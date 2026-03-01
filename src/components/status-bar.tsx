@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTime } from '@/hooks/use-time'
+import { useTimeFormat } from '@/hooks/use-time-format'
 import { selectIsConnected, selectPresence, selectScopeError, useGatewayStore } from '@/stores/gateway-store'
 
 export function StatusBar() {
@@ -10,6 +11,7 @@ export function StatusBar() {
   const connected = useGatewayStore(selectIsConnected)
   const scopeError = useGatewayStore(selectScopeError)
   const presence = useGatewayStore(selectPresence)
+  const { is24h, toggle: toggleTimeFormat } = useTimeFormat()
 
   const presenceEntries = useMemo(() => {
     return Object.entries(presence).map(([id, entry]) => ({
@@ -21,7 +23,12 @@ export function StatusBar() {
   }, [presence])
   const presenceCount = presenceEntries.length
 
-  const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const time = now.toLocaleTimeString('en-US', {
+    hour12: !is24h,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
   const date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
   return (
@@ -71,10 +78,15 @@ export function StatusBar() {
               <WifiOff className="h-3 w-3 text-destructive animate-pulse" />
             )}
           </div>
-          <div className="text-right">
+          <button
+            type="button"
+            onClick={toggleTimeFormat}
+            className="cursor-pointer text-right transition-opacity hover:opacity-70"
+            title={`Switch to ${is24h ? '12h' : '24h'} format`}
+          >
             <div className="font-mono text-xs font-bold tracking-tight sm:text-sm">{time}</div>
             <div className="text-[9px] text-muted-foreground sm:text-[10px]">{date}</div>
-          </div>
+          </button>
         </div>
       </header>
       {scopeError && (

@@ -2,6 +2,32 @@
 
 ---
 
+## [Unreleased]
+
+### Added
+
+#### Dashboard
+- **6 metric tiles:** Gateway status, Latency (color-coded: green < 50ms, orange < 200ms, red > 200ms), Agents, Sessions, Channels, Cron (active/failing count)
+- **Today's Cost banner** — fetches `usage.cost` (last 1 day) on connect; shows total cost + token count with link to `/usage`
+- **Gateway Latency tile** — round-trip ms measured via `health` probe on connect
+- **Cron Summary tile** — enabled job count + failing job count from store; status color reflects failing state
+- **Quick Actions** — "New Agent" button (reuses `CreateAgentDialog`) + "Open Chat" navigation button in dashboard header
+
+#### Chat Notification Toast
+- Toast with agent name + 120-char message preview when a chat `final` event arrives while the user is not on `/chat`; auto-dismiss after 6s; "Open" action navigates to `/chat`
+
+#### Time Format Preference
+- 12h/24h toggle stored in `localStorage` via `useSyncExternalStore`; click the status bar clock to switch; applied to dashboard session timestamps
+
+### Changed
+- Dashboard page refactored from monolithic component into feature-based structure: `components/`, `hooks/`, `types.ts`
+- `MetricTile` extracted as reusable component — replaces inline tile function
+- `SessionsCard` and `PresenceCard` extracted as standalone components
+- Status bar clock: `<div>` → `<button>` with `type="button"` — clickable to toggle 12h/24h format
+- Status bar time formatting now respects the stored 12h/24h preference
+
+---
+
 ## [2026.2.24-1] — 2026-02-24-1
 
 ### Added
