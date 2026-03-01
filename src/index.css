@@ -1,0 +1,829 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── Light Mode ── */
+:root {
+  --bg: oklch(1 0 0);
+  --fg: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-fg: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-fg: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-fg: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-fg: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-fg: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-fg: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-fg: oklch(1 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --c1: oklch(0.81 0.1 252);
+  --c2: oklch(0.62 0.19 260);
+  --c3: oklch(0.55 0.22 263);
+  --c4: oklch(0.49 0.22 264);
+  --c5: oklch(0.42 0.18 266);
+  --sidebar-bg: oklch(0.985 0 0);
+  --sidebar-fg: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-fg: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-fg: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --warn: oklch(0.65 0.18 65);
+  --warn-fg: oklch(0.145 0 0);
+  --ok: oklch(0.55 0.17 155);
+  --ok-fg: oklch(0.985 0 0);
+  --radius: 0.625rem;
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --terminal-bg: #ffffff;
+}
+
+/* ── Dark Mode — Material Palenight High Contrast ── */
+.dark {
+  --bg: #1f2230;
+  --fg: #a6accd;
+  --card: #292d3e;
+  --card-fg: #a6accd;
+  --popover: #292d3e;
+  --popover-fg: #a6accd;
+  --primary: #80cbc4;
+  --primary-fg: #1f2230;
+  --secondary: #353c52;
+  --secondary-fg: #a6accd;
+  --muted: #292d3e;
+  --muted-fg: #676e95;
+  --accent: #353c52;
+  --accent-fg: #a6accd;
+  --destructive: #f07178;
+  --destructive-fg: #1f2230;
+  --border: #353c52;
+  --input: #353c52;
+  --ring: #80cbc4;
+  --c1: #80cbc4;
+  --c2: #82aaff;
+  --c3: #ffcb6b;
+  --c4: #c792ea;
+  --c5: #f78c6c;
+  --sidebar-bg: #1b1e2b;
+  --sidebar-fg: #a6accd;
+  --sidebar-primary: #80cbc4;
+  --sidebar-primary-fg: #1f2230;
+  --sidebar-accent: #292d3e;
+  --sidebar-accent-fg: #a6accd;
+  --sidebar-border: #353c52;
+  --sidebar-ring: #80cbc4;
+  --warn: #ffcb6b;
+  --warn-fg: #1f2230;
+  --ok: #c3e88d;
+  --ok-fg: #1f2230;
+  --terminal-bg: #1f2230;
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+}
+
+@theme inline {
+  --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-fg);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-fg);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-fg);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-fg);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-fg);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-fg);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--c1);
+  --color-chart-2: var(--c2);
+  --color-chart-3: var(--c3);
+  --color-chart-4: var(--c4);
+  --color-chart-5: var(--c5);
+  --color-sidebar: var(--sidebar-bg);
+  --color-sidebar-foreground: var(--sidebar-fg);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-fg);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-fg);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-warning: var(--warn);
+  --color-warning-foreground: var(--warn-fg);
+  --color-success: var(--ok);
+  --color-success-foreground: var(--ok-fg);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    margin: 0;
+    min-height: 100vh;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  /* Thin, auto-hiding scrollbars */
+  [data-sidebar="content"] {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  [data-sidebar="content"]::-webkit-scrollbar {
+    width: 4px;
+  }
+  [data-sidebar="content"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  [data-sidebar="content"]::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+}
+
+/* ── Agents Page ── */
+@layer components {
+  .agents-shell {
+    position: relative;
+  }
+
+  .agents-grid-mask {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.04;
+    mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, black 20%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 0%, black 20%, transparent 100%);
+  }
+
+  .agents-panel {
+    border-radius: 1rem;
+    border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+    background: color-mix(in oklch, var(--card) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .fleet-agent-card {
+    flex: 0 0 auto;
+    width: 220px;
+    scroll-snap-align: start;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+    background: color-mix(in oklch, var(--card) 60%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .fleet-agent-card:hover {
+    border-color: color-mix(in oklch, var(--border) 80%, transparent);
+    background: color-mix(in oklch, var(--card) 85%, transparent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px color-mix(in oklch, var(--primary) 8%, transparent);
+  }
+
+  .fleet-agent-card[data-selected="true"] {
+    border-color: color-mix(in oklch, var(--primary) 40%, transparent);
+    background: color-mix(in oklch, var(--card) 90%, transparent);
+    box-shadow:
+      0 0 0 3px color-mix(in oklch, var(--primary) 12%, transparent),
+      0 8px 24px -4px color-mix(in oklch, var(--primary) 10%, transparent);
+  }
+
+  .agents-tab-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted-fg);
+    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .agents-tab-trigger:hover {
+    color: var(--fg);
+    background: color-mix(in oklch, var(--accent) 50%, transparent);
+  }
+
+  .agents-tab-trigger[data-active="true"] {
+    color: var(--primary);
+    background: color-mix(in oklch, var(--primary) 12%, transparent);
+    box-shadow: 0 1px 3px color-mix(in oklch, var(--primary) 8%, transparent);
+  }
+
+  .agents-tab-surface {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .agents-tab-surface::-webkit-scrollbar {
+    width: 4px;
+  }
+  .agents-tab-surface::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .agents-tab-surface::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+}
+
+/* ── Chat / Prompt-Kit Animations ── */
+@keyframes typing {
+  0% {
+    opacity: 0.2;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+/* =============================================
+   CALENDAR / FORM UTILITIES
+   ============================================= */
+
+.input-field {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--foreground);
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.input-field::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.5;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3);
+}
+
+.btn-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  padding: 0.375rem 0.625rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: all 150ms;
+  cursor: pointer;
+  background: transparent;
+}
+
+.btn-toggle:hover {
+  color: var(--foreground);
+  border-color: var(--foreground);
+}
+
+.btn-toggle-active {
+  background: oklch(from var(--primary) l c h / 0.1);
+  color: var(--primary);
+  border-color: oklch(from var(--primary) l c h / 0.3);
+}
+
+/* =============================================
+   XTERM.JS OVERRIDES
+   ============================================= */
+
+.xterm {
+  padding: 4px;
+}
+
+.xterm .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(1 0 0 / 0.15) transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.15);
+  border-radius: 3px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.25);
+}
+
+:root:not(.dark) .xterm .xterm-viewport {
+  scrollbar-color: oklch(0 0 0 / 0.15) transparent;
+}
+
+:root:not(.dark) .xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background: oklch(0 0 0 / 0.15);
+}
+
+:root:not(.dark) .xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: oklch(0 0 0 / 0.25);
+}
+
+/* =============================================
+   CHAT TEXT (markdown content inside bubbles)
+   Ported from OpenClaw grouped chat styles
+   ============================================= */
+
+.chat-text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--foreground);
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* User messages in primary bubble — inherit the bubble text color */
+.user-markdown {
+  color: inherit;
+}
+.user-markdown :where(a) {
+  color: inherit;
+  text-decoration: underline;
+  opacity: 0.9;
+}
+.user-markdown :where(code) {
+  background: oklch(1 0 0 / 0.15);
+  color: inherit;
+}
+.user-markdown :where(.cb-wrap) {
+  background: oklch(1 0 0 / 0.08);
+  border-color: oklch(1 0 0 / 0.15);
+}
+.user-markdown :where(th) {
+  background: oklch(1 0 0 / 0.1);
+}
+.user-markdown :where(th, td) {
+  border-color: oklch(1 0 0 / 0.2);
+}
+
+/* --- BiDi: let each block decide its own direction --- */
+.chat-text :where(p, li, h1, h2, h3, h4, h5, h6, blockquote, th, td, summary) {
+  unicode-bidi: plaintext;
+}
+
+/* --- Block spacing --- */
+.chat-text :where(p, ul, ol, pre, blockquote, table, hr) {
+  margin: 0;
+}
+
+.chat-text
+  :where(
+    p + p,
+    p + ul,
+    p + ol,
+    p + pre,
+    p + blockquote,
+    p + table,
+    ul + p,
+    ol + p,
+    pre + p,
+    blockquote + p,
+    ul + ul,
+    ol + ol,
+    ul + ol,
+    ol + ul,
+    pre + ul,
+    pre + ol,
+    blockquote + ul,
+    blockquote + ol
+  ) {
+  margin-top: 0.75em;
+}
+
+/* --- Headings --- */
+.chat-text :where(h1, h2, h3, h4) {
+  margin: 1.1em 0 0.4em;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.chat-text :where(*:first-child):where(h1, h2, h3, h4) {
+  margin-top: 0;
+}
+.chat-text :where(h1) {
+  font-size: 1.25em;
+}
+.chat-text :where(h2) {
+  font-size: 1.15em;
+}
+.chat-text :where(h3) {
+  font-size: 1.05em;
+}
+
+/* --- Lists --- */
+.chat-text :where(ul) {
+  padding-left: 1.6em;
+  list-style-type: disc;
+}
+
+.chat-text :where(ol) {
+  padding-left: 1.6em;
+  list-style-type: decimal;
+}
+
+.chat-text :where(ul ul) {
+  list-style-type: circle;
+}
+.chat-text :where(ul ul ul) {
+  list-style-type: square;
+}
+
+.chat-text :where(li) {
+  padding-left: 0.2em;
+}
+
+.chat-text :where(li + li) {
+  margin-top: 0.3em;
+}
+
+.chat-text :where(li > p) {
+  margin: 0;
+}
+
+.chat-text :where(li > p + p) {
+  margin-top: 0.5em;
+}
+
+/* Nested lists — extra spacing + indentation */
+.chat-text :where(li > ul, li > ol) {
+  margin-top: 0.35em;
+  margin-bottom: 0.1em;
+}
+
+/* --- Links --- */
+.chat-text :where(a) {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.chat-text :where(a:hover) {
+  opacity: 0.8;
+}
+
+/* --- Emphasis --- */
+.chat-text :where(strong) {
+  font-weight: 650;
+}
+
+/* --- Inline code --- */
+.chat-text :where(code) {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.88em;
+}
+
+.chat-text :where(:not(pre) > code) {
+  background: oklch(0 0 0 / 0.08);
+  border: 1px solid oklch(0 0 0 / 0.1);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.dark .chat-text :where(:not(pre) > code) {
+  background: oklch(1 0 0 / 0.1);
+  border-color: oklch(1 0 0 / 0.06);
+}
+
+/* --- Code blocks (wrapped by marked renderer) --- */
+.chat-text :where(.cb-wrap) {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: oklch(0 0 0 / 0.03);
+}
+
+.dark .chat-text :where(.cb-wrap) {
+  background: oklch(0 0 0 / 0.3);
+  border-color: oklch(1 0 0 / 0.08);
+}
+
+.chat-text :where(.cb-header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: oklch(0 0 0 / 0.03);
+}
+
+.dark .chat-text :where(.cb-header) {
+  background: oklch(1 0 0 / 0.03);
+  border-bottom-color: oklch(1 0 0 / 0.06);
+}
+
+.chat-text :where(.cb-header-right) {
+  justify-content: flex-end;
+}
+
+.chat-text :where(.cb-lang) {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  text-transform: lowercase;
+}
+
+.chat-text :where(.cb-copy) {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition:
+    opacity 150ms,
+    color 150ms,
+    background 150ms;
+}
+
+.chat-text :where(.cb-wrap:hover .cb-copy) {
+  opacity: 1;
+}
+
+.chat-text :where(.cb-copy:hover) {
+  color: var(--foreground);
+  background: oklch(0 0 0 / 0.06);
+}
+
+.dark .chat-text :where(.cb-copy:hover) {
+  background: oklch(1 0 0 / 0.08);
+}
+
+.chat-text :where(.cb-copy .cb-check-icon) {
+  display: none;
+}
+
+.chat-text :where(.cb-copy.copied .cb-copy-icon) {
+  display: none;
+}
+
+.chat-text :where(.cb-copy.copied .cb-check-icon) {
+  display: inline-flex;
+  color: var(--primary);
+}
+
+.chat-text :where(.cb-copy.copied) {
+  opacity: 1;
+}
+
+.chat-text :where(.cb-pre) {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.chat-text :where(.cb-pre code) {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* Fallback: plain pre (not wrapped by renderer, e.g. inline) */
+.chat-text :where(pre:not(.cb-pre)) {
+  background: oklch(0 0 0 / 0.05);
+  border: 1px solid oklch(0 0 0 / 0.1);
+  border-radius: 6px;
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+
+.dark .chat-text :where(pre:not(.cb-pre)) {
+  background: oklch(0 0 0 / 0.25);
+  border-color: oklch(1 0 0 / 0.08);
+}
+
+.chat-text :where(pre:not(.cb-pre) code) {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+}
+
+/* --- Blockquotes (with nesting levels) --- */
+.chat-text :where(blockquote) {
+  border-left: 3px solid var(--border);
+  padding: 8px 12px;
+  margin-left: 0;
+  color: var(--muted-foreground);
+  background: oklch(0 0 0 / 0.03);
+  border-radius: 0 var(--radius-sm, 4px) var(--radius-sm, 4px) 0;
+}
+
+.dark .chat-text :where(blockquote) {
+  background: oklch(1 0 0 / 0.02);
+  border-left-color: oklch(1 0 0 / 0.12);
+}
+
+.chat-text :where(blockquote blockquote) {
+  margin-top: 8px;
+  border-left-color: var(--muted-foreground);
+  background: oklch(0 0 0 / 0.05);
+}
+
+.dark .chat-text :where(blockquote blockquote) {
+  background: oklch(1 0 0 / 0.03);
+}
+
+.chat-text :where(blockquote blockquote blockquote) {
+  border-left-color: var(--muted-foreground);
+  background: oklch(0 0 0 / 0.04);
+}
+
+.dark .chat-text :where(blockquote blockquote blockquote) {
+  background: oklch(1 0 0 / 0.04);
+}
+
+/* --- Horizontal rule --- */
+.chat-text :where(hr) {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1em 0;
+}
+
+/* --- Tables --- */
+.chat-text :where(table) {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9em;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.chat-text :where(th, td) {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.chat-text :where(th) {
+  font-weight: 600;
+  background: oklch(0 0 0 / 0.04);
+}
+
+.dark .chat-text :where(th) {
+  background: oklch(1 0 0 / 0.05);
+}
+
+/* --- Strikethrough --- */
+.chat-text :where(del) {
+  opacity: 0.6;
+}
+
+/* =============================================
+   RTL (Right-to-Left) SUPPORT
+   ============================================= */
+
+/* Code blocks are ALWAYS LTR regardless of text direction */
+.chat-text :where(.cb-wrap, pre) {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}
+
+.chat-text[dir="rtl"] {
+  text-align: right;
+}
+
+.chat-text[dir="rtl"] :where(ul, ol) {
+  padding-left: 0;
+  padding-right: 1.6em;
+  padding-inline-start: 1.6em;
+  padding-inline-end: 0;
+}
+
+.chat-text[dir="rtl"] :where(li) {
+  padding-left: 0;
+  padding-right: 0.2em;
+}
+
+.chat-text[dir="rtl"] :where(blockquote) {
+  border-left: none;
+  border-right: 3px solid var(--border);
+  padding-left: 0;
+  padding-right: 12px;
+  border-radius: var(--radius-sm, 4px) 0 0 var(--radius-sm, 4px);
+}
+
+.chat-text[dir="rtl"] :where(th, td) {
+  text-align: right;
+}
+
+/* Streaming pulse — indicates active generation */
+.animate-pulse-border {
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: var(--border);
+  }
+  50% {
+    border-color: var(--primary);
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

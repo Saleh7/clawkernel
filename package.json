@@ -1,0 +1,97 @@
+{
+  "name": "clawkernel",
+  "version": "2026.2.24",
+  "description": "ClawKernel — Mission Control & Automation Dashboard for OpenClaw. Manage AI agents, schedule cron jobs, monitor live sessions, and stream real-time chat from a single interface.",
+  "keywords": [
+    "clawkernel",
+    "openclaw",
+    "openclaw-gateway",
+    "mission-control",
+    "dashboard",
+    "automation",
+    "ai-agents",
+    "self-hosted",
+    "cron",
+    "real-time",
+    "websocket",
+    "react",
+    "vite",
+    "AI代理",
+    "智能体",
+    "任务控制",
+    "自动化仪表板",
+    "定时任务",
+    "实时聊天",
+    "自托管"
+  ],
+  "homepage": "https://github.com/Saleh7/clawkernel",
+  "bugs": {
+    "url": "https://github.com/Saleh7/clawkernel/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Saleh",
+    "url": "https://github.com/Saleh7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saleh7/clawkernel.git"
+  },
+  "type": "module",
+  "bin": {
+    "clawkernel": "./bin/clawkernel.mjs"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "README.md",
+    "public/cover.png",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "check": "npx @biomejs/biome check --write src/",
+    "check:ci": "npx @biomejs/biome check src/",
+    "format": "npx @biomejs/biome format --write src/",
+    "typecheck": "tsc --noEmit",
+    "knip": "knip",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^3.0.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/react-virtual": "^3.13.19",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dompurify": "^3.3.1",
+    "lucide-react": "^0.564.0",
+    "marked": "^17.0.2",
+    "radix-ui": "^1.4.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router": "^7.13.0",
+    "shiki": "^3.22.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.18",
+    "tw-animate-css": "^1.4.0",
+    "use-stick-to-bottom": "^1.1.3",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.4",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "knip": "^5.85.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1"
+  }
+}
