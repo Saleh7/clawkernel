@@ -19,12 +19,25 @@
 #### Time Format Preference
 - 12h/24h toggle stored in `localStorage` via `useSyncExternalStore`; click the status bar clock to switch; applied to dashboard session timestamps
 
+#### Channels `/channels`
+- **Channel Status Grid** — card per channel with connection status dot (green/yellow/red), account pills, last error display, auto-refresh every 30s
+- **Channel Settings** — DM policy (pairing/allow/deny) and Group policy (allow/mention/deny) selectors via `config.patch`
+- **Token Setup** — inline token input for Telegram, Discord, Slack with show/hide toggle; saves via `config.patch` → gateway auto-reconnects
+- **WhatsApp/Signal QR Login** — modal with `web.login.start` → QR code display → `web.login.wait` (120s timeout) → success/error feedback
+- **Device Pairing Management** — pending requests (approve/reject) + paired devices table (rotate token, revoke token, remove device) via `device.pair.*` and `device.token.*` APIs
+- **DM Pairing Queue** — contacts awaiting approval per channel; approve adds to `allowFrom` via `config.patch`
+- **Pairing Bell** — global bell icon in status bar with pending request count badge; popover dropdown with approve/reject actions; polls `device.pair.list` every 15s (visibility-aware); bounce animation on new requests
+- **Channel Setup Wizard** — 3-step dialog (Choose → Configure → Done); "Add Channel" button on page header; shows all 5 supported channels (Telegram, Discord, Slack, WhatsApp, Signal) with Configured/Needs setup badge; token input + QR trigger; post-setup checklist per channel with docs links
+- **Enable/Disable Toggle** — per-channel power button with confirm dialog; `config.patch` → root + account-level `enabled`; toast "gateway restarting…"; disabled cards at 60% opacity + "Disabled" label
+- New route: `/channels` with sidebar navigation
+- New UI primitive: `Select` component (`radix-ui` based)
+
 ### Changed
-- Dashboard page refactored from monolithic component into feature-based structure: `components/`, `hooks/`, `types.ts`
-- `MetricTile` extracted as reusable component — replaces inline tile function
+- Dashboard refactored from monolithic component into feature-based structure: `components/`, `hooks/`, `types.ts`
+- `MetricTile` extracted as reusable component
 - `SessionsCard` and `PresenceCard` extracted as standalone components
-- Status bar clock: `<div>` → `<button>` with `type="button"` — clickable to toggle 12h/24h format
-- Status bar time formatting now respects the stored 12h/24h preference
+- Status bar clock clickable to toggle 12h/24h format; respects stored preference
+- Pairing Bell added to global status bar — always visible
 
 ---
 

@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import('@/app/dashboard'))
 const Chat = lazy(() => import('@/app/chat'))
 const Agents = lazy(() => import('@/app/agents'))
 const Sessions = lazy(() => import('@/app/sessions'))
+const Channels = lazy(() => import('@/app/channels'))
 
 const NotFound = lazy(() => import('@/app/not-found'))
 
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'chat', element: withBoundary('chat', Chat) },
       { path: 'agents', element: withBoundary('agents', Agents) },
       { path: 'sessions', element: withBoundary('sessions', Sessions) },
+      { path: 'channels', element: withBoundary('channels', Channels) },
 
       { path: '*', element: <NotFound /> },
     ],

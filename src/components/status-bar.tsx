@@ -1,5 +1,6 @@
 import { AlertTriangle, Shield, Users, Wifi, WifiOff } from 'lucide-react'
 import { useMemo } from 'react'
+import { PairingBell } from '@/components/pairing-bell'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTime } from '@/hooks/use-time'
@@ -71,6 +72,7 @@ export function StatusBar() {
               <span>{connected ? 'Connected' : 'Offline'}</span>
             </div>
           </div>
+          <PairingBell />
           <div className="flex items-center gap-1.5 sm:hidden">
             {connected ? (
               <Wifi className="h-3 w-3 text-success" />

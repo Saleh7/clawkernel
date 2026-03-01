@@ -1,4 +1,4 @@
-import { Bot, ChevronUp, Layers, LayoutDashboard, MessageSquare } from 'lucide-react'
+import { Bot, ChevronUp, Layers, LayoutDashboard, MessageSquare, Radio } from 'lucide-react'
 import { NavLink } from 'react-router'
 import {
   Sidebar,
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { title: 'Chat', icon: MessageSquare, to: '/chat' },
   { title: 'Agents', icon: Bot, to: '/agents' },
   { title: 'Sessions', icon: Layers, to: '/sessions' },
+  { title: 'Channels', icon: Radio, to: '/channels' },
 ] as const
 
 export function AppSidebar() {
