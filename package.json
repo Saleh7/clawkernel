@@ -39,7 +39,7 @@
   },
   "type": "module",
   "bin": {
-    "clawkernel": "./bin/clawkernel.mjs"
+    "clawkernel": "bin/clawkernel.mjs"
   },
   "files": [
     "dist/",
