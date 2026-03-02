@@ -1,4 +1,4 @@
-import { Bot, ChevronUp, Layers, LayoutDashboard, MessageSquare, Radio } from 'lucide-react'
+import { Bot, ChevronUp, Clock, Layers, LayoutDashboard, MessageSquare, Radio } from 'lucide-react'
 import { NavLink } from 'react-router'
 import {
   Sidebar,
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { title: 'Agents', icon: Bot, to: '/agents' },
   { title: 'Sessions', icon: Layers, to: '/sessions' },
   { title: 'Channels', icon: Radio, to: '/channels' },
+  { title: 'Cron', icon: Clock, to: '/cron' },
 ] as const
 
 export function AppSidebar() {

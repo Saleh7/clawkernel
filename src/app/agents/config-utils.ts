@@ -4,6 +4,34 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('agents:config')
 
+// ---------------------------------------------------------------------------
+// Hash-conflict detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true if the error is a config hash conflict from the Gateway.
+ *
+ * OpenClaw gateway emits three distinct messages for hash-related rejections
+ * (verified against server-methods/config.ts → requireConfigBaseHash):
+ *
+ *   "config base hash unavailable; re-run config.get and retry"  (hash field missing in snapshot)
+ *   "config base hash required; re-run config.get and retry"     (baseHash param missing)
+ *   "config changed since last load; re-run config.get and retry" (baseHash !== snapshotHash)
+ *
+ * The first two contain the word "hash".
+ * The third does NOT — which is why the original check was incomplete.
+ * All three contain "re-run config.get", used here as the canonical signal.
+ */
+function isHashConflict(msg: string): boolean {
+  return (
+    msg.includes('hash') || msg.includes('conflict') || msg.includes('BASE_HASH') || msg.includes('re-run config.get')
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Agent config patch (config.set / config.apply)
+// ---------------------------------------------------------------------------
+
 /**
  * Patches a specific agent entry in config and returns the full patched config string.
  * Returns null if the agent is not found in the config list.
@@ -51,8 +79,7 @@ export async function saveConfigWithRetry(
     await client.request(method, result)
   } catch (err) {
     const msg = err instanceof Error ? err.message : ''
-    // Hash conflict — re-fetch and retry once
-    if (msg.includes('hash') || msg.includes('conflict') || msg.includes('BASE_HASH')) {
+    if (isHashConflict(msg)) {
       log.warn('Config hash conflict, retrying with fresh config')
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})
       const retryResult = patchAgentConfig(freshConfig, agentId, patcher)
@@ -83,7 +110,7 @@ export async function saveRawConfigWithRetry(
     await client.request(method, { raw: JSON.stringify(patched, null, 2), baseHash: config.hash })
   } catch (err) {
     const msg = err instanceof Error ? err.message : ''
-    if (msg.includes('hash') || msg.includes('conflict') || msg.includes('BASE_HASH')) {
+    if (isHashConflict(msg)) {
       log.warn('Config hash conflict, retrying with fresh config')
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})
       const freshCurrent = (freshConfig.config ?? {}) as Record<string, unknown>
@@ -95,4 +122,53 @@ export async function saveRawConfigWithRetry(
   }
 
   return await client.request<ConfigSnapshot>('config.get', {})
+}
+
+// ---------------------------------------------------------------------------
+// config.patch helper (merge-patch, used by channel components)
+// ---------------------------------------------------------------------------
+
+/**
+ * Send config.patch with automatic hash-conflict retry.
+ *
+ * config.patch applies a JSON Merge Patch (diff only) to the current config.
+ * Unlike config.set / config.apply, the same `raw` diff can safely be retried
+ * against the latest config — channel enable/disable and policy patches are
+ * always idempotent.
+ *
+ * On hash conflict ("config changed since last load"), re-fetches the latest
+ * config to obtain a fresh baseHash and retries the patch exactly once.
+ *
+ * The caller is responsible for updating the gateway store and calling
+ * channels.status / onRefresh after this function returns.
+ *
+ * @param client       - Connected GatewayClient
+ * @param config       - Current config snapshot (provides baseHash)
+ * @param raw          - JSON string of the merge-patch diff
+ * @param restartDelayMs - Optional restart delay passed to the gateway
+ */
+export async function patchConfigWithRetry(
+  client: GatewayClient,
+  config: ConfigSnapshot,
+  raw: string,
+  restartDelayMs?: number,
+): Promise<void> {
+  const buildParams = (hash: string | null | undefined) => ({
+    raw,
+    ...(hash ? { baseHash: hash } : {}),
+    ...(restartDelayMs !== undefined ? { restartDelayMs } : {}),
+  })
+
+  try {
+    await client.request('config.patch', buildParams(config.hash))
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : ''
+    if (isHashConflict(msg)) {
+      log.warn('config.patch hash conflict, retrying with fresh config')
+      const fresh = await client.request<ConfigSnapshot>('config.get', {})
+      await client.request('config.patch', buildParams(fresh.hash))
+      return
+    }
+    throw err
+  }
 }

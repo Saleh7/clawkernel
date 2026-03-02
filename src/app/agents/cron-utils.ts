@@ -1,44 +1,11 @@
-// ---------------------------------------------------------------------------
-//  Cron — Pure helpers, form types & converters
-// ---------------------------------------------------------------------------
-
 import type { GatewayClient } from '@/lib/gateway/client'
 import type { CronJob, CronPayload, CronSchedule } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
 import { useGatewayStore } from '@/stores/gateway-store'
 
+export { formatDuration, formatRelative, formatSchedule } from '@/lib/cron'
+
 export const log = createLogger('agents:cron')
-
-// -- Formatting helpers -----------------------------------------------------
-
-export function formatSchedule(job: CronJob): { label: string; kind: string } {
-  const s = job.schedule
-  if (s.kind === 'cron') return { label: `${s.expr}${s.tz ? ` (${s.tz})` : ''}`, kind: 'cron' }
-  if (s.kind === 'every') {
-    const sec = Math.round(s.everyMs / 1000)
-    if (sec < 60) return { label: `every ${sec}s`, kind: 'interval' }
-    if (sec < 3600) return { label: `every ${Math.round(sec / 60)}m`, kind: 'interval' }
-    return { label: `every ${(sec / 3600).toFixed(1)}h`, kind: 'interval' }
-  }
-  if (s.kind === 'at') return { label: new Date(s.at).toLocaleString(), kind: 'one-shot' }
-  return { label: '—', kind: 'unknown' }
-}
-
-export function formatRelative(ms?: number | null): string {
-  if (!ms) return '—'
-  const diff = Date.now() - ms
-  if (Math.abs(diff) < 60_000) return 'just now'
-  if (diff < 0) return `in ${Math.round(-diff / 60_000)}m`
-  if (diff < 3600_000) return `${Math.round(diff / 60_000)}m ago`
-  if (diff < 86400_000) return `${Math.round(diff / 3600_000)}h ago`
-  return `${Math.round(diff / 86400_000)}d ago`
-}
-
-export function formatDuration(ms?: number): string {
-  if (ms == null) return '—'
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(1)}s`
-}
 
 export async function refreshCron(client: GatewayClient) {
   try {
@@ -152,7 +119,7 @@ export function formStateToSchedule(f: JobFormState): CronSchedule {
     return { kind: 'cron', expr: f.cronExpr, ...(f.cronTz ? { tz: f.cronTz } : {}) }
   }
   if (f.scheduleKind === 'every') {
-    const multiplier = f.intervalUnit === 'hours' ? 3600_000 : f.intervalUnit === 'minutes' ? 60_000 : 1000
+    const multiplier = f.intervalUnit === 'hours' ? 3_600_000 : f.intervalUnit === 'minutes' ? 60_000 : 1_000
     return { kind: 'every', everyMs: Number(f.intervalValue) * multiplier }
   }
   return { kind: 'at', at: new Date(f.atDatetime).toISOString() }

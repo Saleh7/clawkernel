@@ -232,11 +232,20 @@ export type PresenceEntry = {
 export type CronSchedule =
   | { kind: 'at'; at: string }
   | { kind: 'every'; everyMs: number; anchorMs?: number }
-  | { kind: 'cron'; expr: string; tz?: string }
+  | { kind: 'cron'; expr: string; tz?: string; staggerMs?: number }
 
 export type CronPayload =
   | { kind: 'systemEvent'; text: string }
-  | { kind: 'agentTurn'; message: string; thinking?: string; timeoutSeconds?: number }
+  | { kind: 'agentTurn'; message: string; model?: string; thinking?: string; timeoutSeconds?: number }
+
+export type CronDeliveryMode = 'none' | 'announce' | 'webhook'
+
+export type CronDelivery = {
+  mode: CronDeliveryMode
+  channel?: string
+  to?: string
+  bestEffort?: boolean
+}
 
 export type CronJobState = {
   nextRunAtMs?: number
@@ -245,6 +254,8 @@ export type CronJobState = {
   lastStatus?: 'ok' | 'error' | 'skipped'
   lastError?: string
   lastDurationMs?: number
+  consecutiveErrors?: number
+  lastDeliveryStatus?: CronDeliveryStatus
 }
 
 export type CronJob = {
@@ -260,6 +271,7 @@ export type CronJob = {
   sessionTarget: 'main' | 'isolated'
   wakeMode: 'next-heartbeat' | 'now'
   payload: CronPayload
+  delivery?: CronDelivery
   state?: CronJobState
 }
 
@@ -269,18 +281,46 @@ export type CronStatus = {
   nextWakeAtMs?: number | null
 }
 
+export type CronJobsEnabledFilter = 'all' | 'enabled' | 'disabled'
+export type CronJobsSortBy = 'nextRunAtMs' | 'updatedAtMs' | 'name'
+export type CronSortDir = 'asc' | 'desc'
+export type CronDeliveryStatus = 'delivered' | 'not-delivered' | 'unknown' | 'not-requested'
+
 export type CronRunLogEntry = {
   ts: number
   jobId: string
-  action: 'finished'
+  jobName?: string
   status?: 'ok' | 'error' | 'skipped'
   error?: string
   summary?: string
+  deliveryStatus?: CronDeliveryStatus
+  deliveryError?: string
+  delivered?: boolean
   sessionId?: string
   sessionKey?: string
   runAtMs?: number
   durationMs?: number
   nextRunAtMs?: number
+  model?: string
+  provider?: string
+}
+
+export type CronJobsListResult = {
+  jobs?: CronJob[]
+  total?: number
+  offset?: number
+  limit?: number
+  hasMore?: boolean
+  nextOffset?: number | null
+}
+
+export type CronRunsResult = {
+  entries?: CronRunLogEntry[]
+  total?: number
+  offset?: number
+  limit?: number
+  hasMore?: boolean
+  nextOffset?: number | null
 }
 
 // -- Skills -----------------------------------------------------------------

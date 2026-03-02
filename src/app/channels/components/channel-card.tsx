@@ -1,6 +1,7 @@
 import { LogOut, Power, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { patchConfigWithRetry } from '@/app/agents/config-utils'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -77,11 +78,7 @@ export function ChannelCard({ channelId, label, accounts, client, onRefresh }: P
         }
       }
       const patch = { channels: { [channelId]: channelPatch } }
-      await client.request('config.patch', {
-        raw: JSON.stringify(patch),
-        baseHash: config.hash,
-        restartDelayMs: 2000,
-      })
+      await patchConfigWithRetry(client, config, JSON.stringify(patch), 2000)
       setShowToggle(false)
       toast.success(`${label} ${next ? 'enabled' : 'disabled'} — gateway restarting…`, { duration: 4000 })
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})

@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useTimeFormat } from '@/hooks/use-time-format'
 import type { GatewayClient } from '@/lib/gateway/client'
 import type { CronJob, CronStatus } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
@@ -48,15 +49,17 @@ type Props = {
 function CronJobCard({
   job,
   client,
+  is24h,
   onEdit,
   onDelete,
 }: {
   job: CronJob
   client: GatewayClient | null
+  is24h: boolean
   onEdit: () => void
   onDelete: () => void
 }) {
-  const sched = formatSchedule(job)
+  const sched = formatSchedule(job.schedule, is24h)
   const nextRun = job.state?.nextRunAtMs
   const now = Date.now()
   const timeToNext = nextRun ? nextRun - now : null
@@ -230,6 +233,7 @@ function CronJobCard({
 // ---------------------------------------------------------------------------
 
 export function AgentCron({ agentId, cronJobs, cronStatus, client }: Props) {
+  const { is24h } = useTimeFormat()
   const jobs = cronJobs.filter((j) => j.agentId === agentId)
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -288,6 +292,7 @@ export function AgentCron({ agentId, cronJobs, cronStatus, client }: Props) {
               key={job.id}
               job={job}
               client={client}
+              is24h={is24h}
               onEdit={() => setEditJob(job)}
               onDelete={() => setDeleteJob(job)}
             />

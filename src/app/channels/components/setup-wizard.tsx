@@ -1,6 +1,7 @@
 import { Check, ExternalLink, Eye, EyeOff, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { patchConfigWithRetry } from '@/app/agents/config-utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -95,10 +96,7 @@ export function SetupWizard({
         if (v) channelPatch[f.key] = v
       }
       const patch = { channels: { [current.id]: channelPatch } }
-      await client.request('config.patch', {
-        raw: JSON.stringify(patch),
-        baseHash: config.hash,
-      })
+      await patchConfigWithRetry(client, config, JSON.stringify(patch))
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})
       useGatewayStore.getState().setConfig(freshConfig)
       toast.success(`${current.label} configured — gateway reconnecting`)

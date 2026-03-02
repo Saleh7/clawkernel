@@ -32,7 +32,37 @@
 - New route: `/channels` with sidebar navigation
 - New UI primitive: `Select` component (`radix-ui` based)
 
+#### Cron `/cron`
+- **Global Cron Hub** — dedicated page listing all cron jobs across all agents with real-time stats bar (scheduler status, total/enabled/failing counts, next wake timer)
+- **Job Cards** — collapsed view with status dot, human-readable schedule, agent label, next-run countdown, delivery warning badge; quick actions (enable/disable, run now, edit, delete)
+- **Expanded Job Detail** — configuration panel, delivery config, 4 execution tiles (last run, next run, duration, status with consecutive-error count), prompt preview, paginated run history
+- **Create Job Wizard** — 5-step dialog (Basics → Schedule → Payload → Delivery → Review); 11 schedule presets + custom cron/interval/one-shot; agent selector; model override + thinking level; announce delivery with best-effort flag
+- **Inline Edit Form** — flat layout with schedule, payload, delivery, and flag editors; opens below the card header
+- **Failure Guide** — pattern-matched error diagnosis with actionable fix steps; covers delivery-target, auth, model, timeout, and network errors; technical details collapsible
+- **`cronToHuman()` formatter** — human-readable schedule labels (`0 8 * * *` → "Daily at 8:00 AM"); respects 12h/24h preference
+- **Run History** — per-job paginated list with status icons, timestamps, duration, model, session ID; expandable detail view with summary, session key, and delivery status
+- **URL deep-linking** — `?job=<id>` scrolls to and highlights a job; `?show=errors` auto-expands the first failing job
+- **Sorting & filtering** — sort by next run / last updated / name (asc/desc); filter by all / enabled / disabled; search by name
+- Shared cron formatters extracted to `src/lib/cron.ts` — `formatSchedule`, `formatRelative`, `formatDuration`, `cronToHuman`, `buildFailureGuide`
+- New route: `/cron` with sidebar navigation
+
+### Fixed
+
+#### Channels
+- **`config.patch` hash-conflict retry** — `isHashConflict()` now matches all three Gateway error variants, including `"config changed since last load; re-run config.get and retry"` (the most common stale-hash message, which doesn't contain the word "hash"). All three `config.patch` call sites (`channel-card`, `channel-settings`, `setup-wizard`) use `patchConfigWithRetry` and auto-retry once with a fresh `baseHash` on conflict.
+
+#### Cron
+- **`formToDelivery` mode=none** — previously returned `undefined`, which was absent in JSON and left an existing delivery intact on update; now correctly returns `{ mode: 'none' }` so the Gateway clears delivery when the user selects "No delivery"
+- **`staggerMs` preserved on edit** — `CronSchedule` type, `formToSchedule`, and `jobToForm` (via `scheduleToForm`) all carry `staggerMs`; editing a job with a non-zero stagger no longer silently drops the value
+- **`useCronRuns` race condition** — `setLoading(false)` / `setLoadingMore(false)` moved to a `finally` block; a stale-job `return` inside `try` no longer leaves the loading spinner stuck indefinitely
+- **Wizard dead network call** — removed a `useEffect` that called `agents.list` on wizard open but discarded the result; agent list is already available from the gateway store snapshot
+- **`cron.list` redundant param** — removed `includeDisabled` from the request; the `enabled` filter param is the canonical API, and sending both is redundant (verified against `server-methods/cron.ts`)
+- **Wizard review — unconditional ellipsis** — payload preview now appends `…` only when `payloadText.length > 80`; short messages no longer show a trailing ellipsis
+- **Unused import** — removed `AgentsListResult` import from `create-job-wizard.tsx` (leftover after the dead network call was removed)
+
 ### Changed
+- Agent Cron tab now uses shared `cronToHuman()` formatter with 12h/24h support
+- Gateway types updated: `CronDelivery`, `CronJobsListResult`, `CronRunsResult`, `CronDeliveryStatus`, pagination support for `cron.list` and `cron.runs`
 - Dashboard refactored from monolithic component into feature-based structure: `components/`, `hooks/`, `types.ts`
 - `MetricTile` extracted as reusable component
 - `SessionsCard` and `PresenceCard` extracted as standalone components

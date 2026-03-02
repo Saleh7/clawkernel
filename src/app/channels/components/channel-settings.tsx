@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { patchConfigWithRetry } from '@/app/agents/config-utils'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { GatewayClient } from '@/lib/gateway/client'
@@ -34,10 +35,7 @@ export function ChannelSettings({ channelId, client, onRefresh }: Props) {
     setBusy(true)
     try {
       const patch = { channels: { [channelId]: { [field]: value } } }
-      await client.request('config.patch', {
-        raw: JSON.stringify(patch),
-        baseHash: config.hash,
-      })
+      await patchConfigWithRetry(client, config, JSON.stringify(patch))
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})
       useGatewayStore.getState().setConfig(freshConfig)
       toast.success(`${field === 'dmPolicy' ? 'DM' : 'Group'} policy updated`)
