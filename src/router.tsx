@@ -14,6 +14,7 @@ const Skills = lazy(() => import('@/app/skills'))
 const Models = lazy(() => import('@/app/models'))
 const Audio = lazy(() => import('@/app/audio'))
 const Browser = lazy(() => import('@/app/browser'))
+const Search = lazy(() => import('@/app/search'))
 
 const NotFound = lazy(() => import('@/app/not-found'))
 
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
       { path: 'models', element: withBoundary('models', Models) },
       { path: 'audio', element: withBoundary('audio', Audio) },
       { path: 'browser', element: withBoundary('browser', Browser) },
+      { path: 'search', element: withBoundary('search', Search) },
 
       { path: '*', element: <NotFound /> },
     ],

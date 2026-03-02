@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Radio,
+  Search,
   Sparkles,
   Volume2,
   Wrench,
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
   { title: 'Models', icon: Sparkles, to: '/models' },
   { title: 'Audio', icon: Volume2, to: '/audio' },
   { title: 'Browser', icon: Globe, to: '/browser' },
+  { title: 'Search', icon: Search, to: '/search' },
 ] as const
 
 export function AppSidebar() {

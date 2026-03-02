@@ -7,6 +7,17 @@
 ### Added
 
 
+#### Web Search `/search`
+- **Web Search page** — new route `/search`; nav item (Search icon) in sidebar; wrapped with `PageErrorBoundary`
+- **Provider Status Bar** — 4 tiles from `config.get`: Active Provider (accent only when *that* provider's key is configured), Model, Cache TTL, Keys Configured (n/5 from config-stored keys only; full env-var detection in Phase 7)
+- **Provider Cards** — 5 cards for all supported providers: `brave · perplexity · grok · gemini · kimi`; configured status from `config.get`; active badge; env var name shown; Perplexity card notes OpenRouter `baseUrl` override
+- **Model Selector** — shown when active provider has a model field; Perplexity: 3 preset buttons (sonar / sonar-pro / sonar-reasoning-pro); Grok / Gemini / Kimi: free-form text input with documented default as placeholder; saves via `config.patch` merge; re-syncs when config refreshes externally
+- **Search Playground** — agent dropdown (from gateway store) + session dropdown (filtered by agent); query input + result count (1 / 3 / 5 / 10); CLI equivalent preview with copy button; runs search via `chat.send` (not `chat.inject` — which does not trigger agent processing); streams response via Gateway `chat` broadcast events; result panel shows status badge · provider · agent · duration and renders response as markdown (same renderer as `/chat`)
+- **No-provider warning banner** — shown when zero API keys are set in config; includes setup guide link
+- **`PROVIDER_LIST`** constant in `search/types.ts` — single source of truth for the 5-provider ordered list; used by provider cards, warning banner, and status bar
+- **Load error state** — inline error panel when `config.get` fails on initial load (instead of blank page); `loadError` tracked in `useSearchConfig`
+- **Gateway types** — `WebSearchProvider`, `WebSearchConfig`, `PlaygroundState` added to `src/app/search/types.ts`
+
 #### Browser `/browser`
 - **Browser page** — new route `/browser`; nav item (Globe) in sidebar
 - **Browser Status card** — probes `browser.request GET /` on load; shows Running · CDP Ready · Profile · Browser tiles; disabled state (browser control off) with docs link
