@@ -106,7 +106,6 @@ export default function AgentsPage() {
   const [showComparison, setShowComparison] = useState(false)
   const carouselRef = useRef<HTMLDivElement>(null)
 
-  // Auto-select default agent
   const firstAgentId = agents[0]?.id ?? null
   useEffect(() => {
     if (!selectedId && agentsList) {
@@ -127,7 +126,6 @@ export default function AgentsPage() {
     }
   }, [client, agents])
 
-  // Fetch config if not in store
   useEffect(() => {
     if (!client || config) return
     client
@@ -136,7 +134,6 @@ export default function AgentsPage() {
       .catch((err) => log.warn('Config fetch failed', err))
   }, [client, config])
 
-  // Fetch workspace when agent changes
   useEffect(() => {
     if (!client || !selectedId) return
     setWorkspace(null)

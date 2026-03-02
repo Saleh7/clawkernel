@@ -103,7 +103,6 @@ export function useModels() {
     ]
   })
 
-  // Agent list: combine store agents with per-agent model overrides from config
   const configAgentsList = cfg?.agents?.list ?? []
   const modelByAgent = new Map(configAgentsList.map((a) => [a.id, a.model]))
   const agentList = (storeAgents?.agents ?? []).map((a) => ({

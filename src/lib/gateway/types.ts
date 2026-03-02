@@ -418,6 +418,83 @@ export type AgentFileEntry = {
 
 // -- Logs -------------------------------------------------------------------
 
+// -- Browser ----------------------------------------------------------------
+
+export type BrowserStatus = {
+  enabled: boolean
+  profile: string
+  running: boolean
+  cdpReady: boolean
+  cdpHttp: boolean
+  cdpPort: number | null
+  cdpUrl: string | null
+  chosenBrowser: string | null
+  detectedBrowser: string | null
+  detectedExecutablePath: string | null
+  detectError: string | null
+  userDataDir: string | null
+  color: string | null
+  headless: boolean
+  attachOnly: boolean
+}
+
+// -- TTS / Audio ------------------------------------------------------------
+
+export type TtsAutoMode = 'off' | 'always' | 'inbound' | 'tagged'
+
+export type TtsStatus = {
+  enabled: boolean
+  auto: TtsAutoMode
+  provider: string
+  fallbackProvider: string | null
+  fallbackProviders: string[]
+  prefsPath?: string
+  hasOpenAIKey: boolean
+  hasElevenLabsKey: boolean
+  edgeEnabled: boolean
+}
+
+export type TtsProvider = {
+  id: string
+  name: string
+  configured: boolean
+  models: string[]
+  voices?: string[]
+}
+
+export type TtsProvidersResult = {
+  providers: TtsProvider[]
+  active: string
+}
+
+export type TtsConvertResult = {
+  audioPath: string
+  provider: string
+  outputFormat: string
+  voiceCompatible: boolean
+}
+
+export type TalkConfigPayload = {
+  voiceId?: string
+  voiceAliases?: Record<string, string>
+  modelId?: string
+  outputFormat?: string
+  interruptOnSpeech?: boolean
+  [key: string]: unknown
+}
+
+export type TalkConfigResult = {
+  config: {
+    talk?: TalkConfigPayload
+    session?: { mainKey: string }
+    ui?: { seamColor: string }
+  }
+}
+
+export type VoiceWakeResult = {
+  triggers: string[]
+}
+
 // -- Models -----------------------------------------------------------------
 
 export type ModelCatalogEntry = {

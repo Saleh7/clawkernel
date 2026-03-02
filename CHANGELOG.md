@@ -6,6 +6,25 @@
 
 ### Added
 
+
+#### Browser `/browser`
+- **Browser page** — new route `/browser`; nav item (Globe) in sidebar
+- **Browser Status card** — probes `browser.request GET /` on load; shows Running · CDP Ready · Profile · Browser tiles; disabled state (browser control off) with docs link
+- **Request Panel** — method selector (GET/POST/DELETE) · path input · query JSON textarea · body JSON textarea (POST only) · Send button → `browser.request`; preset buttons for common routes
+- **Response viewer** — shows success (200 OK) or error with JSON-prettified body; updates on every send
+- **History** — last 20 requests (newest-first) with method · path · status · duration; click any entry to restore into panel
+- **Gateway types** — `BrowserStatus` added to `gateway/types.ts`
+
+#### Audio `/audio`
+- **Audio page** — new route `/audio` with `PageErrorBoundary`; nav item (Volume2) in sidebar
+- **TTS Status card** — enabled toggle via `tts.enable` / `tts.disable`; auto-mode display (read-only; Enable → always, Disable → off); provider fallback chain; API key status for OpenAI, ElevenLabs, Edge TTS
+- **TTS Providers section** — provider cards from `tts.providers`; expand to show models and voices; "Set Active" via `tts.setProvider`; active provider highlighted
+- **Voice Sample Lab** — text presets + textarea → `tts.convert { text }` → shows provider, format, and server-side output path (browser playback requires Phase 7 backend)
+- **Wake Word card** — triggers list from `voicewake.get`; inline add/remove + save via `voicewake.set { triggers }`
+- **Talk Config card** — read-only display from `talk.config`: voiceId, modelId, outputFormat, interruptOnSpeech, voiceAliases, seamColor; empty state with setup guide link
+- **Slash commands accordion** — reference panel for `/tts` slash commands (collapsed by default)
+- **Gateway types** — `TtsAutoMode`, `TtsStatus`, `TtsProvider`, `TtsProvidersResult`, `TtsConvertResult`, `TalkConfigPayload`, `TalkConfigResult`, `VoiceWakeResult` added to `gateway/types.ts`
+
 #### Skills `/skills`
 - **Global skills page** — `skills.status` per agent; groups by source (Workspace · Built-in · Installed · Other)
 - **Stats bar** — 5 tiles: Total · Ready · Needs Setup · Blocked · Disabled

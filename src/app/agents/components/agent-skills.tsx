@@ -67,7 +67,6 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
   const savedFilter = cfg?.agents?.list?.find((a) => a.id === agentId)?.skills
   const [filterDraft, setFilterDraft] = useState<string[] | null>(savedFilter ?? null)
 
-  // Sync draft when config changes externally
   useEffect(() => {
     const fresh = (config?.config as ParsedConfig | null | undefined)?.agents?.list?.find(
       (a) => a.id === agentId,
@@ -106,7 +105,6 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
 
   const groups = groupBySource(filtered)
 
-  // Is a skill enabled in draft?
   const isEnabled = useCallback(
     (skillName: string) => {
       if (filterDraft === null) return true // all enabled

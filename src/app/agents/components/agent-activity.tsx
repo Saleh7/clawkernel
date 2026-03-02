@@ -278,7 +278,6 @@ export function AgentActivity({ agentId, client }: Props) {
     }
   }, [client, cronJobs, agentId])
 
-  // Build unified feed
   const feed = useMemo(() => {
     const items: FeedItem[] = []
 

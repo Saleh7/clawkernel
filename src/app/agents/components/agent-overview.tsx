@@ -140,7 +140,6 @@ export function AgentOverview({
   const [fallbacksDraft, setFallbacksDraft] = useState(agentModel.fallbacks.join(', '))
   const [availableModels, setAvailableModels] = useState<ModelChoice[]>([])
 
-  // Sync drafts when agent/config changes
   useEffect(() => {
     const m = resolveModel(entry?.model)
     setPrimaryDraft(m.primary)

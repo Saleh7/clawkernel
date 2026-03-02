@@ -139,7 +139,6 @@ function SessionItem({
 
   const handleMouseEnter = useCallback(() => {
     setHovered(true)
-    // If cached and fresh, show immediately
     const cached = previewCache.get(session.key)
     if (cached && Date.now() - cached.ts < PREVIEW_CACHE_TTL_MS) {
       setPreview(cached.entry)
@@ -158,7 +157,6 @@ function SessionItem({
         const entry = r?.previews?.[0] ?? null
         if (entry) {
           previewCache.set(session.key, { entry, ts: Date.now() })
-          // Evict oldest entries if cache is too large
           if (previewCache.size > PREVIEW_CACHE_MAX) {
             const oldest = previewCache.keys().next().value
             if (oldest) previewCache.delete(oldest)

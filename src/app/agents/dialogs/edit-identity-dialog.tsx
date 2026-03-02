@@ -192,7 +192,6 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
-  // Load IDENTITY.md content when dialog opens
   useEffect(() => {
     if (!open || !client?.connected) return
     setLoading(true)
@@ -208,7 +207,6 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
           setFields(parsed)
           setOriginal(parsed)
         } else {
-          // Pre-fill from identity RPC result
           const prefill: IdentityFields = {
             ...EMPTY_FIELDS,
             name: identity?.name || '',
@@ -219,7 +217,6 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
         }
       })
       .catch(() => {
-        // Fallback to identity props
         const prefill: IdentityFields = {
           ...EMPTY_FIELDS,
           name: identity?.name || '',
@@ -257,7 +254,6 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
       setSaved(true)
       onSaved?.(fields)
 
-      // Refresh identity in the store by re-fetching
       client
         .request<AgentIdentityResult>('agent.identity.get', { agentId })
         .catch((err) => log.warn('Identity refresh failed', err))

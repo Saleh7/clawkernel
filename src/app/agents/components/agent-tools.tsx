@@ -72,7 +72,6 @@ export function AgentTools({ agentId, config, client }: Props) {
     return () => ac.abort()
   }, [fetchCatalog])
 
-  // ── Resolved catalog (server or fallback) ──
   const usingFallback = !catalog
   const groups = catalog?.groups ?? FALLBACK_SECTIONS
   const profiles = catalog?.profiles ?? FALLBACK_PROFILES
@@ -103,7 +102,6 @@ export function AgentTools({ agentId, config, client }: Props) {
     setDenyDraft(savedDeny)
   }, [savedProfile, savedAlsoAllow, savedDeny])
 
-  // ── Policy resolution ──
   const basePolicy = useMemo(() => {
     if (hasAgentAllow) {
       return { allow: agentTools.allow ?? [], deny: agentTools.deny ?? [] }
