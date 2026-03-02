@@ -418,6 +418,21 @@ export type AgentFileEntry = {
 
 // -- Logs -------------------------------------------------------------------
 
+// -- Models -----------------------------------------------------------------
+
+export type ModelCatalogEntry = {
+  id: string
+  name: string
+  provider: string
+  contextWindow?: number
+  reasoning?: boolean
+  input?: Array<'text' | 'image'>
+}
+
+export type ModelsListResult = {
+  models: ModelCatalogEntry[]
+}
+
 // -- Usage ------------------------------------------------------------------
 
 // -- Session Preview --------------------------------------------------------

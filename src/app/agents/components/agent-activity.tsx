@@ -245,13 +245,11 @@ export function AgentActivity({ agentId, client }: Props) {
   const [cleared, setCleared] = useState<number>(0) // timestamp of last clear
   const [now, setNow] = useState(Date.now())
 
-  // Tick relative timestamps every 15s
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 15_000)
     return () => clearInterval(id)
   }, [])
 
-  // Fetch cron run history on mount / agent change
   useEffect(() => {
     if (!client) return
     const agentJobs = cronJobs.filter((j: CronJob) => j.agentId === agentId)

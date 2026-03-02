@@ -6,6 +6,26 @@
 
 ### Added
 
+#### Skills `/skills`
+- **Global skills page** — `skills.status` per agent; groups by source (Workspace · Built-in · Installed · Other)
+- **Stats bar** — 5 tiles: Total · Ready · Needs Setup · Blocked · Disabled
+- **Availability badges** — Ready (green) / Needs Setup (amber) / Blocked (red) / Disabled (muted)
+- **Grid + list view** — toggle between card grid and compact list; collapsible source groups
+- **Enable / Disable** — inline toggle per skill via `skills.update { skillKey, enabled }`
+- **Install dependencies** — per-install-option buttons via `skills.install { name, installId, timeoutMs: 120s }`
+- **API key input** — inline form for missing `env` requirements via `skills.update { skillKey, apiKey }`
+- **Agent selector** — dropdown to view skills for any configured agent (multi-agent setups)
+- **Search + filter** — text search across name/description/key; status filter (All / Ready / Needs Setup / Blocked)
+- **Detail panel** — slide-over with full description, status toggle, requirements, missing items, install options, API key form, homepage link, source path
+
+#### Models `/models`
+- **Routing section** — displays default model + fallback chain + image model + image fallbacks from `config.get`
+- **Aliases table** — model ID → alias mapping from `agents.defaults.models`
+- **Provider status** — per-provider cards showing API key configured/missing from config
+- **Available models** — full catalog from `models.list` grouped by provider: name · ID · context window · reasoning · vision badges
+- **Model search** — client-side filter across name/ID/provider
+- **`ModelCatalogEntry` type** added to gateway types (`id · name · provider · contextWindow · reasoning · input`)
+
 #### Dashboard
 - **6 metric tiles:** Gateway status, Latency (color-coded: green < 50ms, orange < 200ms, red > 200ms), Agents, Sessions, Channels, Cron (active/failing count)
 - **Today's Cost banner** — fetches `usage.cost` (last 1 day) on connect; shows total cost + token count with link to `/usage`

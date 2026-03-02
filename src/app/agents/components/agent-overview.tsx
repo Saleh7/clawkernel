@@ -131,13 +131,11 @@ export function AgentOverview({
   const identityName = identity?.name?.trim() || agent.identity?.name?.trim() || agent.name?.trim() || agent.id
   const identityEmoji = identity?.emoji?.trim() || agent.identity?.emoji?.trim() || ''
 
-  // Model from config
   const agentModel = resolveModel(entry?.model)
   const defaultModel = resolveModel(defaults?.model)
   const effectiveModel = agentModel.primary ? agentModel : defaultModel
   const hasOwnModel = !!agentModel.primary
 
-  // Draft state for model editing
   const [primaryDraft, setPrimaryDraft] = useState(agentModel.primary)
   const [fallbacksDraft, setFallbacksDraft] = useState(agentModel.fallbacks.join(', '))
   const [availableModels, setAvailableModels] = useState<ModelChoice[]>([])
@@ -149,7 +147,6 @@ export function AgentOverview({
     setFallbacksDraft(m.fallbacks.join(', '))
   }, [entry?.model])
 
-  // Fetch available models
   useEffect(() => {
     if (!client) return
     client
@@ -206,7 +203,6 @@ export function AgentOverview({
     },
   })
 
-  // Configured model aliases
   const configuredModels = (() => {
     const models = defaults?.models
     if (!models || typeof models !== 'object') return [] as { value: string; label: string }[]
@@ -216,7 +212,6 @@ export function AgentOverview({
     })
   })()
 
-  // All model options
   const allModelOptions = (() => {
     const seen = new Set<string>()
     const options: { value: string; label: string; provider?: string }[] = []
@@ -239,7 +234,6 @@ export function AgentOverview({
     return options
   })()
 
-  // Session & token stats
   const workspaceLabel = workspace || entry?.workspace || defaults?.workspace || 'not available'
   const toolProfile = entry?.tools?.profile || defaults?.tools?.profile || 'full'
   const skillPolicy = Array.isArray(entry?.skills) ? `${entry.skills.length} filtered` : 'all enabled'

@@ -354,13 +354,11 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
   const [draft, setDraft] = useState<BindingDraft>(EMPTY_DRAFT)
   const [saving, setSaving] = useState(false)
 
-  // Parse all bindings from config
   const allBindings = useMemo(() => {
     const cfg = config?.config as Record<string, unknown> | null | undefined
     return (cfg?.bindings ?? []) as AgentBinding[]
   }, [config])
 
-  // This agent's bindings with their global indices
   const agentBindingsWithIndex = useMemo(() => {
     const result: { binding: AgentBinding; globalIndex: number }[] = []
     allBindings.forEach((b, i) => {
@@ -369,12 +367,10 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
     return result
   }, [allBindings, agentId])
 
-  // Other agents' bindings for context
   const otherAgentBindings = useMemo(() => {
     return allBindings.filter((b) => b?.agentId && b.agentId !== agentId)
   }, [allBindings, agentId])
 
-  // Save bindings to config
   const saveBindings = useCallback(
     async (newAllBindings: AgentBinding[]) => {
       if (!client?.connected || !config) return

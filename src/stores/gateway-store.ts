@@ -352,7 +352,6 @@ export const useGatewayStore = create<GatewayStore>()(
                   completedAt: Date.now(),
                 },
               }))
-              // Auto-clear after 5s
               setTimeout(() => {
                 const current = get().compactionStatus
                 if (current && !current.active && current.sessionKey === sessionKey) {
@@ -398,7 +397,6 @@ export const useGatewayStore = create<GatewayStore>()(
                 occurredAt: Date.now(),
               },
             })
-            // Auto-clear after 8s
             setTimeout(() => {
               const current = get().fallbackStatus
               if (current && current.sessionKey === sessionKey) {

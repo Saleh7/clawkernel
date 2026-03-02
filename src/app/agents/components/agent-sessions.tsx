@@ -412,18 +412,15 @@ export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) 
   const [refreshing, setRefreshing] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // Dialog states
   const [sendTarget, setSendTarget] = useState<GatewaySessionRow | null>(null)
   const [patchTarget, setPatchTarget] = useState<GatewaySessionRow | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<GatewaySessionRow | null>(null)
   const [historyTarget, setHistoryTarget] = useState<GatewaySessionRow | null>(null)
 
-  // Filter sessions belonging to this agent
   const agentSessions = useMemo(() => {
     return sessions.filter((s) => sessionBelongsToAgent(s.key, agentId))
   }, [sessions, agentId])
 
-  // Search + sort
   const filteredSorted = useMemo(() => {
     let list = agentSessions
     if (search.trim()) {
@@ -455,7 +452,6 @@ export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) 
     })
   }, [agentSessions, search, sortKey, sortDir])
 
-  // Stats
   const stats = useMemo(() => {
     const now = Date.now()
     const active = agentSessions.filter((s) => s.updatedAt && now - s.updatedAt < ACTIVE_SESSION_MS).length
@@ -464,7 +460,6 @@ export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) 
     return { total: agentSessions.length, active, totalTokens, uniqueSurfaces: surfaces.size }
   }, [agentSessions])
 
-  // Running session keys
   const runningKeys = useMemo(() => {
     const keys = new Set<string>()
     for (const run of Object.values(activeRuns)) {
@@ -495,7 +490,6 @@ export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) 
     }
   }
 
-  // Empty state
   if (agentSessions.length === 0) {
     return (
       <AgentTabEmptyState

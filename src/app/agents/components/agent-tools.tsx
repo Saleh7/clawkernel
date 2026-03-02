@@ -39,7 +39,6 @@ type Props = {
 }
 
 export function AgentTools({ agentId, config, client }: Props) {
-  // ── Catalog from server ──
   const [catalog, setCatalog] = useState<ToolsCatalogResult | null>(null)
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
@@ -80,7 +79,6 @@ export function AgentTools({ agentId, config, client }: Props) {
   const allTools = useMemo(() => groups.flatMap((g) => g.tools), [groups])
   const allToolIds = useMemo(() => allTools.map((t) => t.id), [allTools])
 
-  // ── Config-based state ──
   const cfg = config?.config as ParsedConfig | null | undefined
   const entry = cfg?.agents?.list?.find((a) => a.id === agentId)
   const agentTools = entry?.tools ?? {}
@@ -94,13 +92,11 @@ export function AgentTools({ agentId, config, client }: Props) {
   const savedAlsoAllow = useMemo(() => agentTools.alsoAllow ?? [], [agentTools.alsoAllow])
   const savedDeny = useMemo(() => agentTools.deny ?? [], [agentTools.deny])
 
-  // ── Draft state ──
   const [profileDraft, setProfileDraft] = useState(savedProfile)
   const [alsoAllowDraft, setAlsoAllowDraft] = useState<string[]>(savedAlsoAllow)
   const [denyDraft, setDenyDraft] = useState<string[]>(savedDeny)
   const [reloading, setReloading] = useState(false)
 
-  // Sync drafts on external config change
   useEffect(() => {
     setProfileDraft(savedProfile)
     setAlsoAllowDraft(savedAlsoAllow)
@@ -132,8 +128,6 @@ export function AgentTools({ agentId, config, client }: Props) {
     if (denyDraft.length !== savedDeny.length || denyDraft.some((v, i) => v !== savedDeny[i])) return true
     return false
   }, [profileDraft, savedProfile, alsoAllowDraft, savedAlsoAllow, denyDraft, savedDeny])
-
-  // ── Actions ──
 
   const toggleTool = (toolId: string) => {
     if (!editable) return
@@ -235,7 +229,6 @@ export function AgentTools({ agentId, config, client }: Props) {
     },
   })
 
-  // ── Loading state ──
   if (catalogLoading && !catalog) {
     return (
       <div className="space-y-5">

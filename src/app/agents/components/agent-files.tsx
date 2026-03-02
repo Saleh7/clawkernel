@@ -137,7 +137,6 @@ export function AgentFiles({ agentId, client }: Props) {
     [openTabs, drafts, contents],
   )
 
-  // Build folder tree
   const folders = useMemo(() => {
     const tree: Record<string, AgentFileEntry[]> = { '/': [] }
     for (const f of files) {

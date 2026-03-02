@@ -112,10 +112,7 @@ export function useSessionsPage() {
     })
   }, [sessions])
 
-  // -- Card expansion -------------------------------------------------------
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
-
-  // -- Dialogs --------------------------------------------------------------
   const [historySession, setHistorySession] = useState<GatewaySessionRow | null>(null)
   const [sendSession, setSendSession] = useState<GatewaySessionRow | null>(null)
   const [patchSession, setPatchSession] = useState<GatewaySessionRow | null>(null)
@@ -254,19 +251,14 @@ export function useSessionsPage() {
   const showAll = useCallback(() => setDisplayLimit(filtered.length), [filtered.length])
 
   return {
-    // Gateway state
     connected,
     sessions,
     refreshing,
-
-    // Refresh
     refresh,
     autoRefresh,
     setAutoRefresh,
     gatewayLimit,
     setGatewayLimit,
-
-    // Filters
     search,
     setSearch,
     sortField,
@@ -282,21 +274,15 @@ export function useSessionsPage() {
     uniqueAgents,
     viewMode,
     setViewMode,
-
-    // Bulk
     bulkMode,
     toggleBulkMode,
     selected,
     toggleSelect,
     selectVisible,
-
-    // Card
     expandedKey,
     setExpandedKey,
     runningSessionKeys,
     maxTokens,
-
-    // List
     filtered,
     visibleSessions,
     grouped,
@@ -305,8 +291,6 @@ export function useSessionsPage() {
     remainingSessions,
     showMore,
     showAll,
-
-    // Dialogs
     historySession,
     setHistorySession,
     sendSession,
