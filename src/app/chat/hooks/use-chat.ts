@@ -726,7 +726,9 @@ export function useChat() {
     setQueue(rest)
     await executeSend(next)
   }, [executeSend])
-  flushQueueRef.current = flushQueue
+  flushQueueRef.current = () => {
+    void flushQueue()
+  }
 
   // -- Send -----------------------------------------------------------------
   const handleSend = useCallback(async () => {

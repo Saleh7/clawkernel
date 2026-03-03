@@ -7,6 +7,8 @@ dist-ssr/
 *.local
 vite.config.ts.timestamp-*
 *.log
+sonar-project.properties
+.scannerwork
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

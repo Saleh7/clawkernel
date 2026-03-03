@@ -64,7 +64,7 @@ export function ConfirmDialog({
 
   const handleAction = () => {
     if (!confirmed || loading) return
-    void onConfirm()
+    onConfirm()
   }
 
   const actionClass =

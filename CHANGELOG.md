@@ -145,6 +145,29 @@
 - Status bar clock clickable to toggle 12h/24h format; respects stored preference
 - Pairing Bell added to global status bar — always visible
 
+### Fixed
+
+#### Sessions
+- **`uniqueAgents` sort** (`use-sessions-page.ts`) — `.sort()` replaced with `.sort((a, b) => a.localeCompare(b))`; previous call produced locale-inconsistent ordering across environments
+
+#### Chat
+- **`flushQueueRef` type mismatch** (`use-chat.ts`) — `flushQueueRef` is typed as `() => void` but `flushQueue` is `async`; assignment now wraps with `() => { void flushQueue() }` to discard the Promise intentionally and satisfy the type contract
+- **`useChatToast` navigate in void context** (`use-chat-toast.ts`) — `onClick: () => navigate('/chat')` returned the `Promise<void>` from react-router v7's `navigate`; fixed to `() => { void navigate('/chat') }` to explicitly discard the return value
+
+#### Agents
+- **`normalizeAgentId` regex precedence** (`agents/utils.ts`) — `/^-|-$/g` has ambiguous operator precedence; replaced with `/(?:^-|-$)/g` to make intent explicit
+- **`parseIdentityMd` regex precedence** (`edit-identity-dialog.tsx`) — `/^[*_]+|[*_]+$/g` has the same ambiguity; replaced with `/(?:^[*_]+|[*_]+$)/g`
+
+#### Cron
+- **`job-card` click wrapper** (`job-card.tsx`) — stopPropagation `<div>` now includes `onKeyDown` + `role="none"`; removed two `biome-ignore` a11y suppressions that were masking the missing keyboard handler
+
+#### Gateway Client
+- **`GatewayClient` readonly members** (`gateway/client.ts`) — five class members (`pending`, `listeners`, `onOpen`, `onClose`, `onMessage`) are never reassigned after construction; marked `readonly` to prevent accidental mutation and surface the invariant in the type system
+
+#### UI Components
+- **`PromptInput` click wrapper** (`prompt-input.tsx`) — click-to-focus `<div>` now includes a proper `handleKeyDown` (focuses textarea on Enter/Space) + `role="none"`; removed `biome-ignore` a11y suppressions; `handleChange` wrapped in `useCallback([onValueChange])` for stable identity; Context value wrapped in `useMemo` to avoid a new object reference on every render
+- **`ConfirmDialog` void operator** (`confirm-dialog.tsx`) — `void onConfirm()` simplified to `onConfirm()`; `onConfirm` is typed `() => void | Promise<void>` so the explicit `void` operator was redundant
+
 ---
 
 ## [2026.2.24-1] — 2026-02-24-1

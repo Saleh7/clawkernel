@@ -74,7 +74,7 @@ function parseIdentityMd(content: string): IdentityFields {
     const label = cleaned.slice(0, colonIdx).replace(/[*_]/g, '').trim().toLowerCase()
     const value = cleaned
       .slice(colonIdx + 1)
-      .replace(/^[*_]+|[*_]+$/g, '')
+      .replace(/(?:^[*_]+|[*_]+$)/g, '')
       .trim()
     if (!value) continue
     if (label === 'name') fields.name = value

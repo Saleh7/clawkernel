@@ -5,7 +5,7 @@ export function normalizeAgentId(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '-')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replace(/(?:^-|-$)/g, '')
 }
 
 /** Guard against URLs/paths being rendered as emoji — matches official isLikelyEmoji */

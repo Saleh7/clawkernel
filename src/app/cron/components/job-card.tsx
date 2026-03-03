@@ -214,9 +214,12 @@ export function JobCard({
           </div>
 
           {/* Quick actions */}
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper */}
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper */}
-          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div
+            role="none"
+            className="flex items-center gap-1 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <Button
               variant="ghost"
               size="icon"

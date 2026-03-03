@@ -154,7 +154,7 @@ export class GatewayClient {
   private connectTimer: ReturnType<typeof setTimeout> | null = null
 
   // -- Request/response -----------------------------------------------------
-  private pending = new Map<string, PendingRequest>()
+  private readonly pending = new Map<string, PendingRequest>()
   private connectSent = false
   private connectNonce: string | null = null
 
@@ -163,7 +163,7 @@ export class GatewayClient {
 
   // -- Event listeners ------------------------------------------------------
   // biome-ignore lint/complexity/noBannedTypes: generic event emitter requires Function
-  private listeners = new Map<EventName, Set<Function>>()
+  private readonly listeners = new Map<EventName, Set<Function>>()
 
   // -- Public state ---------------------------------------------------------
   public snapshot: GatewaySnapshot | null = null
@@ -291,7 +291,7 @@ export class GatewayClient {
     })
   }
 
-  private onOpen = (): void => {
+  private readonly onOpen = (): void => {
     this.setState('authenticating')
     // Queue a fallback connect after 750ms. If the gateway sends a
     // connect.challenge event first, the timer is cancelled and connect
@@ -307,14 +307,14 @@ export class GatewayClient {
     }, CONNECT_FALLBACK_DELAY_MS)
   }
 
-  private onClose = (ev: CloseEvent): void => {
+  private readonly onClose = (ev: CloseEvent): void => {
     this.ws = null
     this.flushPending(new Error(`gateway closed (${ev.code}): ${ev.reason}`))
     this.emit('close', { code: ev.code, reason: ev.reason })
     this.scheduleReconnect()
   }
 
-  private onMessage = (ev: MessageEvent): void => {
+  private readonly onMessage = (ev: MessageEvent): void => {
     let parsed: unknown
     try {
       parsed = JSON.parse(String(ev.data ?? ''))

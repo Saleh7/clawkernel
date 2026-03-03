@@ -127,7 +127,7 @@ export function useSessionsPage() {
 
   const uniqueAgents = useMemo(() => {
     const agents = new Set(sessions.map((s) => extractAgentId(s.key)))
-    return Array.from(agents).sort()
+    return Array.from(agents).sort((a, b) => a.localeCompare(b))
   }, [sessions])
 
   const maxTokens = useMemo(() => sessions.reduce((max, s) => Math.max(max, s.totalTokens ?? 0), 0), [sessions])

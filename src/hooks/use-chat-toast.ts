@@ -58,7 +58,9 @@ export function useChatToast() {
         duration: DISMISS_MS,
         action: {
           label: 'Open',
-          onClick: () => navigate('/chat'),
+          onClick: () => {
+            void navigate('/chat')
+          },
         },
       })
 
