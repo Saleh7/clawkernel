@@ -65,10 +65,10 @@ function groupBySource(skills: SkillStatusEntry[]): Partial<Record<SourceGroup, 
 // ---------------------------------------------------------------------------
 
 type RowProps = {
-  skill: SkillStatusEntry
-  enabled: boolean
-  onToggle: () => void
-  onExpand: () => void
+  readonly skill: SkillStatusEntry
+  readonly enabled: boolean
+  readonly onToggle: () => void
+  readonly onExpand: () => void
 }
 
 function SkillRow({ skill, enabled, onToggle, onExpand }: RowProps) {

@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+---
+
+## [2026.2.25] — 22026.2.25
+
 ### Added
 
 
@@ -146,6 +150,25 @@
 - Pairing Bell added to global status bar — always visible
 
 ### Fixed
+
+#### Code Quality
+- **`cronToHuman`** (`lib/cron.ts`) — extracted 7 named pattern-matcher functions (`matchEveryNMinutes`, `matchEveryNHours`, …, `matchSingleWeekday`); main function now delegates via a matchers array — complexity 28 → 4
+- **`JobCard`** (`cron/job-card.tsx`) — extracted `statusDotClass`, `lastStatusClass`, `lastStatusLabel`, `tileStatusClass`; removes all nested status ternaries from render — complexity 32 → ~12
+- **`AgentChannels / ChannelCard`** (`agent-channels.tsx`) — extracted `channelBorderClass`, `iconBoxClass`, `barClass`, `dotClass`; eliminates repeated 3-branch ternaries — complexity 23 → ~8
+- **`AgentActivity`** (`agent-activity.tsx`) — extracted `fetchJobRuns` async helper; flattens Promise chain from 5 nesting levels to 2; resolves S2004 (nested functions > 4 levels)
+- **`ChatBubble`** (`chat/components/bubble.tsx`) — extracted `resolveDisplayContent`; removes complex multi-`&&` guard from render function — complexity 17 → ~10
+- **`ChatPage` keyboard handler** (`chat/index.tsx`) — extracted `handleEscapeKey(ctx)` with typed `EscapeContext`; removes 4-level nesting from `useEffect` — complexity 17 → 3
+- **`AgentComparison / getAgentData`** (`agent-comparison.tsx`) — extracted `computeAgentStatus`; replaces 3-level nested ternary with 4 clear early-return branches — complexity 18 → ~12
+- **`AgentOverview / isDirty`** (`agent-overview.tsx`) — IIFE `(() => {...})()` converted to `useMemo` with explicit dependency array — complexity 19 → ~14
+- **`DmPairingQueue`** (`channels/dm-pairing-queue.tsx`) — extracted `collectDmRequests(channels)`; moves triple-nested loop out of component body — complexity 16 → ~6
+- **`sendRequest`** (`browser/hooks/use-browser.ts`) — extracted `tryParseJson(raw, errorMessage)`; removes two try/catch blocks from the main request function — complexity 16 → ~11
+- **`parseIdentityMd`** (`agents/dialogs/edit-identity-dialog.tsx`) — replaced 6 sequential `if (label === '...')` assignments with a `IDENTITY_FIELD_MAP` lookup table — complexity 17 → ~5
+- **`buildSessionTree`** (`sessions/utils.ts`) — extracted `findParentKey(s, keySet)`; reduces 3-level nesting to 2 — complexity 17 → ~12
+- **`useChatToast` navigate** (`hooks/use-chat-toast.ts`) — `{ void navigate('/chat') }` simplified to `{ navigate('/chat') }` — removes S3735 void operator warning
+- **`readonly` props** — all component props types and interfaces across 84 files now explicitly mark every property as `readonly`; prevents accidental mutation and makes data flow intent clear at the type level
+- **Re-export syntax** (`audio/types.ts`, `browser/types.ts`) — `import { X } from '…'` + `export { X }` pairs replaced with direct `export { X } from '…'`
+- **Redundant type assertions removed** — 11 unnecessary `as SomeType` casts removed across `agents/`, `chat/`, `cron/`, `audio/` files; TypeScript already inferred the correct types
+- **`Number.parseInt`** (`tts-settings-card.tsx`) — `parseInt(…, 10)` replaced with `Number.parseInt(…, 10)`
 
 #### Sessions
 - **`uniqueAgents` sort** (`use-sessions-page.ts`) — `.sort()` replaced with `.sort((a, b) => a.localeCompare(b))`; previous call produced locale-inconsistent ordering across environments

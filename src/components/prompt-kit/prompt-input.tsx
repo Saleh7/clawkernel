@@ -177,7 +177,7 @@ function PromptInputTextarea({ className, onKeyDown, disableAutosize = false, ..
   )
 }
 
-type PromptInputActionsProps = React.HTMLAttributes<HTMLDivElement>
+type PromptInputActionsProps = Readonly<React.HTMLAttributes<HTMLDivElement>>
 
 function PromptInputActions({ children, className, ...props }: PromptInputActionsProps) {
   return (

@@ -38,9 +38,9 @@ function DangerRow({
   description,
   action,
 }: {
-  label: string
-  description: React.ReactNode
-  action: React.ReactNode
+  readonly label: string
+  readonly description: React.ReactNode
+  readonly action: React.ReactNode
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -64,11 +64,11 @@ export function QuickActions({
   config,
   agentSessions,
 }: {
-  agentId: string
-  isDefault: boolean
-  client: GatewayClient | null
-  config: ConfigSnapshot | null
-  agentSessions: GatewaySessionRow[]
+  readonly agentId: string
+  readonly isDefault: boolean
+  readonly client: GatewayClient | null
+  readonly config: ConfigSnapshot | null
+  readonly agentSessions: GatewaySessionRow[]
 }) {
   const [settingDefault, setSettingDefault] = useState(false)
   const [clearingSessions, setClearingSessions] = useState(false)
@@ -205,11 +205,11 @@ export function DangerZone({
   agentSessions,
   deleteSlot,
 }: {
-  agentId: string
-  isDefault: boolean
-  client: GatewayClient | null
-  agentSessions: GatewaySessionRow[]
-  deleteSlot?: React.ReactNode
+  readonly agentId: string
+  readonly isDefault: boolean
+  readonly client: GatewayClient | null
+  readonly agentSessions: GatewaySessionRow[]
+  readonly deleteSlot?: React.ReactNode
 }) {
   const [clearingSessions, setClearingSessions] = useState(false)
   const [resettingWorkspace, setResettingWorkspace] = useState(false)

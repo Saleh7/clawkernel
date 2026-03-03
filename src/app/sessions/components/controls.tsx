@@ -46,31 +46,31 @@ export function SessionsControls({
   onSelectVisible,
   onOpenBulkDelete,
 }: {
-  quickFilter: QuickFilter
-  setQuickFilter: (next: QuickFilter) => void
-  quickCounts: { all: number; active: number; highUsage: number; stale: number }
-  autoRefresh: boolean
-  setAutoRefresh: (next: boolean) => void
-  gatewayLimit: number
-  setGatewayLimit: (next: number) => void
-  search: string
-  setSearch: (next: string) => void
-  sortField: SortField
-  sortDir: SortDir
-  onToggleSort: (field: SortField) => void
-  kindFilter: KindFilter
-  setKindFilter: (next: KindFilter) => void
-  uniqueAgents: string[]
-  agentFilter: string
-  setAgentFilter: (next: string) => void
-  viewMode: ViewMode
-  setViewMode: (next: ViewMode) => void
-  bulkMode: boolean
-  selectedCount: number
-  visibleCount: number
-  onToggleBulkMode: () => void
-  onSelectVisible: () => void
-  onOpenBulkDelete: () => void
+  readonly quickFilter: QuickFilter
+  readonly setQuickFilter: (next: QuickFilter) => void
+  readonly quickCounts: { all: number; active: number; highUsage: number; stale: number }
+  readonly autoRefresh: boolean
+  readonly setAutoRefresh: (next: boolean) => void
+  readonly gatewayLimit: number
+  readonly setGatewayLimit: (next: number) => void
+  readonly search: string
+  readonly setSearch: (next: string) => void
+  readonly sortField: SortField
+  readonly sortDir: SortDir
+  readonly onToggleSort: (field: SortField) => void
+  readonly kindFilter: KindFilter
+  readonly setKindFilter: (next: KindFilter) => void
+  readonly uniqueAgents: string[]
+  readonly agentFilter: string
+  readonly setAgentFilter: (next: string) => void
+  readonly viewMode: ViewMode
+  readonly setViewMode: (next: ViewMode) => void
+  readonly bulkMode: boolean
+  readonly selectedCount: number
+  readonly visibleCount: number
+  readonly onToggleBulkMode: () => void
+  readonly onSelectVisible: () => void
+  readonly onOpenBulkDelete: () => void
 }) {
   const SortIcon = sortDir === 'desc' ? ArrowDown : ArrowUp
 

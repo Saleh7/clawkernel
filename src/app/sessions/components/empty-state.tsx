@@ -1,6 +1,6 @@
 import { Inbox } from 'lucide-react'
 
-export function EmptyState({ filtered }: { filtered?: boolean }) {
+export function EmptyState({ filtered }: { readonly filtered?: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="rounded-2xl bg-muted/50 p-6 mb-4">

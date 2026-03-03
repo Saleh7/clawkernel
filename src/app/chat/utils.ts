@@ -180,7 +180,7 @@ export function extractImages(msg: ChatMessage | undefined): ExtractedImage[] {
         return {
           kind: 'data',
           mediaType: (block.mimeType as string) || (block.media_type as string) || 'image/png',
-          data: block.data as string,
+          data: block.data,
         }
       }
 
@@ -303,7 +303,7 @@ export function groupMessages(messages: ChatMessage[], _settings: ChatSettings):
     const marker = (msg as Record<string, unknown>).__openclaw as { kind?: string } | undefined
     if (marker?.kind === 'compaction') {
       flushTools()
-      items.push({ kind: 'divider', label: 'Context compacted', timestamp: msg.timestamp as number | undefined })
+      items.push({ kind: 'divider', label: 'Context compacted', timestamp: msg.timestamp })
       continue
     }
 

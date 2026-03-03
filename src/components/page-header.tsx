@@ -2,11 +2,11 @@ import type { LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 interface PageHeaderProps {
-  icon: LucideIcon
-  title: string
-  description: string
-  badge?: string
-  children?: React.ReactNode
+  readonly icon: LucideIcon
+  readonly title: string
+  readonly description: string
+  readonly badge?: string
+  readonly children?: React.ReactNode
 }
 
 export function PageHeader({ icon: Icon, title, description, badge, children }: PageHeaderProps) {

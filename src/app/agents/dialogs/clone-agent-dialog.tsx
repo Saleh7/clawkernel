@@ -28,13 +28,13 @@ import { normalizeAgentId } from '../utils'
 const log = createLogger('agents:clone')
 
 type Props = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  sourceAgentId: string
-  sourceAgentName: string
-  config: ConfigSnapshot | null
-  client: GatewayClient | null
-  onCloned?: (agentId: string) => void
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly sourceAgentId: string
+  readonly sourceAgentName: string
+  readonly config: ConfigSnapshot | null
+  readonly client: GatewayClient | null
+  readonly onCloned?: (agentId: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -198,9 +198,7 @@ export function CloneAgentDialog({
               <ToggleOption
                 label="Skill Allowlist"
                 description={
-                  Array.isArray(sourceEntry?.skills)
-                    ? `${(sourceEntry.skills as string[]).length} filtered`
-                    : 'all enabled'
+                  Array.isArray(sourceEntry?.skills) ? `${sourceEntry.skills.length} filtered` : 'all enabled'
                 }
                 checked={cloneSkills}
                 onChange={setCloneSkills}
@@ -253,10 +251,10 @@ function ToggleOption({
   checked,
   onChange,
 }: {
-  label: string
-  description: string
-  checked: boolean
-  onChange: (v: boolean) => void
+  readonly label: string
+  readonly description: string
+  readonly checked: boolean
+  readonly onChange: (v: boolean) => void
 }) {
   return (
     <button

@@ -17,26 +17,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 type ConfirmDialogProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly title: string
   /** Optional icon rendered before the title text */
-  titleIcon?: React.ReactNode
-  description: React.ReactNode
+  readonly titleIcon?: React.ReactNode
+  readonly description: React.ReactNode
   /**
    * When provided, the user must type this exact text to enable the action button.
    * Omit for a simple one-click confirmation.
    */
-  confirmText?: string
+  readonly confirmText?: string
   /** Button label when idle */
-  actionLabel: string
+  readonly actionLabel: string
   /** Button label while loading */
-  loadingLabel?: string
-  variant?: 'destructive' | 'default'
-  loading?: boolean
-  onConfirm: () => void | Promise<void>
+  readonly loadingLabel?: string
+  readonly variant?: 'destructive' | 'default'
+  readonly loading?: boolean
+  readonly onConfirm: () => void | Promise<void>
   /** Optional extra content rendered between description and confirm input */
-  children?: React.ReactNode
+  readonly children?: React.ReactNode
 }
 
 export function ConfirmDialog({

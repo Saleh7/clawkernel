@@ -14,10 +14,10 @@ export function BulkDeleteDialog({
   onClose,
   onDone,
 }: {
-  keys: string[]
-  open: boolean
-  onClose: () => void
-  onDone: (result: BulkDeleteResult) => void
+  readonly keys: string[]
+  readonly open: boolean
+  readonly onClose: () => void
+  readonly onDone: (result: BulkDeleteResult) => void
 }) {
   const client = useGatewayStore(selectClient)
   const [deleting, setDeleting] = useState(false)

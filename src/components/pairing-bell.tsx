@@ -28,7 +28,7 @@ type PairingData = {
   pending: PendingDevice[]
 }
 
-function PlatformIcon({ platform, className }: { platform?: string; className?: string }) {
+function PlatformIcon({ platform, className }: { readonly platform?: string; readonly className?: string }) {
   const p = (platform ?? '').toLowerCase()
   if (p.includes('iphone') || p.includes('ios') || p.includes('android')) {
     return <Smartphone className={className} />

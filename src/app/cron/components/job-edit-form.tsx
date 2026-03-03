@@ -15,11 +15,11 @@ import { type CronFormState, formToDelivery, formToPayload, formToSchedule, jobT
 const log = createLogger('cron:edit')
 
 type Props = {
-  job: CronJob
-  client: GatewayClient | null
-  is24h: boolean
-  onClose: () => void
-  onSaved: () => void
+  readonly job: CronJob
+  readonly client: GatewayClient | null
+  readonly is24h: boolean
+  readonly onClose: () => void
+  readonly onSaved: () => void
 }
 
 export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
@@ -338,7 +338,7 @@ const INTERVAL_UNITS = [
   { label: 'hr', ms: 3_600_000 },
 ] as const
 
-function IntervalInput({ value, onChange }: { value: number; onChange: (ms: number) => void }) {
+function IntervalInput({ value, onChange }: { readonly value: number; readonly onChange: (ms: number) => void }) {
   const unit = [...INTERVAL_UNITS].reverse().find((u) => value >= u.ms && value % u.ms === 0) ?? INTERVAL_UNITS[1]
   const [unitMs, setUnitMs] = useState(unit.ms)
   const displayAmount = Math.round(value / unitMs)

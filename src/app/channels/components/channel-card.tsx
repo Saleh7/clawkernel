@@ -19,11 +19,11 @@ import { TokenSetup } from './token-setup'
 const log = createLogger('channel-card')
 
 type Props = {
-  channelId: string
-  label: string
-  accounts: ChannelAccountSnapshot[]
-  client: GatewayClient | null
-  onRefresh: () => void
+  readonly channelId: string
+  readonly label: string
+  readonly accounts: ChannelAccountSnapshot[]
+  readonly client: GatewayClient | null
+  readonly onRefresh: () => void
 }
 
 function accountStatus(a: ChannelAccountSnapshot): 'connected' | 'partial' | 'offline' {

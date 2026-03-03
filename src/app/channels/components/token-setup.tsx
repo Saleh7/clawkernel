@@ -13,10 +13,10 @@ import { CHANNEL_META } from '../types'
 const log = createLogger('token-setup')
 
 type Props = {
-  channelId: string
-  label: string
-  client: GatewayClient | null
-  onRefresh: () => void
+  readonly channelId: string
+  readonly label: string
+  readonly client: GatewayClient | null
+  readonly onRefresh: () => void
 }
 
 export function TokenSetup({ channelId, label, client, onRefresh }: Props) {

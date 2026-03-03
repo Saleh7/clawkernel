@@ -23,10 +23,10 @@ const PROVIDER_ICONS: Record<string, string> = {
 }
 
 type Props = {
-  provider: TtsProvider
-  isActive: boolean
-  saving: boolean
-  onSetActive: () => void
+  readonly provider: TtsProvider
+  readonly isActive: boolean
+  readonly saving: boolean
+  readonly onSetActive: () => void
 }
 
 export function ProviderCard({ provider, isActive, saving, onSetActive }: Props) {

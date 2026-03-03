@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { PresenceEntry } from '@/lib/gateway/types'
 
 type Props = {
-  entries: PresenceEntry[]
+  readonly entries: PresenceEntry[]
 }
 
 export function PresenceCard({ entries }: Props) {

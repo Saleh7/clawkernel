@@ -9,12 +9,12 @@ import { cn } from '@/lib/utils'
 import type { CustomProvider } from '../hooks/use-models'
 
 type Props = {
-  models: ModelCatalogEntry[]
-  customProviders: CustomProvider[]
-  saving: boolean
-  onAddCustomProvider: (id: string, baseUrl: string, apiKey: string) => Promise<void>
-  onRemoveCustomProvider: (id: string) => Promise<void>
-  onEditCustomProvider: (id: string, baseUrl: string, apiKey: string) => Promise<void>
+  readonly models: ModelCatalogEntry[]
+  readonly customProviders: CustomProvider[]
+  readonly saving: boolean
+  readonly onAddCustomProvider: (id: string, baseUrl: string, apiKey: string) => Promise<void>
+  readonly onRemoveCustomProvider: (id: string) => Promise<void>
+  readonly onEditCustomProvider: (id: string, baseUrl: string, apiKey: string) => Promise<void>
 }
 
 export function ProviderStatus({

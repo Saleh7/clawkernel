@@ -5,9 +5,9 @@ import type { CronJob, CronStatus } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 
 type Props = {
-  status: CronStatus | null
-  jobs: CronJob[]
-  total: number
+  readonly status: CronStatus | null
+  readonly jobs: CronJob[]
+  readonly total: number
 }
 
 export function CronStatsBar({ status, jobs, total }: Props) {

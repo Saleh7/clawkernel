@@ -16,7 +16,7 @@ const log = createLogger('agents:files')
 type FilesListResult = { agentId: string; workspace: string; files: AgentFileEntry[] }
 type FileGetResult = { agentId: string; workspace: string; file: AgentFileEntry }
 
-type Props = { agentId: string; client: GatewayClient | null }
+type Props = { readonly agentId: string; readonly client: GatewayClient | null }
 
 function formatBytes(bytes?: number) {
   if (bytes == null) return '—'

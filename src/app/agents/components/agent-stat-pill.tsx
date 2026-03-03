@@ -2,11 +2,11 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface AgentStatPillProps {
-  icon: LucideIcon
-  value: React.ReactNode
-  label: string
-  iconClassName?: string
-  valueClassName?: string
+  readonly icon: LucideIcon
+  readonly value: React.ReactNode
+  readonly label: string
+  readonly iconClassName?: string
+  readonly valueClassName?: string
 }
 
 export function AgentStatPill({ icon: Icon, value, label, iconClassName, valueClassName }: AgentStatPillProps) {

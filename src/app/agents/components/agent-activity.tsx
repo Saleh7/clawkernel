@@ -10,7 +10,7 @@ import {
   Trash2,
   Zap,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -28,8 +28,8 @@ const log = createLogger('agents:activity')
 // ---------------------------------------------------------------------------
 
 type Props = {
-  agentId: string
-  client: GatewayClient | null
+  readonly agentId: string
+  readonly client: GatewayClient | null
 }
 
 type EventCategory = 'all' | 'chat' | 'cron' | 'config' | 'sessions'
@@ -48,6 +48,24 @@ type FeedItem = {
 // ---------------------------------------------------------------------------
 
 const MAX_ITEMS = 200
+
+async function fetchJobRuns(
+  client: GatewayClient,
+  jobs: CronJob[],
+): Promise<Array<CronRunLogEntry & { _jobName?: string }>> {
+  const results = await Promise.all(
+    jobs.map(async (job) => {
+      try {
+        const r = await client.request<{ runs: CronRunLogEntry[] }>('cron.runs', { jobId: job.id, limit: 20 })
+        return r.runs.map((run) => ({ ...run, _jobName: job.name }))
+      } catch (err) {
+        log.warn('Failed to load cron runs', err)
+        return [] as Array<CronRunLogEntry & { _jobName?: string }>
+      }
+    }),
+  )
+  return results.flat()
+}
 
 function categorize(event: string): Exclude<EventCategory, 'all'> {
   if (event === 'chat') return 'chat'
@@ -114,6 +132,59 @@ const CATEGORY_ICON: Record<Exclude<EventCategory, 'all'>, typeof Activity> = {
   sessions: Layers,
 }
 
+type EventLogEntry = { readonly ts: number; readonly event: string; readonly payload?: unknown }
+
+function buildCronRunDescription(run: CronRunLogEntry & { _jobName?: string }): { title: string; description: string } {
+  const jobName = run._jobName ?? run.jobId
+  const dur = run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : ''
+  const durSuffix = dur ? ` · ${dur}` : ''
+  const errorSuffix = run.error ? ` · ${run.error}` : ''
+  return {
+    title: `Cron: ${jobName}`,
+    description: `${run.status ?? 'finished'}${durSuffix}${errorSuffix}`,
+  }
+}
+
+function buildFeedItems(
+  eventLog: readonly EventLogEntry[],
+  cronRuns: Array<CronRunLogEntry & { _jobName?: string }>,
+  agentId: string,
+  cleared: number,
+): FeedItem[] {
+  const items: FeedItem[] = []
+
+  for (let i = 0; i < eventLog.length; i++) {
+    const entry = eventLog[i]
+    if (cleared && entry.ts <= cleared) continue
+    if (!eventBelongsToAgent(entry.event, entry.payload, agentId)) continue
+    items.push({
+      id: `ev-${entry.ts}-${entry.event}-${i}`,
+      ts: entry.ts,
+      category: categorize(entry.event),
+      title: entry.event,
+      description: describeEvent(entry.event, entry.payload),
+      payload: entry.payload,
+    })
+  }
+
+  for (let i = 0; i < cronRuns.length; i++) {
+    const run = cronRuns[i]
+    if (cleared && run.ts <= cleared) continue
+    const { title, description } = buildCronRunDescription(run)
+    items.push({
+      id: `cron-${run.ts}-${run.jobId}-${i}`,
+      ts: run.ts,
+      category: 'cron',
+      title,
+      description,
+      payload: run,
+    })
+  }
+
+  items.sort((a, b) => b.ts - a.ts)
+  return items.slice(0, MAX_ITEMS)
+}
+
 const FILTER_OPTIONS: { id: EventCategory; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'chat', label: 'Chat' },
@@ -126,7 +197,7 @@ const FILTER_OPTIONS: { id: EventCategory; label: string }[] = [
 //  PayloadViewer
 // ---------------------------------------------------------------------------
 
-function PayloadViewer({ payload }: { payload: unknown }) {
+function PayloadViewer({ payload }: { readonly payload: unknown }) {
   const [open, setOpen] = useState(false)
   if (payload === undefined || payload === null) return null
 
@@ -153,7 +224,7 @@ function PayloadViewer({ payload }: { payload: unknown }) {
 //  ActivityItem
 // ---------------------------------------------------------------------------
 
-function ActivityItem({ item, now }: { item: FeedItem; now: number }) {
+const ActivityItem = memo(function ActivityItem({ item, now }: { readonly item: FeedItem; readonly now: number }) {
   const Icon = CATEGORY_ICON[item.category]
 
   return (
@@ -192,7 +263,7 @@ function ActivityItem({ item, now }: { item: FeedItem; now: number }) {
       </div>
     </div>
   )
-}
+})
 
 // ---------------------------------------------------------------------------
 //  ActivityFilter
@@ -203,9 +274,9 @@ function ActivityFilter({
   onChange,
   counts,
 }: {
-  active: EventCategory
-  onChange: (cat: EventCategory) => void
-  counts: Record<EventCategory, number>
+  readonly active: EventCategory
+  readonly onChange: (cat: EventCategory) => void
+  readonly counts: Record<EventCategory, number>
 }) {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -241,7 +312,8 @@ export function AgentActivity({ agentId, client }: Props) {
   const cronJobs = useGatewayStore((s) => s.cronJobs)
 
   const [filter, setFilter] = useState<EventCategory>('all')
-  const [cronRuns, setCronRuns] = useState<CronRunLogEntry[]>([])
+  const [cronRuns, setCronRuns] = useState<Array<CronRunLogEntry & { _jobName?: string }>>([])
+
   const [cleared, setCleared] = useState<number>(0) // timestamp of last clear
   const [now, setNow] = useState(Date.now())
 
@@ -259,61 +331,21 @@ export function AgentActivity({ agentId, client }: Props) {
     }
 
     let cancelled = false
-    Promise.all(
-      agentJobs.map((job) =>
-        client
-          .request<{ runs: CronRunLogEntry[] }>('cron.runs', { jobId: job.id, limit: 20 })
-          .then((r) => r.runs.map((run) => ({ ...run, _jobName: job.name })))
-          .catch((err) => {
-            log.warn('Failed to load cron runs', err)
-            return [] as Array<CronRunLogEntry & { _jobName?: string }>
-          }),
-      ),
-    ).then((results) => {
-      if (!cancelled) setCronRuns(results.flat() as CronRunLogEntry[])
-    })
+    fetchJobRuns(client, agentJobs)
+      .then((runs) => {
+        if (!cancelled) setCronRuns(runs)
+      })
+      .catch((err) => log.warn('Failed to load cron runs for activity feed', err))
 
     return () => {
       cancelled = true
     }
   }, [client, cronJobs, agentId])
 
-  const feed = useMemo(() => {
-    const items: FeedItem[] = []
-
-    // Source 1: event log
-    for (const entry of eventLog) {
-      if (cleared && entry.ts <= cleared) continue
-      if (!eventBelongsToAgent(entry.event, entry.payload, agentId)) continue
-      const cat = categorize(entry.event)
-      items.push({
-        id: `ev-${entry.ts}-${entry.event}`,
-        ts: entry.ts,
-        category: cat,
-        title: entry.event,
-        description: describeEvent(entry.event, entry.payload),
-        payload: entry.payload,
-      })
-    }
-
-    // Source 2: cron runs
-    for (const run of cronRuns) {
-      if (cleared && run.ts <= cleared) continue
-      const jobName = (run as CronRunLogEntry & { _jobName?: string })._jobName ?? run.jobId
-      const dur = run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : ''
-      items.push({
-        id: `cron-${run.ts}-${run.jobId}`,
-        ts: run.ts,
-        category: 'cron',
-        title: `Cron: ${jobName}`,
-        description: `${run.status ?? 'finished'}${dur ? ` · ${dur}` : ''}${run.error ? ` · ${run.error}` : ''}`,
-        payload: run,
-      })
-    }
-
-    items.sort((a, b) => b.ts - a.ts)
-    return items.slice(0, MAX_ITEMS)
-  }, [eventLog, cronRuns, agentId, cleared])
+  const feed = useMemo(
+    () => buildFeedItems(eventLog, cronRuns, agentId, cleared),
+    [eventLog, cronRuns, agentId, cleared],
+  )
 
   const counts = useMemo(() => {
     const c: Record<EventCategory, number> = { all: feed.length, chat: 0, cron: 0, config: 0, sessions: 0 }
@@ -368,7 +400,7 @@ export function AgentActivity({ agentId, client }: Props) {
               <p className="mt-1 text-[11px] text-muted-foreground/60">Events will appear here as the agent runs</p>
             </div>
           ) : (
-            <div className="space-y-0 pr-3">
+            <div className="pr-3">
               {filtered.map((item) => (
                 <ActivityItem key={item.id} item={item} now={now} />
               ))}

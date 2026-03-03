@@ -200,7 +200,15 @@ export default function AudioPage() {
   )
 }
 
-function SummaryTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SummaryTile({
+  icon,
+  label,
+  value,
+}: {
+  readonly icon: React.ReactNode
+  readonly label: string
+  readonly value: string
+}) {
   return (
     <div className="flex items-center gap-2">
       {icon}

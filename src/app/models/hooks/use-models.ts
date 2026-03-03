@@ -108,7 +108,7 @@ export function useModels() {
   const agentList = (storeAgents?.agents ?? []).map((a) => ({
     id: a.id,
     name: a.name,
-    model: modelByAgent.get(a.id) as AgentModelConfig | undefined,
+    model: modelByAgent.get(a.id),
   }))
 
   // ---------------------------------------------------------------------------

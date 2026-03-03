@@ -47,10 +47,10 @@ const EXPANDED_ROW_HEIGHT = 340
 // ---------------------------------------------------------------------------
 
 type Props = {
-  agentId: string
-  sessions: GatewaySessionRow[]
-  activeRuns: Record<string, { sessionKey: string; startedAt: number }>
-  client: ReturnType<typeof useGatewayStore.getState>['client']
+  readonly agentId: string
+  readonly sessions: GatewaySessionRow[]
+  readonly activeRuns: Record<string, { sessionKey: string; startedAt: number }>
+  readonly client: ReturnType<typeof useGatewayStore.getState>['client']
 }
 
 type SortKey = 'updated' | 'tokens' | 'name'
@@ -92,10 +92,10 @@ function SessionStatsBar({
   totalTokens,
   uniqueSurfaces,
 }: {
-  total: number
-  active: number
-  totalTokens: number
-  uniqueSurfaces: number
+  readonly total: number
+  readonly active: number
+  readonly totalTokens: number
+  readonly uniqueSurfaces: number
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -127,14 +127,14 @@ function SessionCard({
   onSendMessage,
   onViewHistory,
 }: {
-  session: GatewaySessionRow
-  isRunning: boolean
-  isExpanded: boolean
-  onToggle: () => void
-  onPatch: () => void
-  onDelete: () => void
-  onSendMessage: () => void
-  onViewHistory: () => void
+  readonly session: GatewaySessionRow
+  readonly isRunning: boolean
+  readonly isExpanded: boolean
+  readonly onToggle: () => void
+  readonly onPatch: () => void
+  readonly onDelete: () => void
+  readonly onSendMessage: () => void
+  readonly onViewHistory: () => void
 }) {
   const label = extractSessionLabel(session)
   const sessionType = extractSessionType(session.key)
@@ -308,7 +308,15 @@ function SessionCard({
 //  TokenStat — small stat cell
 // ---------------------------------------------------------------------------
 
-function TokenStat({ label, value, highlight }: { label: string; value?: number | null; highlight?: boolean }) {
+function TokenStat({
+  label,
+  value,
+  highlight,
+}: {
+  readonly label: string
+  readonly value?: number | null
+  readonly highlight?: boolean
+}) {
   return (
     <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
       <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</p>
@@ -335,16 +343,16 @@ function VirtualSessionCards({
   onViewHistory,
   search,
 }: {
-  listRef: React.RefObject<HTMLDivElement | null>
-  sessions: GatewaySessionRow[]
-  runningKeys: Set<string>
-  expandedKey: string | null
-  onToggle: (key: string) => void
-  onPatch: (s: GatewaySessionRow) => void
-  onDelete: (s: GatewaySessionRow) => void
-  onSendMessage: (s: GatewaySessionRow) => void
-  onViewHistory: (s: GatewaySessionRow) => void
-  search: string
+  readonly listRef: React.RefObject<HTMLDivElement | null>
+  readonly sessions: GatewaySessionRow[]
+  readonly runningKeys: Set<string>
+  readonly expandedKey: string | null
+  readonly onToggle: (key: string) => void
+  readonly onPatch: (s: GatewaySessionRow) => void
+  readonly onDelete: (s: GatewaySessionRow) => void
+  readonly onSendMessage: (s: GatewaySessionRow) => void
+  readonly onViewHistory: (s: GatewaySessionRow) => void
+  readonly search: string
 }) {
   const virtualizer = useVirtualizer({
     count: sessions.length,

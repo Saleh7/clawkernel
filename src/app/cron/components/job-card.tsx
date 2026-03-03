@@ -32,23 +32,49 @@ import { RunHistory } from './run-history'
 
 const log = createLogger('cron:card')
 
+function statusDotClass(enabled: boolean, isRunning: boolean, hasError: boolean, lastStatus?: string): string {
+  if (!enabled) return 'bg-muted-foreground/20'
+  if (isRunning) return 'bg-blue-500 animate-pulse shadow-md shadow-blue-500/40'
+  if (hasError) return 'bg-red-500 shadow-md shadow-red-500/40'
+  if (lastStatus === 'ok') return 'bg-emerald-500 shadow-md shadow-emerald-500/30'
+  return 'bg-muted-foreground/30'
+}
+
+function lastStatusClass(hasError: boolean, lastStatus?: string): string {
+  if (hasError) return 'text-red-600 dark:text-red-400'
+  if (lastStatus === 'ok') return 'text-emerald-600 dark:text-emerald-400'
+  return ''
+}
+
+function lastStatusLabel(lastStatus: string): string {
+  if (lastStatus === 'ok') return 'Passed'
+  if (lastStatus === 'error') return 'Failed'
+  return 'Skipped'
+}
+
+function tileStatusClass(hasError: boolean, lastStatus?: string): string {
+  if (hasError) return 'text-red-600 dark:text-red-300'
+  if (lastStatus === 'ok') return 'text-emerald-600 dark:text-emerald-300'
+  return ''
+}
+
 type Props = {
-  job: CronJob
-  client: GatewayClient | null
-  is24h: boolean
-  expanded: boolean
-  runs: CronRunLogEntry[]
-  runsTotal: number
-  runsHasMore: boolean
-  runsLoading: boolean
-  runsLoadingMore: boolean
-  focused?: boolean
-  onToggleExpand: () => void
-  onEdit: () => void
-  onDelete: () => void
-  onRefreshRuns: () => void
-  onLoadMoreRuns: () => void
-  onRefreshJobs: () => void
+  readonly job: CronJob
+  readonly client: GatewayClient | null
+  readonly is24h: boolean
+  readonly expanded: boolean
+  readonly runs: CronRunLogEntry[]
+  readonly runsTotal: number
+  readonly runsHasMore: boolean
+  readonly runsLoading: boolean
+  readonly runsLoadingMore: boolean
+  readonly focused?: boolean
+  readonly onToggleExpand: () => void
+  readonly onEdit: () => void
+  readonly onDelete: () => void
+  readonly onRefreshRuns: () => void
+  readonly onLoadMoreRuns: () => void
+  readonly onRefreshJobs: () => void
 }
 
 export function JobCard({
@@ -122,18 +148,7 @@ export function JobCard({
           {/* Status column */}
           <div className="mt-1.5 flex flex-col items-center gap-2">
             <div
-              className={cn(
-                'h-4 w-4 rounded-full',
-                !job.enabled
-                  ? 'bg-muted-foreground/20'
-                  : isRunning
-                    ? 'bg-blue-500 animate-pulse shadow-md shadow-blue-500/40'
-                    : hasError
-                      ? 'bg-red-500 shadow-md shadow-red-500/40'
-                      : st?.lastStatus === 'ok'
-                        ? 'bg-emerald-500 shadow-md shadow-emerald-500/30'
-                        : 'bg-muted-foreground/30',
-              )}
+              className={cn('h-4 w-4 rounded-full', statusDotClass(job.enabled, isRunning, hasError, st?.lastStatus))}
             />
             {expanded ? (
               <ChevronDown className="h-4 w-4 text-muted-foreground/50" />
@@ -193,18 +208,9 @@ export function JobCard({
                 </span>
               )}
               {st?.lastStatus && (
-                <span
-                  className={cn(
-                    'flex items-center gap-1.5 font-medium',
-                    hasError
-                      ? 'text-red-600 dark:text-red-400'
-                      : st.lastStatus === 'ok'
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : '',
-                  )}
-                >
+                <span className={cn('flex items-center gap-1.5 font-medium', lastStatusClass(hasError, st.lastStatus))}>
                   <Zap className="h-4 w-4 shrink-0" />
-                  {st.lastStatus === 'ok' ? 'Passed' : st.lastStatus === 'error' ? 'Failed' : 'Skipped'}
+                  {lastStatusLabel(st.lastStatus)}
                   {st.lastDurationMs != null && (
                     <span className="font-normal text-muted-foreground">({formatDuration(st.lastDurationMs)})</span>
                   )}
@@ -307,13 +313,7 @@ export function JobCard({
               label="Status"
               value={st?.lastStatus ?? '—'}
               className={cn(hasError && 'border-red-500/20 bg-red-500/5')}
-              valueClassName={cn(
-                hasError
-                  ? 'text-red-600 dark:text-red-300'
-                  : st?.lastStatus === 'ok'
-                    ? 'text-emerald-600 dark:text-emerald-300'
-                    : undefined,
-              )}
+              valueClassName={tileStatusClass(hasError, st?.lastStatus)}
               sub={hasError && st?.consecutiveErrors ? `${st.consecutiveErrors} consecutive errors` : undefined}
             />
           </div>
@@ -426,7 +426,15 @@ export function JobCard({
 
 // -- Internal helpers -------------------------------------------------------
 
-function ConfigRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function ConfigRow({
+  label,
+  value,
+  mono,
+}: {
+  readonly label: string
+  readonly value: string
+  readonly mono?: boolean
+}) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-sm text-muted-foreground">{label}</span>
@@ -442,11 +450,11 @@ function ExecTile({
   className,
   valueClassName,
 }: {
-  label: string
-  value: string
-  sub?: string
-  className?: string
-  valueClassName?: string
+  readonly label: string
+  readonly value: string
+  readonly sub?: string
+  readonly className?: string
+  readonly valueClassName?: string
 }) {
   return (
     <div className={cn('rounded-xl border border-border/30 bg-muted/20 p-4 text-center', className)}>

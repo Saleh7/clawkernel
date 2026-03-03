@@ -1,12 +1,12 @@
 import type { LucideIcon } from 'lucide-react'
 
 interface AgentTabEmptyStateProps {
-  icon: LucideIcon
-  title: React.ReactNode
+  readonly icon: LucideIcon
+  readonly title: React.ReactNode
   /** Optional secondary line below the title */
-  description?: React.ReactNode
+  readonly description?: React.ReactNode
   /** Optional CTA — pass a fully-formed <Button> */
-  action?: React.ReactNode
+  readonly action?: React.ReactNode
 }
 
 export function AgentTabEmptyState({ icon: Icon, title, description, action }: AgentTabEmptyStateProps) {

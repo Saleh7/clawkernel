@@ -3,10 +3,10 @@ import { cn } from '@/lib/utils'
 import type { BrowserStatus } from '../types'
 
 type Props = {
-  status: BrowserStatus | null
-  loading: boolean
-  disabled: boolean
-  error: string | null
+  readonly status: BrowserStatus | null
+  readonly loading: boolean
+  readonly disabled: boolean
+  readonly error: string | null
 }
 
 export function BrowserStatusCard({ status, loading, disabled, error }: Props) {
@@ -112,7 +112,7 @@ export function BrowserStatusCard({ status, loading, disabled, error }: Props) {
   )
 }
 
-function StatusPill({ running, cdpReady }: { running: boolean; cdpReady: boolean }) {
+function StatusPill({ running, cdpReady }: { readonly running: boolean; readonly cdpReady: boolean }) {
   const ready = running && cdpReady
   const partial = running && !cdpReady
   return (
@@ -138,7 +138,7 @@ function StatusPill({ running, cdpReady }: { running: boolean; cdpReady: boolean
   )
 }
 
-function StatusTile({ label, value, ok }: { label: string; value: string; ok: boolean }) {
+function StatusTile({ label, value, ok }: { readonly label: string; readonly value: string; readonly ok: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
       <p className="text-xs uppercase tracking-wider text-muted-foreground/60">{label}</p>

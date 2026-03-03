@@ -23,8 +23,8 @@ import { normalizeAgentId } from '../utils'
 const log = createLogger('agents:create')
 
 type Props = {
-  client: GatewayClient | null
-  onCreated?: (agentId: string) => void
+  readonly client: GatewayClient | null
+  readonly onCreated?: (agentId: string) => void
 }
 
 export function CreateAgentDialog({ client, onCreated }: Props) {
@@ -87,7 +87,7 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
       <DialogTrigger asChild>
         <Button size="sm" className="gap-1.5 rounded-full px-3">
           <Plus className="h-3.5 w-3.5" />
-          New Agent
+          <span>New Agent</span>
         </Button>
       </DialogTrigger>
 
@@ -95,7 +95,7 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Create Agent
+            <span>Create Agent</span>
           </DialogTitle>
           <DialogDescription>Set up a new agent with its own workspace, identity, and configuration.</DialogDescription>
         </DialogHeader>
@@ -125,7 +125,7 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
           <div className="space-y-2">
             <Label htmlFor="agent-workspace" className="flex items-center gap-1.5">
               <FolderOpen className="h-3.5 w-3.5" />
-              Workspace Path
+              <span>Workspace Path</span>
             </Label>
             <Input
               id="agent-workspace"
@@ -181,12 +181,12 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
             {creating ? (
               <>
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Creating…
+                <span>Creating…</span>
               </>
             ) : (
               <>
                 <Plus className="h-3.5 w-3.5" />
-                Create Agent
+                <span>Create Agent</span>
               </>
             )}
           </Button>

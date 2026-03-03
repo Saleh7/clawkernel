@@ -2,7 +2,13 @@
 
 import { cn } from '@/lib/utils'
 
-export function TypingLoader({ className, size = 'md' }: { className?: string; size?: 'sm' | 'md' | 'lg' }) {
+export function TypingLoader({
+  className,
+  size = 'md',
+}: {
+  readonly className?: string
+  readonly size?: 'sm' | 'md' | 'lg'
+}) {
   const dotSizes = {
     sm: 'h-1 w-1',
     md: 'h-1.5 w-1.5',
@@ -36,9 +42,9 @@ export function TextShimmerLoader({
   className,
   size = 'md',
 }: {
-  text?: string
-  className?: string
-  size?: 'sm' | 'md' | 'lg'
+  readonly text?: string
+  readonly className?: string
+  readonly size?: 'sm' | 'md' | 'lg'
 }) {
   const textSizes = {
     sm: 'text-xs',

@@ -3,7 +3,7 @@ import type * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-function AlertDialog({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
+function AlertDialog({ ...props }: Readonly<React.ComponentProps<typeof AlertDialogPrimitive.Root>>) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
 }
 
@@ -11,7 +11,7 @@ function AlertDialogTrigger({ ...props }: React.ComponentProps<typeof AlertDialo
   return <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
 }
 
-function AlertDialogPortal({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+function AlertDialogPortal({ ...props }: Readonly<React.ComponentProps<typeof AlertDialogPrimitive.Portal>>) {
   return <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
 }
 

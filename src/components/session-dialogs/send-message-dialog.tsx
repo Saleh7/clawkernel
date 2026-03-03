@@ -11,11 +11,11 @@ import { createLogger } from '@/lib/logger'
 import { useSessionDialogClient } from './use-session-dialog-client'
 
 interface SendMessageDialogProps {
-  session: GatewaySessionRow | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  readonly session: GatewaySessionRow | null
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
   /** Optional — if omitted, falls back to the gateway store client */
-  client?: GatewayClient | null
+  readonly client?: GatewayClient | null
 }
 
 const log = createLogger('sessions:send-dialog')

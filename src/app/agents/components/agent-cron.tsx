@@ -24,8 +24,12 @@ import { Button } from '@/components/ui/button'
 import { useTimeFormat } from '@/hooks/use-time-format'
 import type { GatewayClient } from '@/lib/gateway/client'
 import type { CronJob, CronStatus } from '@/lib/gateway/types'
+import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
-import { formatDuration, formatRelative, formatSchedule, log, refreshCron } from '../cron-utils'
+import { formatDuration, formatRelative, formatSchedule, refreshCron } from '../cron-utils'
+
+const log = createLogger('agents:cron')
+
 import { CreateEditJobDialog } from '../dialogs/create-edit-job-dialog'
 import { DeleteJobDialog } from '../dialogs/delete-job-dialog'
 import { RunHistoryPanel } from '../dialogs/run-history-panel'
@@ -36,10 +40,10 @@ import { AgentTabEmptyState } from './agent-tab-empty-state'
 // ---------------------------------------------------------------------------
 
 type Props = {
-  agentId: string
-  cronJobs: CronJob[]
-  cronStatus: CronStatus | null
-  client: GatewayClient | null
+  readonly agentId: string
+  readonly cronJobs: CronJob[]
+  readonly cronStatus: CronStatus | null
+  readonly client: GatewayClient | null
 }
 
 // ---------------------------------------------------------------------------
@@ -53,11 +57,11 @@ function CronJobCard({
   onEdit,
   onDelete,
 }: {
-  job: CronJob
-  client: GatewayClient | null
-  is24h: boolean
-  onEdit: () => void
-  onDelete: () => void
+  readonly job: CronJob
+  readonly client: GatewayClient | null
+  readonly is24h: boolean
+  readonly onEdit: () => void
+  readonly onDelete: () => void
 }) {
   const sched = formatSchedule(job.schedule, is24h)
   const nextRun = job.state?.nextRunAtMs

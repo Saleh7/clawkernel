@@ -31,7 +31,7 @@ function classifySession(key: string, updatedAt: number | null, activeSessions: 
 //  Status indicator dot — zero-delay, pure CSS animations
 // ---------------------------------------------------------------------------
 
-function StatusDot({ status }: { status: SessionStatus }) {
+function StatusDot({ status }: { readonly status: SessionStatus }) {
   if (status === 'running') {
     return (
       <span className="relative flex h-2 w-2 shrink-0">
@@ -72,7 +72,7 @@ function statusLabel(status: SessionStatus): string {
 //  Preview hover card — shows last messages on hover
 // ---------------------------------------------------------------------------
 
-function PreviewHoverCard({ entry }: { entry: SessionsPreviewEntry | null | 'loading' }) {
+function PreviewHoverCard({ entry }: { readonly entry: SessionsPreviewEntry | null | 'loading' }) {
   if (entry === 'loading') {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
@@ -127,10 +127,10 @@ function SessionItem({
   status,
   onSelect,
 }: {
-  session: SessionEntry
-  selected: boolean
-  status: SessionStatus
-  onSelect: (key: string) => void
+  readonly session: SessionEntry
+  readonly selected: boolean
+  readonly status: SessionStatus
+  readonly onSelect: (key: string) => void
 }) {
   const client = useGatewayStore(selectClient)
   const [preview, setPreview] = useState<SessionsPreviewEntry | null | 'loading'>(null)
@@ -229,9 +229,9 @@ function AgentGroupHeader({
   info,
   statuses,
 }: {
-  agentId: string
-  info?: AgentInfo
-  statuses: SessionStatus[]
+  readonly agentId: string
+  readonly info?: AgentInfo
+  readonly statuses: SessionStatus[]
 }) {
   const runningCount = statuses.filter((s) => s === 'running').length
   const recentCount = statuses.filter((s) => s === 'recent').length
@@ -265,8 +265,8 @@ function AgentGroupHeader({
 // ---------------------------------------------------------------------------
 
 type FlatItem =
-  | { kind: 'header'; agentId: string; info?: AgentInfo; statuses: SessionStatus[] }
-  | { kind: 'session'; session: SessionEntry & { status: SessionStatus } }
+  | { readonly kind: 'header'; readonly agentId: string; readonly info?: AgentInfo; readonly statuses: SessionStatus[] }
+  | { readonly kind: 'session'; readonly session: SessionEntry & { status: SessionStatus } }
 
 const HEADER_HEIGHT = 32
 const SESSION_HEIGHT = 40
@@ -277,10 +277,10 @@ function VirtualSessionList({
   selected,
   onSelect,
 }: {
-  grouped: Map<string, Array<SessionEntry & { status: SessionStatus }>>
-  agents: Map<string, AgentInfo>
-  selected: string | null
-  onSelect: (key: string) => void
+  readonly grouped: Map<string, Array<SessionEntry & { status: SessionStatus }>>
+  readonly agents: Map<string, AgentInfo>
+  readonly selected: string | null
+  readonly onSelect: (key: string) => void
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -346,13 +346,13 @@ export function SessionSidebar({
   onSearchChange,
   activeSessions,
 }: {
-  sessions: SessionEntry[]
-  agents: Map<string, AgentInfo>
-  selected: string | null
-  onSelect: (key: string) => void
-  search: string
-  onSearchChange: (v: string) => void
-  activeSessions: Set<string>
+  readonly sessions: SessionEntry[]
+  readonly agents: Map<string, AgentInfo>
+  readonly selected: string | null
+  readonly onSelect: (key: string) => void
+  readonly search: string
+  readonly onSearchChange: (v: string) => void
+  readonly activeSessions: Set<string>
 }) {
   const client = useGatewayStore(selectClient)
   const [refreshing, setRefreshing] = useState(false)

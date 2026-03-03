@@ -7,17 +7,17 @@ import type { CronRunLogEntry } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 
 type Props = {
-  runs: CronRunLogEntry[]
-  total: number
-  hasMore: boolean
-  loading: boolean
-  loadingMore: boolean
-  is24h: boolean
-  onRefresh: () => void
-  onLoadMore: () => void
+  readonly runs: CronRunLogEntry[]
+  readonly total: number
+  readonly hasMore: boolean
+  readonly loading: boolean
+  readonly loadingMore: boolean
+  readonly is24h: boolean
+  readonly onRefresh: () => void
+  readonly onLoadMore: () => void
 }
 
-function RunCard({ run, is24h }: { run: CronRunLogEntry; is24h: boolean }) {
+function RunCard({ run, is24h }: { readonly run: CronRunLogEntry; readonly is24h: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const isError = run.status === 'error'
 

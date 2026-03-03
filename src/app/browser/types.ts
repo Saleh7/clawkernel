@@ -1,6 +1,4 @@
-import type { BrowserStatus } from '@/lib/gateway/types'
-
-export type { BrowserStatus }
+export type { BrowserStatus } from '@/lib/gateway/types'
 
 export type RequestMethod = 'GET' | 'POST' | 'DELETE'
 

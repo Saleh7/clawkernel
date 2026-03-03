@@ -12,14 +12,14 @@ import { ModelPicker } from './model-picker'
 // ---------------------------------------------------------------------------
 
 type ModelCardProps = {
-  icon: React.ElementType
-  label: string
-  model: AgentModelConfig
-  models: ModelCatalogEntry[]
-  saving: boolean
-  onSetModel: (model: string) => Promise<void>
-  onAddFallback: (fallback: string) => Promise<void>
-  onRemoveFallback: (fallback: string) => Promise<void>
+  readonly icon: React.ElementType
+  readonly label: string
+  readonly model: AgentModelConfig
+  readonly models: ModelCatalogEntry[]
+  readonly saving: boolean
+  readonly onSetModel: (model: string) => Promise<void>
+  readonly onAddFallback: (fallback: string) => Promise<void>
+  readonly onRemoveFallback: (fallback: string) => Promise<void>
 }
 
 function ModelCard({
@@ -216,17 +216,17 @@ function ModelCard({
 // ---------------------------------------------------------------------------
 
 type Props = {
-  defaultModel: AgentModelConfig
-  imageModel: AgentModelConfig
-  models: ModelCatalogEntry[]
-  saving: boolean
-  saveError: string | null
-  onSetDefaultModel: (model: string) => Promise<void>
-  onAddDefaultFallback: (fallback: string) => Promise<void>
-  onRemoveDefaultFallback: (fallback: string) => Promise<void>
-  onSetImageModel: (model: string) => Promise<void>
-  onAddImageFallback: (fallback: string) => Promise<void>
-  onRemoveImageFallback: (fallback: string) => Promise<void>
+  readonly defaultModel: AgentModelConfig
+  readonly imageModel: AgentModelConfig
+  readonly models: ModelCatalogEntry[]
+  readonly saving: boolean
+  readonly saveError: string | null
+  readonly onSetDefaultModel: (model: string) => Promise<void>
+  readonly onAddDefaultFallback: (fallback: string) => Promise<void>
+  readonly onRemoveDefaultFallback: (fallback: string) => Promise<void>
+  readonly onSetImageModel: (model: string) => Promise<void>
+  readonly onAddImageFallback: (fallback: string) => Promise<void>
+  readonly onRemoveImageFallback: (fallback: string) => Promise<void>
 }
 
 export function RoutingSection({

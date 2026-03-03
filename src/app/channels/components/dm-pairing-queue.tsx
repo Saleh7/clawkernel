@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatRelativeTime } from '@/lib/format'
 import type { GatewayClient } from '@/lib/gateway/client'
+import type { ChannelsStatusSnapshot } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
 import { useGatewayStore } from '@/stores/gateway-store'
 import { CHANNEL_ICONS } from '../types'
@@ -23,8 +24,22 @@ type DmRequest = {
 }
 
 type Props = {
-  client: GatewayClient | null
-  onRefresh: () => void
+  readonly client: GatewayClient | null
+  readonly onRefresh: () => void
+}
+
+function collectDmRequests(channels: ChannelsStatusSnapshot | null): DmRequest[] {
+  const requests: DmRequest[] = []
+  if (!channels?.channelAccounts) return requests
+  for (const [channelId, accounts] of Object.entries(channels.channelAccounts)) {
+    for (const account of accounts) {
+      const pending = (account as Record<string, unknown>).pendingPairings
+      if (Array.isArray(pending)) {
+        for (const p of pending as DmRequest[]) requests.push({ ...p, channel: channelId })
+      }
+    }
+  }
+  return requests
 }
 
 export function DmPairingQueue({ client, onRefresh }: Props) {
@@ -32,20 +47,7 @@ export function DmPairingQueue({ client, onRefresh }: Props) {
   const channels = useGatewayStore((s) => s.channels)
   const [busy, setBusy] = useState<string | null>(null)
 
-  const dmRequests: DmRequest[] = []
-  if (channels?.channelAccounts) {
-    for (const [channelId, accounts] of Object.entries(channels.channelAccounts)) {
-      for (const account of accounts) {
-        const raw = account as Record<string, unknown>
-        const pendingPairs = raw.pendingPairings as DmRequest[] | undefined
-        if (Array.isArray(pendingPairs)) {
-          for (const p of pendingPairs) {
-            dmRequests.push({ ...p, channel: channelId })
-          }
-        }
-      }
-    }
-  }
+  const dmRequests = collectDmRequests(channels)
 
   const handleApprove = useCallback(
     async (channel: string, code: string) => {

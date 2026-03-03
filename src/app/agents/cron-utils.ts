@@ -5,7 +5,7 @@ import { useGatewayStore } from '@/stores/gateway-store'
 
 export { formatDuration, formatRelative, formatSchedule } from '@/lib/cron'
 
-export const log = createLogger('agents:cron')
+const log = createLogger('agents:cron')
 
 export async function refreshCron(client: GatewayClient) {
   try {
@@ -120,9 +120,14 @@ export function formStateToSchedule(f: JobFormState): CronSchedule {
   }
   if (f.scheduleKind === 'every') {
     const multiplier = f.intervalUnit === 'hours' ? 3_600_000 : f.intervalUnit === 'minutes' ? 60_000 : 1_000
-    return { kind: 'every', everyMs: Number(f.intervalValue) * multiplier }
+    const ms = Number(f.intervalValue)
+    if (!Number.isFinite(ms) || ms <= 0) throw new Error('Interval must be a positive number')
+    return { kind: 'every', everyMs: ms * multiplier }
   }
-  return { kind: 'at', at: new Date(f.atDatetime).toISOString() }
+  if (!f.atDatetime) throw new Error('Date and time are required')
+  const at = new Date(f.atDatetime)
+  if (!Number.isFinite(at.getTime())) throw new Error('Invalid date or time value')
+  return { kind: 'at', at: at.toISOString() }
 }
 
 export function formStateToPayload(f: JobFormState): CronPayload {

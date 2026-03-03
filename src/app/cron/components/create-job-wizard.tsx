@@ -34,11 +34,11 @@ const log = createLogger('cron:wizard')
 const TOTAL_STEPS = 5
 
 type Props = {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  client: GatewayClient | null
-  is24h: boolean
-  onCreated: () => void
+  readonly open: boolean
+  readonly onOpenChange: (v: boolean) => void
+  readonly client: GatewayClient | null
+  readonly is24h: boolean
+  readonly onCreated: () => void
 }
 
 export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }: Props) {
@@ -542,7 +542,15 @@ function stepLabel(step: number): string {
   }
 }
 
-function ReviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function ReviewRow({
+  label,
+  value,
+  mono,
+}: {
+  readonly label: string
+  readonly value: string
+  readonly mono?: boolean
+}) {
   return (
     <div className="flex items-center justify-between px-3 py-2.5">
       <span className="text-xs text-muted-foreground/80">{label}</span>

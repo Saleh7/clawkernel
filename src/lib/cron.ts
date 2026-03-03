@@ -59,36 +59,69 @@ function formatClock(hour24: number, minute: number, is24h: boolean): string {
   return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`
 }
 
-export function cronToHuman(expr: string, is24h: boolean): string {
-  const parts = expr.trim().split(/\s+/)
-  if (parts.length < 5) return expr
-  const [min, hour, day, month, dow] = parts
+type CronParts = readonly [string, string, string, string, string]
+type CronMatcher = (p: CronParts, is24h: boolean) => string | null
 
-  if (min.startsWith('*/') && hour === '*' && day === '*' && month === '*' && dow === '*') {
-    const n = min.slice(2)
-    if (/^\d+$/.test(n)) return n === '1' ? 'Every minute' : `Every ${n} minutes`
-  }
-  if (min === '0' && hour.startsWith('*/') && day === '*' && month === '*' && dow === '*') {
-    const n = hour.slice(2)
-    if (/^\d+$/.test(n)) return n === '1' ? 'Every hour' : `Every ${n} hours`
-  }
-  if (min === '0' && hour === '*' && day === '*' && month === '*' && dow === '*') return 'Every hour'
-  if (/^\d+$/.test(min) && /^\d+$/.test(hour) && day === '*' && month === '*' && dow === '*') {
-    return `Daily at ${formatClock(Number.parseInt(hour, 10), Number.parseInt(min, 10), is24h)}`
-  }
-  if (min === '0' && /^\d+,\d+$/.test(hour) && day === '*' && month === '*' && dow === '*') {
-    const [h1, h2] = hour.split(',').map((x) => Number.parseInt(x, 10))
-    return `Twice a day (${formatClock(h1, 0, is24h)} & ${formatClock(h2, 0, is24h)})`
-  }
-  if (min === '0' && /^\d+$/.test(hour) && day === '*' && month === '*' && dow === '1-5') {
-    return `Weekdays at ${formatClock(Number.parseInt(hour, 10), 0, is24h)}`
-  }
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  if (min === '0' && /^\d+$/.test(hour) && day === '*' && month === '*' && /^\d$/.test(dow)) {
-    const d = Number.parseInt(dow, 10)
-    if (d >= 0 && d <= 6) {
-      return `Every ${dayNames[d]} at ${formatClock(Number.parseInt(hour, 10), 0, is24h)}`
-    }
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+function matchEveryNMinutes([min, hour, day, month, dow]: CronParts): string | null {
+  if (!min.startsWith('*/') || hour !== '*' || day !== '*' || month !== '*' || dow !== '*') return null
+  const n = min.slice(2)
+  if (!/^\d+$/.test(n)) return null
+  return n === '1' ? 'Every minute' : `Every ${n} minutes`
+}
+
+function matchEveryNHours([min, hour, day, month, dow]: CronParts): string | null {
+  if (min !== '0' || !hour.startsWith('*/') || day !== '*' || month !== '*' || dow !== '*') return null
+  const n = hour.slice(2)
+  if (!/^\d+$/.test(n)) return null
+  return n === '1' ? 'Every hour' : `Every ${n} hours`
+}
+
+function matchEveryHourOnDot([min, hour, day, month, dow]: CronParts): string | null {
+  return min === '0' && hour === '*' && day === '*' && month === '*' && dow === '*' ? 'Every hour' : null
+}
+
+function matchDailyAt([min, hour, day, month, dow]: CronParts, is24h: boolean): string | null {
+  if (!/^\d+$/.test(min) || !/^\d+$/.test(hour) || day !== '*' || month !== '*' || dow !== '*') return null
+  return `Daily at ${formatClock(Number.parseInt(hour, 10), Number.parseInt(min, 10), is24h)}`
+}
+
+function matchTwiceADay([min, hour, day, month, dow]: CronParts, is24h: boolean): string | null {
+  if (min !== '0' || !/^\d+,\d+$/.test(hour) || day !== '*' || month !== '*' || dow !== '*') return null
+  const [h1, h2] = hour.split(',').map((x) => Number.parseInt(x, 10))
+  return `Twice a day (${formatClock(h1, 0, is24h)} & ${formatClock(h2, 0, is24h)})`
+}
+
+function matchWeekdays([min, hour, day, month, dow]: CronParts, is24h: boolean): string | null {
+  if (min !== '0' || !/^\d+$/.test(hour) || day !== '*' || month !== '*' || dow !== '1-5') return null
+  return `Weekdays at ${formatClock(Number.parseInt(hour, 10), 0, is24h)}`
+}
+
+function matchSingleWeekday([min, hour, day, month, dow]: CronParts, is24h: boolean): string | null {
+  if (min !== '0' || !/^\d+$/.test(hour) || day !== '*' || month !== '*' || !/^\d$/.test(dow)) return null
+  const d = Number.parseInt(dow, 10)
+  if (d < 0 || d > 6) return null
+  return `Every ${DAY_NAMES[d]} at ${formatClock(Number.parseInt(hour, 10), 0, is24h)}`
+}
+
+const CRON_MATCHERS: readonly CronMatcher[] = [
+  matchEveryNMinutes,
+  matchEveryNHours,
+  matchEveryHourOnDot,
+  matchDailyAt,
+  matchTwiceADay,
+  matchWeekdays,
+  matchSingleWeekday,
+]
+
+export function cronToHuman(expr: string, is24h: boolean): string {
+  const raw = expr.trim().split(/\s+/)
+  if (raw.length < 5) return expr
+  const parts = raw as unknown as CronParts
+  for (const matcher of CRON_MATCHERS) {
+    const result = matcher(parts, is24h)
+    if (result !== null) return result
   }
   return expr
 }

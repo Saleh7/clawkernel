@@ -17,10 +17,10 @@ export function ToolCallBlock({
   result,
   isError,
 }: {
-  name: string
-  args: Record<string, unknown>
-  result?: string
-  isError?: boolean
+  readonly name: string
+  readonly args: Record<string, unknown>
+  readonly result?: string
+  readonly isError?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const argsStr = JSON.stringify(args, null, 2)
@@ -85,10 +85,10 @@ export function ToolGroup({
   toolResults,
   settings,
 }: {
-  messages: ChatMessage[]
-  agentInfo?: AgentInfo
-  toolResults: Map<string, { content: string; isError: boolean; details?: Record<string, unknown> }>
-  settings: ChatSettings
+  readonly messages: ChatMessage[]
+  readonly agentInfo?: AgentInfo
+  readonly toolResults: Map<string, { content: string; isError: boolean; details?: Record<string, unknown> }>
+  readonly settings: ChatSettings
 }) {
   const [open, setOpen] = useState(false)
 

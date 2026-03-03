@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useTimeFormat } from '@/hooks/use-time-format'
-import type { CronJob, CronJobsEnabledFilter, CronJobsSortBy, CronSortDir } from '@/lib/gateway/types'
+import type { CronJob, CronJobsSortBy, CronSortDir } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
 import { CreateJobWizard } from './components/create-job-wizard'
 import { CronStatsBar } from './components/cron-stats-bar'
@@ -147,7 +147,7 @@ export default function CronPage() {
               size="sm"
               variant={enabledFilter === opt.value ? 'default' : 'outline'}
               className="h-10 px-4"
-              onClick={() => setEnabledFilter(opt.value as CronJobsEnabledFilter)}
+              onClick={() => setEnabledFilter(opt.value)}
             >
               {opt.label}
             </Button>

@@ -33,9 +33,9 @@ const log = createLogger('agents:tools')
 // ---------------------------------------------------------------------------
 
 type Props = {
-  agentId: string
-  config: ConfigSnapshot | null
-  client: GatewayClient | null
+  readonly agentId: string
+  readonly config: ConfigSnapshot | null
+  readonly client: GatewayClient | null
 }
 
 export function AgentTools({ agentId, config, client }: Props) {

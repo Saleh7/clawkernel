@@ -3,8 +3,8 @@ import type { SkillStatusEntry } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 
 type Props = {
-  skills: SkillStatusEntry[]
-  enabledSet: Set<string>
+  readonly skills: SkillStatusEntry[]
+  readonly enabledSet: Set<string>
 }
 
 type Tile = {

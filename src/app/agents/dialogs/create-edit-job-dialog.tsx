@@ -32,11 +32,11 @@ export function CreateEditJobDialog({
   agentId,
   editJob,
 }: {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  client: GatewayClient | null
-  agentId: string
-  editJob: CronJob | null
+  readonly open: boolean
+  readonly onOpenChange: (v: boolean) => void
+  readonly client: GatewayClient | null
+  readonly agentId: string
+  readonly editJob: CronJob | null
 }) {
   const [form, setForm] = useState<JobFormState>(defaultFormState)
   const [busy, setBusy] = useState(false)
@@ -302,7 +302,7 @@ export function CreateEditJobDialog({
                   onChange={(e) => update('enabled', e.target.checked)}
                   className="rounded"
                 />
-                Enabled
+                <span>Enabled</span>
               </label>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input
@@ -311,7 +311,7 @@ export function CreateEditJobDialog({
                   onChange={(e) => update('deleteAfterRun', e.target.checked)}
                   className="rounded"
                 />
-                Delete after run
+                <span>Delete after run</span>
               </label>
             </div>
 

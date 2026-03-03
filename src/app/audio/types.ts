@@ -1,7 +1,7 @@
 import type { TalkConfigPayload, TtsProvider, TtsStatus } from '@/lib/gateway/types'
 
 // Re-export for convenience inside the audio feature
-export type { TalkConfigPayload, TtsProvider, TtsStatus }
+export type { TalkConfigPayload, TtsProvider, TtsStatus } from '@/lib/gateway/types'
 
 // Derived UI state (loaded from tts.status + tts.providers + talk.config + voicewake.get)
 export type AudioState = {

@@ -3,11 +3,11 @@ import { buildFailureGuide } from '@/lib/cron'
 import type { CronDelivery } from '@/lib/gateway/types'
 
 type Props = {
-  error: string
-  delivery?: CronDelivery
-  consecutiveErrors?: number
-  onFix: () => void
-  compact?: boolean
+  readonly error: string
+  readonly delivery?: CronDelivery
+  readonly consecutiveErrors?: number
+  readonly onFix: () => void
+  readonly compact?: boolean
 }
 
 export function FailureGuideCard({ error, delivery, consecutiveErrors, onFix, compact = false }: Props) {

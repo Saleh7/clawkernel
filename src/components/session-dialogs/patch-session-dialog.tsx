@@ -15,10 +15,10 @@ const LEVELS = ['off', 'low', 'medium', 'high'] as const
 const log = createLogger('sessions:patch-dialog')
 
 interface LevelSelectorProps {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string
-  onChange: (v: string) => void
+  readonly icon: React.ComponentType<{ className?: string }>
+  readonly label: string
+  readonly value: string
+  readonly onChange: (v: string) => void
 }
 
 function LevelSelector({ icon: Icon, label, value, onChange }: LevelSelectorProps) {
@@ -50,13 +50,13 @@ function LevelSelector({ icon: Icon, label, value, onChange }: LevelSelectorProp
 }
 
 interface PatchSessionDialogProps {
-  session: GatewaySessionRow | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  readonly session: GatewaySessionRow | null
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
   /** Optional — if omitted, falls back to the gateway store client */
-  client?: GatewayClient | null
+  readonly client?: GatewayClient | null
   /** Called after a successful patch */
-  onPatched?: () => void
+  readonly onPatched?: () => void
 }
 
 export function PatchSessionDialog({

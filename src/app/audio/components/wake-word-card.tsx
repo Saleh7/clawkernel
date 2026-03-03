@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 type Props = {
-  triggers: string[]
-  saving: boolean
-  onSave: (triggers: string[]) => void
+  readonly triggers: string[]
+  readonly saving: boolean
+  readonly onSave: (triggers: string[]) => void
 }
 
 export function WakeWordCard({ triggers, saving, onSave }: Props) {

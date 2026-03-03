@@ -14,9 +14,9 @@ const DM_POLICIES = ['pairing', 'allow', 'deny'] as const
 const GROUP_POLICIES = ['allow', 'mention', 'deny'] as const
 
 type Props = {
-  channelId: string
-  client: GatewayClient | null
-  onRefresh: () => void
+  readonly channelId: string
+  readonly client: GatewayClient | null
+  readonly onRefresh: () => void
 }
 
 export function ChannelSettings({ channelId, client, onRefresh }: Props) {

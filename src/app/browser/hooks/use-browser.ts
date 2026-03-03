@@ -7,6 +7,37 @@ import type { HistoryEntry, RequestMethod } from '../types'
 const log = createLogger('browser')
 const MAX_HISTORY = 20
 
+function tryParseJson(raw: string, errorMessage: string): { value: unknown; error: string | null } {
+  try {
+    return { value: JSON.parse(raw), error: null }
+  } catch {
+    return { value: undefined, error: errorMessage }
+  }
+}
+
+type ParsedInputs =
+  | { readonly ok: true; readonly parsedQuery?: Record<string, unknown>; readonly parsedBody?: unknown }
+  | { readonly ok: false; readonly errorMessage: string }
+
+function parseRequestInputs(method: RequestMethod, query: string, body: string): ParsedInputs {
+  let parsedQuery: Record<string, unknown> | undefined
+  let parsedBody: unknown
+
+  if (query.trim()) {
+    const q = tryParseJson(query, 'Invalid query JSON')
+    if (q.error) return { ok: false, errorMessage: q.error }
+    parsedQuery = q.value as Record<string, unknown>
+  }
+
+  if (method !== 'GET' && body.trim()) {
+    const b = tryParseJson(body, 'Invalid body JSON')
+    if (b.error) return { ok: false, errorMessage: b.error }
+    parsedBody = b.value
+  }
+
+  return { ok: true, parsedQuery, parsedBody }
+}
+
 // Result returned from sendRequest (shown in response viewer)
 export type SendResult = { ok: true; body: unknown } | { ok: false; errorMessage: string; details?: unknown }
 
@@ -63,24 +94,8 @@ export function useBrowser() {
     }): Promise<SendResult> => {
       if (!client || sending) return { ok: false, errorMessage: 'Not connected' }
 
-      let parsedQuery: Record<string, unknown> | undefined
-      let parsedBody: unknown
-
-      if (params.query.trim()) {
-        try {
-          parsedQuery = JSON.parse(params.query) as Record<string, unknown>
-        } catch {
-          return { ok: false, errorMessage: 'Invalid query JSON' }
-        }
-      }
-
-      if (params.method !== 'GET' && params.body.trim()) {
-        try {
-          parsedBody = JSON.parse(params.body)
-        } catch {
-          return { ok: false, errorMessage: 'Invalid body JSON' }
-        }
-      }
+      const inputs = parseRequestInputs(params.method, params.query, params.body)
+      if (!inputs.ok) return { ok: false, errorMessage: inputs.errorMessage }
 
       setSending(true)
       const startMs = Date.now()
@@ -89,8 +104,8 @@ export function useBrowser() {
         method: params.method,
         path: params.path.startsWith('/') ? params.path : `/${params.path}`,
       }
-      if (parsedQuery) requestParams.query = parsedQuery
-      if (parsedBody !== undefined) requestParams.body = parsedBody
+      if (inputs.parsedQuery) requestParams.query = inputs.parsedQuery
+      if (inputs.parsedBody !== undefined) requestParams.body = inputs.parsedBody
 
       let result: SendResult
 

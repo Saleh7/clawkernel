@@ -12,12 +12,12 @@ const SAMPLE_PRESETS = [
 ]
 
 type Props = {
-  providers: TtsProvider[]
-  activeProvider: string
-  saving: boolean
-  converting: boolean
-  onSetProvider: (id: string) => Promise<void>
-  onConvert: (text: string) => Promise<TtsTestResult | null>
+  readonly providers: TtsProvider[]
+  readonly activeProvider: string
+  readonly saving: boolean
+  readonly converting: boolean
+  readonly onSetProvider: (id: string) => Promise<void>
+  readonly onConvert: (text: string) => Promise<TtsTestResult | null>
 }
 
 export function TtsTestPanel({ providers, activeProvider, saving, converting, onSetProvider, onConvert }: Props) {
@@ -173,7 +173,7 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
   )
 }
 
-function ResultField({ label, value }: { label: string; value: string }) {
+function ResultField({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
       <p className="text-xs uppercase tracking-wider text-muted-foreground/60">{label}</p>

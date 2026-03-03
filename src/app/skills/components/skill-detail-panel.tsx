@@ -6,16 +6,16 @@ import type { SkillStatusEntry } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 
 type Props = {
-  skill: SkillStatusEntry
-  enabled: boolean
-  busy: boolean
-  onClose: () => void
-  onToggle: () => void
-  onInstall: (installId: string) => void
-  onSetApiKey: (apiKey: string) => void
+  readonly skill: SkillStatusEntry
+  readonly enabled: boolean
+  readonly busy: boolean
+  readonly onClose: () => void
+  readonly onToggle: () => void
+  readonly onInstall: (installId: string) => void
+  readonly onSetApiKey: (apiKey: string) => void
 }
 
-function MissingRow({ label, items }: { label: string; items: string[] }) {
+function MissingRow({ label, items }: { readonly label: string; readonly items: string[] }) {
   if (items.length === 0) return null
   return (
     <div className="flex items-start gap-2">
@@ -34,7 +34,7 @@ function MissingRow({ label, items }: { label: string; items: string[] }) {
   )
 }
 
-function RequiredRow({ label, items }: { label: string; items: string[] }) {
+function RequiredRow({ label, items }: { readonly label: string; readonly items: string[] }) {
   if (items.length === 0) return null
   return (
     <div className="flex items-start gap-2">

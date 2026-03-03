@@ -29,13 +29,13 @@ type ChannelOption = {
 }
 
 type Props = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  channelOrder: string[]
-  channelLabels: Record<string, string>
-  channelAccounts: Record<string, ChannelAccountSnapshot[]>
-  client: GatewayClient | null
-  onRefresh: () => void
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly channelOrder: string[]
+  readonly channelLabels: Record<string, string>
+  readonly channelAccounts: Record<string, ChannelAccountSnapshot[]>
+  readonly client: GatewayClient | null
+  readonly onRefresh: () => void
 }
 
 export function SetupWizard({

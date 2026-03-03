@@ -3,7 +3,13 @@ import { cn } from '@/lib/utils'
 import type { AttachmentFile } from '../types'
 import { FILE_ICONS } from '../types'
 
-function AttachmentPreview({ attachment, onRemove }: { attachment: AttachmentFile; onRemove: (id: string) => void }) {
+function AttachmentPreview({
+  attachment,
+  onRemove,
+}: {
+  readonly attachment: AttachmentFile
+  readonly onRemove: (id: string) => void
+}) {
   const ext = attachment.file.name.split('.').pop()?.toUpperCase() || ''
   const icon = FILE_ICONS[attachment.mimeType]
 
@@ -53,8 +59,8 @@ export function AttachmentStrip({
   attachments,
   onRemove,
 }: {
-  attachments: AttachmentFile[]
-  onRemove: (id: string) => void
+  readonly attachments: AttachmentFile[]
+  readonly onRemove: (id: string) => void
 }) {
   if (attachments.length === 0) return null
   return (

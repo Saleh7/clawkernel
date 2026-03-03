@@ -12,7 +12,7 @@ import type { DevicePendingRequest, PairedDevice, TokenRotateResult } from '../t
 
 const log = createLogger('device-mgmt')
 
-function PlatformIcon({ platform, className }: { platform?: string; className?: string }) {
+function PlatformIcon({ platform, className }: { readonly platform?: string; readonly className?: string }) {
   const p = (platform ?? '').toLowerCase()
   if (p.includes('iphone') || p.includes('ios') || p.includes('android')) {
     return <Smartphone className={className} />
@@ -21,14 +21,14 @@ function PlatformIcon({ platform, className }: { platform?: string; className?: 
 }
 
 type Props = {
-  pending: DevicePendingRequest[]
-  paired: PairedDevice[]
-  busy: string | null
-  client: GatewayClient | null
-  onApprove: (requestId: string) => Promise<void>
-  onReject: (requestId: string) => Promise<void>
-  onRemove: (deviceId: string) => Promise<void>
-  onRefresh: () => void
+  readonly pending: DevicePendingRequest[]
+  readonly paired: PairedDevice[]
+  readonly busy: string | null
+  readonly client: GatewayClient | null
+  readonly onApprove: (requestId: string) => Promise<void>
+  readonly onReject: (requestId: string) => Promise<void>
+  readonly onRemove: (deviceId: string) => Promise<void>
+  readonly onRefresh: () => void
 }
 
 export function DeviceManagement({ pending, paired, busy, client, onApprove, onReject, onRemove, onRefresh }: Props) {

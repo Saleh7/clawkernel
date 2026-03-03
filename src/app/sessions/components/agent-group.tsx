@@ -9,9 +9,9 @@ export function AgentGroup({
   sessions,
   renderCard,
 }: {
-  agent: string
-  sessions: GatewaySessionRow[]
-  renderCard: (s: GatewaySessionRow) => React.ReactNode
+  readonly agent: string
+  readonly sessions: GatewaySessionRow[]
+  readonly renderCard: (s: GatewaySessionRow) => React.ReactNode
 }) {
   const [collapsed, setCollapsed] = useState(false)
   const totalTokens = sessions.reduce((a, s) => a + (s.totalTokens ?? 0), 0)

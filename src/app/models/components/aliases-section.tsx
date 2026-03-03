@@ -10,11 +10,11 @@ import { cn } from '@/lib/utils'
 type AliasEntry = { modelId: string; alias: string }
 
 type Props = {
-  aliases: AliasEntry[]
-  models: ModelCatalogEntry[]
-  saving: boolean
-  onAddAlias: (modelId: string, alias: string) => Promise<void>
-  onRemoveAlias: (modelId: string) => Promise<void>
+  readonly aliases: AliasEntry[]
+  readonly models: ModelCatalogEntry[]
+  readonly saving: boolean
+  readonly onAddAlias: (modelId: string, alias: string) => Promise<void>
+  readonly onRemoveAlias: (modelId: string) => Promise<void>
 }
 
 export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAlias }: Props) {

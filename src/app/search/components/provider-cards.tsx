@@ -49,9 +49,9 @@ function ProviderCard({
   cfg,
   isActive,
 }: {
-  provider: WebSearchProvider
-  cfg: WebSearchConfig
-  isActive: boolean
+  readonly provider: WebSearchProvider
+  readonly cfg: WebSearchConfig
+  readonly isActive: boolean
 }) {
   const meta = PROVIDER_META[provider]
   const configured = isConfigured(provider, cfg)
@@ -106,7 +106,7 @@ function ProviderCard({
   )
 }
 
-export function ProviderCards({ cfg }: { cfg: WebSearchConfig }) {
+export function ProviderCards({ cfg }: { readonly cfg: WebSearchConfig }) {
   const activeProvider = cfg.provider ?? 'brave'
 
   return (

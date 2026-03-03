@@ -25,7 +25,7 @@ import { ToolCallBlock } from './tool-group'
 //  File Attachment Card (inline in chat bubbles)
 // ---------------------------------------------------------------------------
 
-function FileAttachmentCard({ file, align }: { file: FileAttachment; align: 'start' | 'end' }) {
+function FileAttachmentCard({ file, align }: { readonly file: FileAttachment; readonly align: 'start' | 'end' }) {
   const ext = file.name.split('.').pop()?.toUpperCase() || ''
   const icon = FILE_ICONS[file.mime] || '📎'
   const displayName = file.name.replace(/---[a-f0-9-]{36}/, '')
@@ -54,7 +54,7 @@ function FileAttachmentCard({ file, align }: { file: FileAttachment; align: 'sta
 //  Message Actions Bar — appears on hover at the top-right of the bubble
 // ---------------------------------------------------------------------------
 
-function MessageActionsBar({ text, onRetry }: { text: string; onRetry?: () => void }) {
+function MessageActionsBar({ text, onRetry }: { readonly text: string; readonly onRetry?: () => void }) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = useCallback(() => {
@@ -97,6 +97,24 @@ function MessageActionsBar({ text, onRetry }: { text: string; onRetry?: () => vo
 }
 
 // ---------------------------------------------------------------------------
+//  Helpers
+// ---------------------------------------------------------------------------
+
+function resolveDisplayContent(
+  message: ChatMessage,
+  isUser: boolean,
+): { text: string | null; thinking: string | null } {
+  const text = extractText(message)
+  const thinking = extractThinking(message)
+  const toolCalls = extractToolCalls(message)
+  // Fall back to thinking only when there's no text and no tool calls (rare reasoning-only response)
+  if (!text?.trim() && thinking && !isUser && toolCalls.length === 0) {
+    return { text: thinking, thinking: null }
+  }
+  return { text, thinking }
+}
+
+// ---------------------------------------------------------------------------
 //  Chat Bubble (memoized)
 // ---------------------------------------------------------------------------
 
@@ -125,20 +143,12 @@ export const ChatBubble = memo(
     onRetry?: () => void
   }) {
     const isUser = message.role === 'user'
-    let text = extractText(message)
+    const { text, thinking } = resolveDisplayContent(message, isUser)
     const rawText = getRawText(message)
     const fileAttachments = isUser && rawText ? extractFileAttachments(rawText) : []
-    let thinking = extractThinking(message)
     const toolCalls = extractToolCalls(message)
     const images = extractImages(message)
-
-    // Only fall back to thinking if there's genuinely no text content at all
-    // and no tool calls (pure reasoning-only response — rare edge case)
-    if (!text?.trim() && thinking && !isUser && toolCalls.length === 0) {
-      text = thinking
-      thinking = null
-    }
-    const timestamp = message.timestamp as number | undefined
+    const timestamp = message.timestamp
     const showTools = toolCalls.length > 0 && settings.showToolCalls && !hideToolCalls
 
     const hasVisibleContent =

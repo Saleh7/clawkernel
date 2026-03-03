@@ -3,7 +3,10 @@ import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import type { GatewayClient } from '@/lib/gateway/client'
 import type { CronJob } from '@/lib/gateway/types'
-import { log, refreshCron } from '../cron-utils'
+import { createLogger } from '@/lib/logger'
+import { refreshCron } from '../cron-utils'
+
+const log = createLogger('agents:cron:delete-job')
 
 export function DeleteJobDialog({
   job,
@@ -11,10 +14,10 @@ export function DeleteJobDialog({
   onOpenChange,
   client,
 }: {
-  job: CronJob | null
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  client: GatewayClient | null
+  readonly job: CronJob | null
+  readonly open: boolean
+  readonly onOpenChange: (v: boolean) => void
+  readonly client: GatewayClient | null
 }) {
   const [busy, setBusy] = useState(false)
 

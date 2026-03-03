@@ -172,7 +172,7 @@ export function useChat() {
       map.set(callId, {
         content: textParts || JSON.stringify(msg.details || {}, null, 2),
         isError: msg.isError || false,
-        details: msg.details as Record<string, unknown> | undefined,
+        details: msg.details,
       })
     }
     return map

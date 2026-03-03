@@ -19,17 +19,17 @@ export function SessionsList({
   onShowAll,
   isFiltered,
 }: {
-  filtered: GatewaySessionRow[]
-  visibleSessions: GatewaySessionRow[]
-  viewMode: ViewMode
-  treeRoots: SessionTreeNode[] | null
-  grouped: Array<[string, GatewaySessionRow[]]> | null
-  renderCard: (session: GatewaySessionRow) => React.ReactNode
-  hasMoreSessions: boolean
-  remainingSessions: number
-  onShowMore: () => void
-  onShowAll: () => void
-  isFiltered: boolean
+  readonly filtered: GatewaySessionRow[]
+  readonly visibleSessions: GatewaySessionRow[]
+  readonly viewMode: ViewMode
+  readonly treeRoots: SessionTreeNode[] | null
+  readonly grouped: Array<[string, GatewaySessionRow[]]> | null
+  readonly renderCard: (session: GatewaySessionRow) => React.ReactNode
+  readonly hasMoreSessions: boolean
+  readonly remainingSessions: number
+  readonly onShowMore: () => void
+  readonly onShowAll: () => void
+  readonly isFiltered: boolean
 }) {
   if (filtered.length === 0) {
     return <EmptyState filtered={isFiltered} />

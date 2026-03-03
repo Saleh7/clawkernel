@@ -23,7 +23,7 @@ function getSessionLabel(s: GatewaySessionRow): string {
   return s.displayName || s.label || s.key.split(':').pop() || s.key
 }
 
-function CommandPreview({ agentId, query }: { agentId: string; query: string }) {
+function CommandPreview({ agentId, query }: { readonly agentId: string; readonly query: string }) {
   const [copied, setCopied] = useState(false)
   const command = `openclaw agent --agent ${agentId} --message "web_search: ${query.trim() || '<your query>'}"`
 
@@ -57,7 +57,7 @@ function CommandPreview({ agentId, query }: { agentId: string; query: string }) 
   )
 }
 
-function ResultPanel({ state, agentId }: { state: PlaygroundState; agentId: string }) {
+function ResultPanel({ state, agentId }: { readonly state: PlaygroundState; readonly agentId: string }) {
   if (state.status === 'idle') return null
 
   return (
@@ -107,11 +107,11 @@ export function SearchPlayground({
   disabled,
   activeProvider,
 }: {
-  playgroundState: PlaygroundState
-  onRun: (params: { sessionKey: string; query: string; resultCount: number; provider: string }) => void
-  onReset: () => void
-  disabled: boolean
-  activeProvider: string
+  readonly playgroundState: PlaygroundState
+  readonly onRun: (params: { sessionKey: string; query: string; resultCount: number; provider: string }) => void
+  readonly onReset: () => void
+  readonly disabled: boolean
+  readonly activeProvider: string
 }) {
   const storeAgents = useGatewayStore((s) => s.agents?.agents ?? EMPTY_AGENTS)
   const storeSessions = useGatewayStore((s) => s.sessions)

@@ -10,11 +10,11 @@ const STATUS_COLOR: Record<Status, string> = {
 }
 
 type MetricTileProps = {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string
-  sub?: string
-  status?: Status
+  readonly icon: React.ComponentType<{ className?: string }>
+  readonly label: string
+  readonly value: string
+  readonly sub?: string
+  readonly status?: Status
 }
 
 export function MetricTile({ icon: Icon, label, value, sub, status }: MetricTileProps) {

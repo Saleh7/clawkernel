@@ -10,11 +10,11 @@ import { useGatewayStore } from '@/stores/gateway-store'
 const log = createLogger('agents:delete')
 
 type Props = {
-  agentId: string
-  agentName: string
-  isDefault: boolean
-  client: GatewayClient | null
-  onDeleted?: () => void
+  readonly agentId: string
+  readonly agentName: string
+  readonly isDefault: boolean
+  readonly client: GatewayClient | null
+  readonly onDeleted?: () => void
 }
 
 export function DeleteAgentDialog({ agentId, agentName, isDefault, client, onDeleted }: Props) {
@@ -93,8 +93,12 @@ export function DeleteAgentDialog({ agentId, agentName, isDefault, client, onDel
         onConfirm={handleDelete}
       >
         {/* Delete files checkbox */}
-        <label className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3 cursor-pointer">
+        <label
+          htmlFor="delete-files-checkbox"
+          className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3 cursor-pointer"
+        >
           <input
+            id="delete-files-checkbox"
             type="checkbox"
             checked={deleteFiles}
             onChange={(e) => setDeleteFiles(e.target.checked)}

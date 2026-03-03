@@ -14,7 +14,7 @@ type TtsConfigSection = { summarize?: boolean; maxTextLength?: number }
 function readTtsConfig(storeConfig: ConfigSnapshot | null): TtsConfigSection {
   const cfg = storeConfig?.config
   if (!cfg || typeof cfg !== 'object') return {}
-  const messages = (cfg as Record<string, unknown>).messages
+  const messages = cfg.messages
   if (!messages || typeof messages !== 'object') return {}
   const tts = (messages as Record<string, unknown>).tts
   if (!tts || typeof tts !== 'object') return {}
@@ -22,9 +22,9 @@ function readTtsConfig(storeConfig: ConfigSnapshot | null): TtsConfigSection {
 }
 
 type Props = {
-  storeConfig: ConfigSnapshot | null
-  saving: boolean
-  onUpdate: (patch: { summarize?: boolean; maxTextLength?: number }) => Promise<void>
+  readonly storeConfig: ConfigSnapshot | null
+  readonly saving: boolean
+  readonly onUpdate: (patch: { summarize?: boolean; maxTextLength?: number }) => Promise<void>
 }
 
 export function TtsSettingsCard({ storeConfig, saving, onUpdate }: Props) {
@@ -51,7 +51,7 @@ export function TtsSettingsCard({ storeConfig, saving, onUpdate }: Props) {
   }
 
   const handleMaxLengthBlur = async () => {
-    const val = parseInt(maxLength, 10)
+    const val = Number.parseInt(maxLength, 10)
     if (!Number.isNaN(val) && val > 0 && val <= MAX_TEXT_LENGTH_INPUT) {
       await onUpdate({ maxTextLength: val })
     } else {

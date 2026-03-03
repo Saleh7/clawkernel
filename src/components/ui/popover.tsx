@@ -3,7 +3,7 @@ import type * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+function Popover({ ...props }: Readonly<React.ComponentProps<typeof PopoverPrimitive.Root>>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
 }
 

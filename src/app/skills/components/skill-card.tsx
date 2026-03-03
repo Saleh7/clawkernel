@@ -7,13 +7,13 @@ import type { SkillStatusEntry } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 
 type Props = {
-  skill: SkillStatusEntry
-  enabled: boolean
-  busy: boolean
-  onToggle: () => void
-  onInstall: (installId: string) => void
-  onSetApiKey: (apiKey: string) => void
-  onExpand: () => void
+  readonly skill: SkillStatusEntry
+  readonly enabled: boolean
+  readonly busy: boolean
+  readonly onToggle: () => void
+  readonly onInstall: (installId: string) => void
+  readonly onSetApiKey: (apiKey: string) => void
+  readonly onExpand: () => void
 }
 
 function statusTone(skill: SkillStatusEntry, enabled: boolean) {

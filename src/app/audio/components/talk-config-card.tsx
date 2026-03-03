@@ -2,8 +2,8 @@ import { Mic } from 'lucide-react'
 import type { TalkConfigPayload } from '../types'
 
 type Props = {
-  talk: TalkConfigPayload | null
-  seamColor: string | null
+  readonly talk: TalkConfigPayload | null
+  readonly seamColor: string | null
 }
 
 export function TalkConfigCard({ talk, seamColor }: Props) {
@@ -90,7 +90,7 @@ export function TalkConfigCard({ talk, seamColor }: Props) {
   )
 }
 
-function ConfigField({ label, value }: { label: string; value: string }) {
+function ConfigField({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
       <p className="text-xs uppercase tracking-wider text-muted-foreground/60">{label}</p>

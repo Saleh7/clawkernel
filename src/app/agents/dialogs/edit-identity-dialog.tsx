@@ -37,10 +37,10 @@ const log = createLogger('agents:identity')
 // ---------------------------------------------------------------------------
 
 type Props = {
-  agentId: string
-  identity?: AgentIdentityResult | null
-  client: GatewayClient | null
-  onSaved?: (identity: IdentityFields) => void
+  readonly agentId: string
+  readonly identity?: AgentIdentityResult | null
+  readonly client: GatewayClient | null
+  readonly onSaved?: (identity: IdentityFields) => void
 }
 
 type IdentityFields = {
@@ -65,6 +65,15 @@ const EMPTY_FIELDS: IdentityFields = {
 //  Parse / serialize IDENTITY.md
 // ---------------------------------------------------------------------------
 
+const IDENTITY_FIELD_MAP: Readonly<Record<string, keyof IdentityFields>> = {
+  name: 'name',
+  emoji: 'emoji',
+  creature: 'creature',
+  vibe: 'vibe',
+  avatar: 'avatar',
+  theme: 'theme',
+}
+
 function parseIdentityMd(content: string): IdentityFields {
   const fields = { ...EMPTY_FIELDS }
   for (const line of content.split(/\r?\n/)) {
@@ -77,12 +86,8 @@ function parseIdentityMd(content: string): IdentityFields {
       .replace(/(?:^[*_]+|[*_]+$)/g, '')
       .trim()
     if (!value) continue
-    if (label === 'name') fields.name = value
-    if (label === 'emoji') fields.emoji = value
-    if (label === 'creature') fields.creature = value
-    if (label === 'vibe') fields.vibe = value
-    if (label === 'avatar') fields.avatar = value
-    if (label === 'theme') fields.theme = value
+    const fieldKey = IDENTITY_FIELD_MAP[label]
+    if (fieldKey) fields[fieldKey] = value
   }
   return fields
 }
@@ -163,7 +168,7 @@ const FIELD_CONFIG: {
 //  Preview component
 // ---------------------------------------------------------------------------
 
-function IdentityPreview({ fields }: { fields: IdentityFields }) {
+function IdentityPreview({ fields }: { readonly fields: IdentityFields }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/50 p-3">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border/40 bg-muted/30 text-xl">

@@ -9,7 +9,7 @@ import type { AgentInfo } from '../types'
 
 // -- Connection Banner ------------------------------------------------------
 
-export function ConnectionBanner({ state, error }: { state: string; error?: string | null }) {
+export function ConnectionBanner({ state, error }: { readonly state: string; readonly error?: string | null }) {
   if (state === 'connected') return null
   const isRestarting = error?.includes('Gateway restarting')
   const message = isRestarting
@@ -40,7 +40,7 @@ export function ConnectionBanner({ state, error }: { state: string; error?: stri
 
 // -- Empty State ------------------------------------------------------------
 
-export function EmptyState({ hasSession }: { hasSession: boolean }) {
+export function EmptyState({ hasSession }: { readonly hasSession: boolean }) {
   return (
     <div className="flex flex-1 items-center justify-center">
       <div className="text-center space-y-3 px-4">
@@ -60,7 +60,7 @@ export function EmptyState({ hasSession }: { hasSession: boolean }) {
 
 // -- Streaming Bubble -------------------------------------------------------
 
-export function StreamingBubble({ text, agentInfo }: { text: string | null; agentInfo?: AgentInfo }) {
+export function StreamingBubble({ text, agentInfo }: { readonly text: string | null; readonly agentInfo?: AgentInfo }) {
   return (
     <div className="flex gap-3 px-4 py-2">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-sm">
@@ -83,7 +83,7 @@ export function StreamingBubble({ text, agentInfo }: { text: string | null; agen
 
 // -- Processing Indicator ---------------------------------------------------
 
-export function ProcessingIndicator({ agentInfo }: { agentInfo?: AgentInfo }) {
+export function ProcessingIndicator({ agentInfo }: { readonly agentInfo?: AgentInfo }) {
   return (
     <div className="flex gap-3 px-4 py-2">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-sm">
@@ -98,7 +98,7 @@ export function ProcessingIndicator({ agentInfo }: { agentInfo?: AgentInfo }) {
 
 // -- Compaction Indicator ---------------------------------------------------
 
-export function CompactionIndicator({ active }: { active: boolean }) {
+export function CompactionIndicator({ active }: { readonly active: boolean }) {
   return (
     <div
       className={cn(
@@ -128,13 +128,13 @@ export function CompactionIndicator({ active }: { active: boolean }) {
 export function FallbackIndicator({
   status,
 }: {
-  status: {
-    phase: 'active' | 'cleared'
-    selected: string
-    active: string
-    previous?: string
-    reason?: string
-    attempts: string[]
+  readonly status: {
+    readonly phase: 'active' | 'cleared'
+    readonly selected: string
+    readonly active: string
+    readonly previous?: string
+    readonly reason?: string
+    readonly attempts: string[]
   }
 }) {
   const isCleared = status.phase === 'cleared'
@@ -164,7 +164,7 @@ export function FallbackIndicator({
 
 // -- Context Meter ----------------------------------------------------------
 
-export function ContextMeter({ used, max }: { used?: number; max?: number }) {
+export function ContextMeter({ used, max }: { readonly used?: number; readonly max?: number }) {
   if (!used || !max || max <= 0) return null
   const pct = Math.min((used / max) * 100, 100)
   return (
@@ -218,7 +218,7 @@ export function ContextMeter({ used, max }: { used?: number; max?: number }) {
 
 // -- Image Lightbox ---------------------------------------------------------
 
-export function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+export function ImageLightbox({ src, onClose }: { readonly src: string; readonly onClose: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()

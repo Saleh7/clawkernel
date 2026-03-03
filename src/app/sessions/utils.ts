@@ -19,6 +19,13 @@ export function isActive(s: GatewaySessionRow): boolean {
   return !!s.updatedAt && Date.now() - s.updatedAt < ACTIVE_SESSION_MS
 }
 
+function findParentKey(s: GatewaySessionRow, keySet: Set<string>): string | null {
+  const parts = s.key.split(':')
+  if (parts.length <= 3) return null
+  const mainKey = `agent:${parts[1]}:main`
+  return s.key !== mainKey && keySet.has(mainKey) ? mainKey : null
+}
+
 export function buildSessionTree(sessions: GatewaySessionRow[]): SessionTreeNode[] {
   const keySet = new Set(sessions.map((s) => s.key))
   const roots: SessionTreeNode[] = []
@@ -29,17 +36,7 @@ export function buildSessionTree(sessions: GatewaySessionRow[]): SessionTreeNode
   }
 
   for (const s of sessions) {
-    const parts = s.key.split(':')
-    let parentKey: string | null = null
-
-    if (parts.length > 3) {
-      const agentId = parts[1]
-      const mainKey = `agent:${agentId}:main`
-      if (s.key !== mainKey && keySet.has(mainKey)) {
-        parentKey = mainKey
-      }
-    }
-
+    const parentKey = findParentKey(s, keySet)
     const node = nodeMap.get(s.key)
     if (!node) continue
 

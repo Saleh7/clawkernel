@@ -44,10 +44,56 @@ import {
 } from './components/status-indicators'
 import { ToolGroup } from './components/tool-group'
 import { useChat } from './hooks/use-chat'
+import type { AttachmentFile, Source } from './types'
 import { ALL_ACCEPT } from './types'
 import { sessionLabel } from './utils'
 
 const log = createLogger('chat:page')
+
+type EscapeContext = {
+  readonly lightboxSrc: string | null
+  readonly sourcesPanel: Source[] | null
+  readonly attachments: ReadonlyArray<Pick<AttachmentFile, 'id' | 'preview'>>
+  readonly setLightboxSrc: (src: string | null) => void
+  readonly setSourcesPanel: (panel: Source[] | null) => void
+  readonly removeAttachment: (id: string) => void
+}
+
+async function execSessionReset(
+  sessionKey: string,
+  reason: 'new' | 'reset',
+  onSuccess: () => void,
+  setResetting: (v: boolean) => void,
+): Promise<void> {
+  const cl = useGatewayStore.getState().client
+  if (!cl) return
+  setResetting(true)
+  try {
+    await cl.request('sessions.reset', { key: sessionKey, reason })
+    onSuccess()
+  } catch (err) {
+    log.error('Session reset failed', err)
+  } finally {
+    setResetting(false)
+  }
+}
+
+function handleEscapeKey(ctx: EscapeContext): void {
+  if (ctx.lightboxSrc) {
+    ctx.setLightboxSrc(null)
+    return
+  }
+  if (ctx.sourcesPanel) {
+    ctx.setSourcesPanel(null)
+    return
+  }
+  if (ctx.attachments.length > 0) {
+    for (const a of ctx.attachments) {
+      if (a.preview) URL.revokeObjectURL(a.preview)
+    }
+    for (const a of ctx.attachments) ctx.removeAttachment(a.id)
+  }
+}
 
 export default function ChatPage() {
   const c = useChat()
@@ -59,56 +105,128 @@ export default function ChatPage() {
   // -- Keyboard shortcuts ---------------------------------------------------
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Escape: clear attachments or close lightbox/sources
       if (e.key === 'Escape') {
-        if (c.lightboxSrc) {
-          c.setLightboxSrc(null)
-          return
-        }
-        if (c.sourcesPanel) {
-          c.setSourcesPanel(null)
-          return
-        }
-        if (c.attachments.length > 0) {
-          for (const a of c.attachments) {
-            if (a.preview) URL.revokeObjectURL(a.preview)
-          }
-          for (const a of c.attachments) c.removeAttachment(a.id)
-          return
-        }
+        handleEscapeKey({
+          lightboxSrc: c.lightboxSrc,
+          sourcesPanel: c.sourcesPanel,
+          attachments: c.attachments,
+          setLightboxSrc: c.setLightboxSrc,
+          setSourcesPanel: c.setSourcesPanel,
+          removeAttachment: c.removeAttachment,
+        })
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [c.lightboxSrc, c.sourcesPanel, c.attachments, c.setLightboxSrc, c.setSourcesPanel, c.removeAttachment])
 
-  const handleNewSession = async () => {
-    if (!c.connected || !c.selectedSession) return
-    const cl = useGatewayStore.getState().client
-    if (!cl) return
-    setSessionResetting(true)
-    try {
-      await cl.request('sessions.reset', { key: c.selectedSession, reason: 'new' })
-      c.handleRefresh()
-    } catch (err) {
-      log.error('New session failed', err)
-    } finally {
-      setSessionResetting(false)
-    }
+  const handleNewSession = () => void execSessionReset(c.selectedSession!, 'new', c.handleRefresh, setSessionResetting)
+
+  const handleResetSession = () => {
+    if (!c.selectedSession) return
+    void execSessionReset(c.selectedSession, 'reset', c.handleRefresh, setSessionResetting)
   }
 
-  const handleResetSession = async () => {
-    const cl = useGatewayStore.getState().client
-    if (!cl || !c.selectedSession) return
-    setSessionResetting(true)
-    try {
-      await cl.request('sessions.reset', { key: c.selectedSession, reason: 'reset' })
-      c.handleRefresh()
-    } catch (err) {
-      log.error('Reset session failed', err)
-    } finally {
-      setSessionResetting(false)
-    }
+  let messageArea: React.ReactNode
+  if (!c.selectedSession) {
+    messageArea = <EmptyState hasSession={false} />
+  } else if (c.chat.loading) {
+    messageArea = (
+      <div className="flex-1 p-4 space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className={cn('flex gap-3 px-4', i % 2 === 0 ? '' : 'flex-row-reverse')}>
+            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  } else if (c.displayMessages.length === 0 && !c.isStreaming) {
+    messageArea = <EmptyState hasSession />
+  } else {
+    messageArea = (
+      <ChatContainerRoot className="flex-1 relative">
+        <ChatContainerContent className="py-4 gap-1">
+          {c.chat.hasMore && (
+            <div className="flex justify-center py-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground"
+                disabled={c.chat.loadingMore}
+                onClick={c.handleLoadMore}
+              >
+                {c.chat.loadingMore ? (
+                  <>
+                    <RefreshCw className="h-3 w-3 mr-1.5 animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  'Load earlier messages'
+                )}
+              </Button>
+            </div>
+          )}
+          {c.renderItems.map((item, ri) => {
+            if (item.kind === 'divider') {
+              return (
+                <div key={`div-${ri}`} className="flex items-center gap-3 px-6 py-3">
+                  <div className="flex-1 border-t border-dashed border-primary/25" />
+                  <span className="text-[11px] font-medium text-primary/60 select-none">{item.label}</span>
+                  <div className="flex-1 border-t border-dashed border-primary/25" />
+                </div>
+              )
+            }
+            if (item.kind === 'toolGroup') {
+              return (
+                <ToolGroup
+                  key={`tg-${item.indices[0]}`}
+                  messages={item.messages}
+                  agentInfo={c.currentAgentInfo}
+                  toolResults={c.toolResultsMap}
+                  settings={c.settings}
+                />
+              )
+            }
+            const { msg, index: i } = item
+            return (
+              <ChatBubble
+                key={`${msg.timestamp || i}-${i}`}
+                message={msg}
+                agentInfo={c.currentAgentInfo}
+                toolResults={c.toolResultsMap}
+                settings={c.settings}
+                isLastAssistant={i === c.lastAssistantIndex}
+                sources={c.sourcesMap.get(i)}
+                onOpenSources={c.setSourcesPanel}
+                onImageClick={c.setLightboxSrc}
+                hideToolCalls={c.indicesInToolGroups.has(i)}
+                onRetry={
+                  msg.role === 'assistant'
+                    ? () => {
+                        const userMsg = c.displayMessages
+                          .slice(0, i)
+                          .reverse()
+                          .find((m) => m.role === 'user')
+                        if (userMsg) c.handleRetry(userMsg)
+                      }
+                    : undefined
+                }
+              />
+            )
+          })}
+          {c.isStreaming && <StreamingBubble text={c.chat.streaming || null} agentInfo={c.currentAgentInfo} />}
+          {!c.isStreaming && c.chat.sending && <ProcessingIndicator agentInfo={c.currentAgentInfo} />}
+          <ChatContainerScrollAnchor />
+        </ChatContainerContent>
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
+          <ScrollButton />
+        </div>
+      </ChatContainerRoot>
+    )
   }
 
   return (
@@ -303,102 +421,7 @@ export default function ChatPage() {
         </div>
 
         {/* Messages */}
-        {!c.selectedSession ? (
-          <EmptyState hasSession={false} />
-        ) : c.chat.loading ? (
-          <div className="flex-1 p-4 space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className={cn('flex gap-3 px-4', i % 2 === 0 ? '' : 'flex-row-reverse')}>
-                <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : c.displayMessages.length === 0 && !c.isStreaming ? (
-          <EmptyState hasSession />
-        ) : (
-          <ChatContainerRoot className="flex-1 relative">
-            <ChatContainerContent className="py-4 gap-1">
-              {c.chat.hasMore && (
-                <div className="flex justify-center py-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-muted-foreground"
-                    disabled={c.chat.loadingMore}
-                    onClick={c.handleLoadMore}
-                  >
-                    {c.chat.loadingMore ? (
-                      <>
-                        <RefreshCw className="h-3 w-3 mr-1.5 animate-spin" />
-                        Loading…
-                      </>
-                    ) : (
-                      'Load earlier messages'
-                    )}
-                  </Button>
-                </div>
-              )}
-              {c.renderItems.map((item, ri) => {
-                if (item.kind === 'divider') {
-                  return (
-                    <div key={`div-${ri}`} className="flex items-center gap-3 px-6 py-3">
-                      <div className="flex-1 border-t border-dashed border-primary/25" />
-                      <span className="text-[11px] font-medium text-primary/60 select-none">{item.label}</span>
-                      <div className="flex-1 border-t border-dashed border-primary/25" />
-                    </div>
-                  )
-                }
-                if (item.kind === 'toolGroup') {
-                  return (
-                    <ToolGroup
-                      key={`tg-${item.indices[0]}`}
-                      messages={item.messages}
-                      agentInfo={c.currentAgentInfo}
-                      toolResults={c.toolResultsMap}
-                      settings={c.settings}
-                    />
-                  )
-                }
-                const { msg, index: i } = item
-                return (
-                  <ChatBubble
-                    key={`${msg.timestamp || i}-${i}`}
-                    message={msg}
-                    agentInfo={c.currentAgentInfo}
-                    toolResults={c.toolResultsMap}
-                    settings={c.settings}
-                    isLastAssistant={i === c.lastAssistantIndex}
-                    sources={c.sourcesMap.get(i)}
-                    onOpenSources={c.setSourcesPanel}
-                    onImageClick={c.setLightboxSrc}
-                    hideToolCalls={c.indicesInToolGroups.has(i)}
-                    onRetry={
-                      msg.role === 'assistant'
-                        ? () => {
-                            const userMsg = c.displayMessages
-                              .slice(0, i)
-                              .reverse()
-                              .find((m) => m.role === 'user')
-                            if (userMsg) c.handleRetry(userMsg)
-                          }
-                        : undefined
-                    }
-                  />
-                )
-              })}
-              {c.isStreaming && <StreamingBubble text={c.chat.streaming || null} agentInfo={c.currentAgentInfo} />}
-              {!c.isStreaming && c.chat.sending && <ProcessingIndicator agentInfo={c.currentAgentInfo} />}
-              <ChatContainerScrollAnchor />
-            </ChatContainerContent>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-              <ScrollButton />
-            </div>
-          </ChatContainerRoot>
-        )}
+        {messageArea}
 
         {/* Error */}
         {c.chat.error && (

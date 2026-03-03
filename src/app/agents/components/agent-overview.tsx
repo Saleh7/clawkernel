@@ -41,15 +41,15 @@ const log = createLogger('agents:overview')
 // ---------------------------------------------------------------------------
 
 type Props = {
-  agent: GatewayAgentRow
-  agentsList: AgentsListResult
-  config: ConfigSnapshot | null
-  workspace: string | null
-  sessions: GatewaySessionRow[]
-  identity?: AgentIdentityResult | null
-  activeRuns?: Record<string, { sessionKey: string; startedAt: number }>
-  deleteSlot?: React.ReactNode
-  client: GatewayClient | null
+  readonly agent: GatewayAgentRow
+  readonly agentsList: AgentsListResult
+  readonly config: ConfigSnapshot | null
+  readonly workspace: string | null
+  readonly sessions: GatewaySessionRow[]
+  readonly identity?: AgentIdentityResult | null
+  readonly activeRuns?: Record<string, { sessionKey: string; startedAt: number }>
+  readonly deleteSlot?: React.ReactNode
+  readonly client: GatewayClient | null
 }
 
 import type { ParsedConfig } from '../types'
@@ -70,6 +70,63 @@ function resolveModel(model?: unknown): { primary: string; fallbacks: string[] }
   return { primary: '', fallbacks: [] }
 }
 
+type ModelOption = { value: string; label: string }
+type ModelOptionWithProvider = ModelOption & { provider?: string }
+
+function buildConfiguredModels(models: unknown): ModelOption[] {
+  if (!models || typeof models !== 'object') return []
+  return Object.entries(models as Record<string, { alias?: string } | null>).map(([id, meta]) => {
+    const alias = meta?.alias?.trim()
+    return { value: id, label: alias && alias !== id ? `${alias} (${id})` : id }
+  })
+}
+
+function buildAllModelOptions(
+  configuredModels: ModelOption[],
+  availableModels: ModelChoice[],
+  primaryDraft: string,
+): ModelOptionWithProvider[] {
+  const seen = new Set<string>()
+  const options: ModelOptionWithProvider[] = []
+  for (const m of configuredModels) {
+    if (!seen.has(m.value)) {
+      seen.add(m.value)
+      options.push(m)
+    }
+  }
+  for (const m of availableModels) {
+    if (!seen.has(m.id)) {
+      seen.add(m.id)
+      options.push({ value: m.id, label: `${m.name} (${m.provider})`, provider: m.provider })
+    }
+  }
+  const current = primaryDraft.trim()
+  if (current && !seen.has(current)) {
+    options.unshift({ value: current, label: current })
+  }
+  return options
+}
+
+function buildSessionTypeLabel(agentSessions: GatewaySessionRow[]): string {
+  const direct = agentSessions.filter((s) => s.kind === 'direct').length
+  const group = agentSessions.filter((s) => s.kind === 'group').length
+  const sub = agentSessions.filter((s) => s.key.includes(':subagent:')).length
+  return `${direct} direct · ${group} group · ${sub} sub`
+}
+
+type AgentStatusInfo = { readonly status: string; readonly color: string }
+
+function getAgentStatusInfo(
+  isRunning: boolean,
+  activeSessions: GatewaySessionRow[],
+  agentSessions: GatewaySessionRow[],
+): AgentStatusInfo {
+  if (isRunning) return { status: 'Running', color: 'text-chart-1' }
+  if (activeSessions.length > 0) return { status: 'Active', color: 'text-green-500' }
+  if (agentSessions.length > 0) return { status: 'Idle', color: 'text-yellow-500' }
+  return { status: 'Inactive', color: 'text-muted-foreground/40' }
+}
+
 // ---------------------------------------------------------------------------
 //  Cell
 // ---------------------------------------------------------------------------
@@ -82,12 +139,12 @@ function Cell({
   badge,
   subValue,
 }: {
-  icon: typeof Activity
-  label: string
-  value: string
-  mono?: boolean
-  badge?: string
-  subValue?: string
+  readonly icon: typeof Activity
+  readonly label: string
+  readonly value: string
+  readonly mono?: boolean
+  readonly badge?: string
+  readonly subValue?: string
 }) {
   return (
     <div className="rounded-xl border border-border/40 bg-background/50 p-4 space-y-2">
@@ -154,7 +211,7 @@ export function AgentOverview({
       .catch((err) => log.warn('Models list failed', err))
   }, [client])
 
-  const isDirty = (() => {
+  const isDirty = useMemo(() => {
     if (primaryDraft !== agentModel.primary) return true
     const draftArr = fallbacksDraft
       .split(',')
@@ -162,7 +219,7 @@ export function AgentOverview({
       .filter(Boolean)
     if (draftArr.length !== agentModel.fallbacks.length) return true
     return draftArr.some((s, i) => s !== agentModel.fallbacks[i])
-  })()
+  }, [primaryDraft, fallbacksDraft, agentModel])
 
   const buildModelPatch = useCallback(
     (entry: Record<string, unknown>) => {
@@ -202,36 +259,8 @@ export function AgentOverview({
     },
   })
 
-  const configuredModels = (() => {
-    const models = defaults?.models
-    if (!models || typeof models !== 'object') return [] as { value: string; label: string }[]
-    return Object.entries(models).map(([id, meta]) => {
-      const alias = meta?.alias?.trim()
-      return { value: id, label: alias && alias !== id ? `${alias} (${id})` : id }
-    })
-  })()
-
-  const allModelOptions = (() => {
-    const seen = new Set<string>()
-    const options: { value: string; label: string; provider?: string }[] = []
-    for (const m of configuredModels) {
-      if (!seen.has(m.value)) {
-        seen.add(m.value)
-        options.push(m)
-      }
-    }
-    for (const m of availableModels) {
-      if (!seen.has(m.id)) {
-        seen.add(m.id)
-        options.push({ value: m.id, label: `${m.name} (${m.provider})`, provider: m.provider })
-      }
-    }
-    const current = primaryDraft.trim()
-    if (current && !seen.has(current)) {
-      options.unshift({ value: current, label: current })
-    }
-    return options
-  })()
+  const configuredModels = buildConfiguredModels(defaults?.models)
+  const allModelOptions = buildAllModelOptions(configuredModels, availableModels, primaryDraft)
 
   const workspaceLabel = workspace || entry?.workspace || defaults?.workspace || 'not available'
   const toolProfile = entry?.tools?.profile || defaults?.tools?.profile || 'full'
@@ -250,20 +279,7 @@ export function AgentOverview({
   const outputTokens = useMemo(() => agentSessions.reduce((sum, s) => sum + (s.outputTokens ?? 0), 0), [agentSessions])
 
   const isRunning = Object.values(activeRuns).some((r) => r.sessionKey.startsWith(`agent:${agent.id}:`))
-  const agentStatus = isRunning
-    ? 'Running'
-    : activeSessions.length > 0
-      ? 'Active'
-      : agentSessions.length > 0
-        ? 'Idle'
-        : 'Inactive'
-  const statusColor = isRunning
-    ? 'text-chart-1'
-    : activeSessions.length > 0
-      ? 'text-green-500'
-      : agentSessions.length > 0
-        ? 'text-yellow-500'
-        : 'text-muted-foreground/40'
+  const { status: agentStatus, color: statusColor } = getAgentStatusInfo(isRunning, activeSessions, agentSessions)
 
   return (
     <div className="space-y-3">
@@ -425,16 +441,7 @@ export function AgentOverview({
         <Cell icon={Zap} label="Skill Policy" value={skillPolicy} />
         <Cell icon={Shield} label="Default Agent" value={isDefault ? 'Yes — primary fleet agent' : 'No'} />
         <Cell icon={Wrench} label="Tool Profile" value={toolProfile} />
-        <Cell
-          icon={Layers}
-          label="Session Types"
-          value={(() => {
-            const direct = agentSessions.filter((s) => s.kind === 'direct').length
-            const group = agentSessions.filter((s) => s.kind === 'group').length
-            const sub = agentSessions.filter((s) => s.key.includes(':subagent:')).length
-            return `${direct} direct · ${group} group · ${sub} sub`
-          })()}
-        />
+        <Cell icon={Layers} label="Session Types" value={buildSessionTypeLabel(agentSessions)} />
       </div>
 
       {/* ── Danger Zone ── */}

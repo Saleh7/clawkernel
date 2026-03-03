@@ -31,10 +31,10 @@ import { useGatewayStore } from '@/stores/gateway-store'
 const log = createLogger('agents:skills')
 
 type Props = {
-  agentId: string
-  client: GatewayClient | null
-  storeSkills: SkillStatusReport | null
-  config: ConfigSnapshot | null
+  readonly agentId: string
+  readonly client: GatewayClient | null
+  readonly storeSkills: SkillStatusReport | null
+  readonly config: ConfigSnapshot | null
 }
 
 import { useAgentConfigSave } from '../hooks/use-agent-config-save'
@@ -409,11 +409,11 @@ function SkillCard({
   onInstall,
   onUpdate,
 }: {
-  skill: SkillStatusEntry
-  enabled: boolean
-  onToggle: () => void
-  onInstall: (installId: string) => void
-  onUpdate: (patch: { skillKey: string; enabled?: boolean; apiKey?: string }) => void
+  readonly skill: SkillStatusEntry
+  readonly enabled: boolean
+  readonly onToggle: () => void
+  readonly onInstall: (installId: string) => void
+  readonly onUpdate: (patch: { skillKey: string; enabled?: boolean; apiKey?: string }) => void
 }) {
   const hasMissing = skill.missing.bins.length > 0 || skill.missing.env.length > 0 || skill.missing.config.length > 0
   const hasInstallOptions = skill.install.length > 0 && hasMissing
@@ -520,7 +520,15 @@ function SkillCard({
   )
 }
 
-function SkillRow({ skill, enabled, onToggle }: { skill: SkillStatusEntry; enabled: boolean; onToggle: () => void }) {
+function SkillRow({
+  skill,
+  enabled,
+  onToggle,
+}: {
+  readonly skill: SkillStatusEntry
+  readonly enabled: boolean
+  readonly onToggle: () => void
+}) {
   return (
     <button
       type="button"

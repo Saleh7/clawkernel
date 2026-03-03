@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils'
 // ---------------------------------------------------------------------------
 
 type ModelPickerProps = {
-  models: ModelCatalogEntry[]
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  exclude?: string[] // provider/model-id strings to exclude
-  disabled?: boolean
-  className?: string
+  readonly models: ModelCatalogEntry[]
+  readonly value: string
+  readonly onChange: (value: string) => void
+  readonly placeholder?: string
+  readonly exclude?: string[] // provider/model-id strings to exclude
+  readonly disabled?: boolean
+  readonly className?: string
 }
 
 export function ModelPicker({

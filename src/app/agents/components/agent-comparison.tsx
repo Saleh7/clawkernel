@@ -14,12 +14,12 @@ import { resolveModelLabel } from '../utils'
 // ---------------------------------------------------------------------------
 
 type Props = {
-  agents: GatewayAgentRow[]
-  sessions: GatewaySessionRow[]
-  config: ConfigSnapshot | null
-  identities: Record<string, AgentIdentityResult>
-  activeRuns: Record<string, { sessionKey: string; startedAt: number }>
-  onClose: () => void
+  readonly agents: GatewayAgentRow[]
+  readonly sessions: GatewaySessionRow[]
+  readonly config: ConfigSnapshot | null
+  readonly identities: Record<string, AgentIdentityResult>
+  readonly activeRuns: Record<string, { sessionKey: string; startedAt: number }>
+  readonly onClose: () => void
 }
 
 import type { ParsedConfig } from '../types'
@@ -30,6 +30,119 @@ import type { ParsedConfig } from '../types'
 
 function sessionBelongsToAgent(key: string, agentId: string): boolean {
   return key.startsWith(`agent:${agentId}:`)
+}
+
+function computeAgentStatus(hasActiveRun: boolean, activeSessions: number, totalSessions: number): string {
+  if (hasActiveRun) return 'running'
+  if (activeSessions > 0) return 'active'
+  if (totalSessions > 0) return 'idle'
+  return 'inactive'
+}
+
+type SessionStats = {
+  readonly agentSessions: GatewaySessionRow[]
+  readonly activeSessions: GatewaySessionRow[]
+  readonly totalTokens: number
+  readonly hasActiveRun: boolean
+}
+
+function computeSessionStats(
+  sessions: GatewaySessionRow[],
+  agentId: string,
+  activeRuns: Record<string, { sessionKey: string; startedAt: number }>,
+): SessionStats {
+  const now = Date.now()
+  const agentSessions = sessions.filter((s) => sessionBelongsToAgent(s.key, agentId))
+  const activeSessions = agentSessions.filter((s) => s.updatedAt && now - s.updatedAt < ACTIVE_SESSION_MS)
+  const totalTokens = agentSessions.reduce((sum, s) => sum + (s.totalTokens ?? 0), 0)
+  const hasActiveRun = Object.values(activeRuns).some((r) => sessionBelongsToAgent(r.sessionKey, agentId))
+  return { agentSessions, activeSessions, totalTokens, hasActiveRun }
+}
+
+type AgentDataResult = {
+  readonly agent: GatewayAgentRow
+  readonly identity: AgentIdentityResult | undefined
+  readonly model: string
+  readonly sessionCount: number
+  readonly activeCount: number
+  readonly totalTokens: number
+  readonly toolProfile: string
+  readonly skills: string[] | null | undefined
+  readonly status: string
+  readonly workspace: string
+}
+
+function computeAgentData(
+  agentId: string | null,
+  agents: GatewayAgentRow[],
+  sessions: GatewaySessionRow[],
+  cfg: ParsedConfig | null | undefined,
+  identities: Record<string, AgentIdentityResult>,
+  activeRuns: Record<string, { sessionKey: string; startedAt: number }>,
+): AgentDataResult | null {
+  if (!agentId) return null
+  const agent = agents.find((a) => a.id === agentId)
+  if (!agent) return null
+
+  const identity = identities[agentId]
+  const agentConfig = cfg?.agents?.list?.find((a) => a.id === agentId)
+  const defaults = cfg?.agents?.defaults
+
+  const { agentSessions, activeSessions, totalTokens, hasActiveRun } = computeSessionStats(
+    sessions,
+    agentId,
+    activeRuns,
+  )
+
+  const model = agentConfig?.model ?? defaults?.model
+  const toolProfile = agentConfig?.tools?.profile ?? defaults?.tools?.profile ?? 'full'
+  const skills = agentConfig?.skills
+  const workspace = agentConfig?.workspace ?? defaults?.workspace
+  const status = computeAgentStatus(hasActiveRun, activeSessions.length, agentSessions.length)
+
+  return {
+    agent,
+    identity,
+    model: resolveModelLabel(model),
+    sessionCount: agentSessions.length,
+    activeCount: activeSessions.length,
+    totalTokens,
+    toolProfile,
+    skills,
+    status,
+    workspace: workspace ?? '—',
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  Helpers
+// ---------------------------------------------------------------------------
+
+function agentIdentityLabel(d: AgentDataResult | null | undefined): string | undefined {
+  if (!d) return undefined
+  return `${d.identity?.emoji ?? ''} ${d.identity?.name ?? d.agent.id}`.trim()
+}
+
+function formatSkillPolicy(d: AgentDataResult | null | undefined): string | undefined {
+  if (!d) return undefined
+  return d.skills === null || d.skills === undefined ? 'all enabled' : `${d.skills.length} filtered`
+}
+
+function agentStatusBadge(status: string) {
+  const colors: Record<string, string> = {
+    running: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+    active: 'border-green-500/30 bg-green-500/10 text-green-400',
+    idle: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+    inactive: 'border-border bg-muted/30 text-muted-foreground',
+  }
+  return (
+    <Badge variant="outline" className={cn('rounded-full text-[10px]', colors[status] ?? '')}>
+      {status === 'running' && (
+        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+      )}
+      {status}
+    </Badge>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -43,11 +156,11 @@ function AgentSelector({
   onSelect,
   label,
 }: {
-  agents: GatewayAgentRow[]
-  identities: Record<string, AgentIdentityResult>
-  selected: string | null
-  onSelect: (id: string) => void
-  label: string
+  readonly agents: GatewayAgentRow[]
+  readonly identities: Record<string, AgentIdentityResult>
+  readonly selected: string | null
+  readonly onSelect: (id: string) => void
+  readonly label: string
 }) {
   const [open, setOpen] = useState(false)
   const identity = selected ? identities[selected] : null
@@ -112,11 +225,11 @@ function ComparisonRow({
   renderA,
   renderB,
 }: {
-  label: string
-  valueA?: string
-  valueB?: string
-  renderA?: React.ReactNode
-  renderB?: React.ReactNode
+  readonly label: string
+  readonly valueA?: string
+  readonly valueB?: string
+  readonly renderA?: React.ReactNode
+  readonly renderB?: React.ReactNode
 }) {
   const isDifferent = valueA !== valueB
 
@@ -136,6 +249,25 @@ function ComparisonRow({
 }
 
 // ---------------------------------------------------------------------------
+//  AgentColumnHeader
+// ---------------------------------------------------------------------------
+
+function AgentColumnHeader({ d }: { readonly d: AgentDataResult | null }) {
+  if (!d) return <span className="text-sm text-muted-foreground/50">Not selected</span>
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-background/60 text-lg">
+        {d.identity?.emoji || d.agent.id.slice(0, 1)}
+      </div>
+      <div>
+        <p className="text-sm font-semibold">{d.identity?.name || d.agent.id}</p>
+        <p className="font-mono text-[10px] text-muted-foreground">{d.agent.id}</p>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 //  AgentComparison — main export
 // ---------------------------------------------------------------------------
 
@@ -145,72 +277,33 @@ export function AgentComparison({ agents, sessions, config, identities, activeRu
 
   const cfg = config?.config as ParsedConfig | null | undefined
 
-  const getAgentData = useMemo(() => {
-    const now = Date.now()
-    return (agentId: string | null) => {
-      if (!agentId) return null
-      const agent = agents.find((a) => a.id === agentId)
-      if (!agent) return null
+  const dataA = useMemo(
+    () => computeAgentData(agentAId, agents, sessions, cfg, identities, activeRuns),
+    [agentAId, agents, sessions, cfg, identities, activeRuns],
+  )
+  const dataB = useMemo(
+    () => computeAgentData(agentBId, agents, sessions, cfg, identities, activeRuns),
+    [agentBId, agents, sessions, cfg, identities, activeRuns],
+  )
 
-      const identity = identities[agentId]
-      const agentConfig = cfg?.agents?.list?.find((a) => a.id === agentId)
-      const defaults = cfg?.agents?.defaults
-
-      const agentSessions = sessions.filter((s) => sessionBelongsToAgent(s.key, agentId))
-      const activeSessions = agentSessions.filter((s) => s.updatedAt && now - s.updatedAt < ACTIVE_SESSION_MS)
-      const totalTokens = agentSessions.reduce((sum, s) => sum + (s.totalTokens ?? 0), 0)
-
-      const model = agentConfig?.model ?? defaults?.model
-      const toolProfile = agentConfig?.tools?.profile ?? defaults?.tools?.profile ?? 'full'
-      const skills = agentConfig?.skills
-      const workspace = agentConfig?.workspace ?? defaults?.workspace
-
-      const hasActiveRun = Object.values(activeRuns).some((r) => sessionBelongsToAgent(r.sessionKey, agentId))
-      const status = hasActiveRun
-        ? 'running'
-        : activeSessions.length > 0
-          ? 'active'
-          : agentSessions.length > 0
-            ? 'idle'
-            : 'inactive'
-
-      return {
-        agent,
-        identity,
-        model: resolveModelLabel(model),
-        sessionCount: agentSessions.length,
-        activeCount: activeSessions.length,
-        totalTokens,
-        toolProfile,
-        skills,
-        status,
-        workspace: workspace ?? '—',
-      }
-    }
-  }, [agents, sessions, cfg, identities, activeRuns])
-
-  const dataA = getAgentData(agentAId)
-  const dataB = getAgentData(agentBId)
-
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      running: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-      active: 'border-green-500/30 bg-green-500/10 text-green-400',
-      idle: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
-      inactive: 'border-border bg-muted/30 text-muted-foreground',
-    }
-    return (
-      <Badge variant="outline" className={cn('rounded-full text-[10px]', colors[status] || '')}>
-        {status === 'running' && (
-          <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        )}
-        {status}
-      </Badge>
-    )
-  }
-
-  const skillLabel = (skills: string[] | undefined | null) =>
-    skills === null || skills === undefined ? 'all enabled' : `${skills.length} filtered`
+  const renderAModel = dataA ? <span className="font-mono text-xs">{dataA.model}</span> : undefined
+  const renderBModel = dataB ? <span className="font-mono text-xs">{dataB.model}</span> : undefined
+  const renderASessions = dataA ? (
+    <span>
+      {dataA.sessionCount} total · <span className="text-emerald-400">{dataA.activeCount} active</span>
+    </span>
+  ) : undefined
+  const renderBSessions = dataB ? (
+    <span>
+      {dataB.sessionCount} total · <span className="text-emerald-400">{dataB.activeCount} active</span>
+    </span>
+  ) : undefined
+  const renderATokens = dataA ? <span className="font-mono">{formatTokens(dataA.totalTokens)}</span> : undefined
+  const renderBTokens = dataB ? <span className="font-mono">{formatTokens(dataB.totalTokens)}</span> : undefined
+  const renderAStatus = dataA ? agentStatusBadge(dataA.status) : undefined
+  const renderBStatus = dataB ? agentStatusBadge(dataB.status) : undefined
+  const renderAWorkspace = dataA ? <span className="font-mono text-xs">{dataA.workspace}</span> : undefined
+  const renderBWorkspace = dataB ? <span className="font-mono text-xs">{dataB.workspace}</span> : undefined
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 sm:p-6 space-y-4">
@@ -232,86 +325,51 @@ export function AgentComparison({ agents, sessions, config, identities, activeRu
       {/* Column headers */}
       <div className="grid grid-cols-[140px_1fr_1fr] gap-4 px-4 max-sm:hidden">
         <div />
-        {[dataA, dataB].map((d, i) => (
-          <div key={i} className="flex items-center gap-2.5">
-            {d ? (
-              <>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-background/60 text-lg">
-                  {d.identity?.emoji || d.agent.id.slice(0, 1)}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{d.identity?.name || d.agent.id}</p>
-                  <p className="font-mono text-[10px] text-muted-foreground">{d.agent.id}</p>
-                </div>
-              </>
-            ) : (
-              <span className="text-sm text-muted-foreground/50">Not selected</span>
-            )}
-          </div>
-        ))}
+        <AgentColumnHeader d={dataA} />
+        <AgentColumnHeader d={dataB} />
       </div>
 
       <Separator className="opacity-30" />
 
       {/* Comparison rows */}
       <div className="space-y-0.5">
-        <ComparisonRow
-          label="Identity"
-          valueA={dataA ? `${dataA.identity?.emoji || ''} ${dataA.identity?.name || dataA.agent.id}`.trim() : undefined}
-          valueB={dataB ? `${dataB.identity?.emoji || ''} ${dataB.identity?.name || dataB.agent.id}`.trim() : undefined}
-        />
+        <ComparisonRow label="Identity" valueA={agentIdentityLabel(dataA)} valueB={agentIdentityLabel(dataB)} />
         <ComparisonRow
           label="Model"
           valueA={dataA?.model}
           valueB={dataB?.model}
-          renderA={dataA ? <span className="font-mono text-xs">{dataA.model}</span> : undefined}
-          renderB={dataB ? <span className="font-mono text-xs">{dataB.model}</span> : undefined}
+          renderA={renderAModel}
+          renderB={renderBModel}
         />
         <ComparisonRow
           label="Sessions"
           valueA={dataA ? `${dataA.sessionCount}t/${dataA.activeCount}a` : undefined}
           valueB={dataB ? `${dataB.sessionCount}t/${dataB.activeCount}a` : undefined}
-          renderA={
-            dataA ? (
-              <span>
-                {dataA.sessionCount} total · <span className="text-emerald-400">{dataA.activeCount} active</span>
-              </span>
-            ) : undefined
-          }
-          renderB={
-            dataB ? (
-              <span>
-                {dataB.sessionCount} total · <span className="text-emerald-400">{dataB.activeCount} active</span>
-              </span>
-            ) : undefined
-          }
+          renderA={renderASessions}
+          renderB={renderBSessions}
         />
         <ComparisonRow
           label="Token Usage"
           valueA={dataA ? String(dataA.totalTokens) : undefined}
           valueB={dataB ? String(dataB.totalTokens) : undefined}
-          renderA={dataA ? <span className="font-mono">{formatTokens(dataA.totalTokens)}</span> : undefined}
-          renderB={dataB ? <span className="font-mono">{formatTokens(dataB.totalTokens)}</span> : undefined}
+          renderA={renderATokens}
+          renderB={renderBTokens}
         />
         <ComparisonRow label="Tool Profile" valueA={dataA?.toolProfile} valueB={dataB?.toolProfile} />
-        <ComparisonRow
-          label="Skill Policy"
-          valueA={dataA ? skillLabel(dataA.skills) : undefined}
-          valueB={dataB ? skillLabel(dataB.skills) : undefined}
-        />
+        <ComparisonRow label="Skill Policy" valueA={formatSkillPolicy(dataA)} valueB={formatSkillPolicy(dataB)} />
         <ComparisonRow
           label="Status"
           valueA={dataA?.status}
           valueB={dataB?.status}
-          renderA={dataA ? statusBadge(dataA.status) : undefined}
-          renderB={dataB ? statusBadge(dataB.status) : undefined}
+          renderA={renderAStatus}
+          renderB={renderBStatus}
         />
         <ComparisonRow
           label="Workspace"
           valueA={dataA?.workspace}
           valueB={dataB?.workspace}
-          renderA={dataA ? <span className="font-mono text-xs">{dataA.workspace}</span> : undefined}
-          renderB={dataB ? <span className="font-mono text-xs">{dataB.workspace}</span> : undefined}
+          renderA={renderAWorkspace}
+          renderB={renderBWorkspace}
         />
       </div>
     </div>

@@ -13,9 +13,9 @@ const KIND_STYLE: Record<string, string> = {
 }
 
 type Props = {
-  sessions: GatewaySessionRow[]
-  connected: boolean
-  is24h: boolean
+  readonly sessions: GatewaySessionRow[]
+  readonly connected: boolean
+  readonly is24h: boolean
 }
 
 export function SessionsCard({ sessions, connected, is24h }: Props) {
@@ -44,7 +44,7 @@ export function SessionsCard({ sessions, connected, is24h }: Props) {
   )
 }
 
-function SessionRow({ session: s, is24h }: { session: GatewaySessionRow; is24h: boolean }) {
+function SessionRow({ session: s, is24h }: { readonly session: GatewaySessionRow; readonly is24h: boolean }) {
   return (
     <div className="flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-accent/50 sm:px-3">
       <div className="min-w-0 flex-1">

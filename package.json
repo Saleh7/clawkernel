@@ -1,6 +1,6 @@
 {
   "name": "clawkernel",
-  "version": "2026.2.24",
+  "version": "2026.2.25",
   "description": "ClawKernel — Mission Control & Automation Dashboard for OpenClaw. Manage AI agents, schedule cron jobs, monitor live sessions, and stream real-time chat from a single interface.",
   "keywords": [
     "clawkernel",

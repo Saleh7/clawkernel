@@ -240,8 +240,8 @@ async function applyShikiHighlighting(container: HTMLElement, isDark: boolean) {
 /* ── Component ─────────────────────────────────── */
 
 type MarkdownProps = {
-  children: string
-  className?: string
+  readonly children: string
+  readonly className?: string
 }
 
 function MarkdownComponent({ children, className }: MarkdownProps) {
@@ -280,7 +280,7 @@ function MarkdownComponent({ children, className }: MarkdownProps) {
     const highlight = (resetHighlighted = false) => {
       if (resetHighlighted) {
         for (const block of el.querySelectorAll<HTMLElement>('[data-highlighted="1"]')) {
-          block.removeAttribute('data-highlighted')
+          delete block.dataset.highlighted
         }
       }
       applyShikiHighlighting(el, document.documentElement.classList.contains('dark'))

@@ -18,9 +18,9 @@ const AUTO_MODE_DESCS: Record<string, string> = {
 }
 
 type Props = {
-  status: TtsStatus
-  saving: boolean
-  onToggle: (enabled: boolean) => void
+  readonly status: TtsStatus
+  readonly saving: boolean
+  readonly onToggle: (enabled: boolean) => void
 }
 
 export function AudioStatusCard({ status, saving, onToggle }: Props) {

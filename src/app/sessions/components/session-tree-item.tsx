@@ -8,9 +8,9 @@ export function SessionTreeItem({
   renderCard,
   defaultExpanded,
 }: {
-  node: SessionTreeNode
-  renderCard: (s: GatewaySessionRow) => React.ReactNode
-  defaultExpanded?: boolean
+  readonly node: SessionTreeNode
+  readonly renderCard: (s: GatewaySessionRow) => React.ReactNode
+  readonly defaultExpanded?: boolean
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? true)
 

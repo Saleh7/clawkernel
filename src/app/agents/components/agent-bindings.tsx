@@ -35,10 +35,10 @@ type AgentBinding = {
 }
 
 type Props = {
-  agentId: string
-  config: ConfigSnapshot | null
-  isDefault: boolean
-  client: GatewayClient | null
+  readonly agentId: string
+  readonly config: ConfigSnapshot | null
+  readonly isDefault: boolean
+  readonly client: GatewayClient | null
 }
 
 type BindingDraft = {
@@ -123,10 +123,10 @@ function BindingCard({
   onEdit,
   onDelete,
 }: {
-  binding: AgentBinding
-  index: number
-  onEdit: () => void
-  onDelete: () => void
+  readonly binding: AgentBinding
+  readonly index: number
+  readonly onEdit: () => void
+  readonly onDelete: () => void
 }) {
   const m = binding.match
   return (
@@ -216,13 +216,13 @@ function BindingFormDialog({
   onSave,
   saving,
 }: {
-  open: boolean
-  onOpenChange: (o: boolean) => void
-  mode: 'create' | 'edit'
-  draft: BindingDraft
-  setDraft: (d: BindingDraft) => void
-  onSave: () => void
-  saving: boolean
+  readonly open: boolean
+  readonly onOpenChange: (o: boolean) => void
+  readonly mode: 'create' | 'edit'
+  readonly draft: BindingDraft
+  readonly setDraft: (d: BindingDraft) => void
+  readonly onSave: () => void
+  readonly saving: boolean
 }) {
   const update = (key: keyof BindingDraft, value: string) => setDraft({ ...draft, [key]: value })
 
@@ -355,7 +355,7 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
   const [saving, setSaving] = useState(false)
 
   const allBindings = useMemo(() => {
-    const cfg = config?.config as Record<string, unknown> | null | undefined
+    const cfg = config?.config
     return (cfg?.bindings ?? []) as AgentBinding[]
   }, [config])
 

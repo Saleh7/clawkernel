@@ -14,10 +14,10 @@ import { AgentTabEmptyState } from './agent-tab-empty-state'
 import type { AgentBinding, ParsedConfig } from '../types'
 
 type Props = {
-  agentId: string
-  channels: ChannelsStatusSnapshot | null
-  config: ConfigSnapshot | null
-  isDefault: boolean
+  readonly agentId: string
+  readonly channels: ChannelsStatusSnapshot | null
+  readonly config: ConfigSnapshot | null
+  readonly isDefault: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -46,6 +46,30 @@ function formatBinding(b: AgentBinding): string {
   return parts.length > 0 ? parts.join(' · ') : 'all traffic'
 }
 
+function channelBorderClass(allConnected: boolean, partial: boolean): string {
+  if (allConnected) return 'border-green-500/20 bg-card/80 backdrop-blur-sm'
+  if (partial) return 'border-yellow-500/20 bg-card/80 backdrop-blur-sm'
+  return 'border-border/50 bg-card/60'
+}
+
+function iconBoxClass(allConnected: boolean, partial: boolean): string {
+  if (allConnected) return 'bg-green-500/10'
+  if (partial) return 'bg-yellow-500/10'
+  return 'bg-muted/50'
+}
+
+function barClass(allConnected: boolean, partial: boolean): string {
+  if (allConnected) return 'bg-green-500/60'
+  if (partial) return 'bg-yellow-500/60'
+  return 'bg-muted-foreground/10'
+}
+
+function dotClass(allConnected: boolean, partial: boolean): string {
+  if (allConnected) return 'bg-green-500 animate-pulse'
+  if (partial) return 'bg-yellow-500'
+  return 'bg-muted-foreground/20'
+}
+
 // ---------------------------------------------------------------------------
 //  ChannelCard
 // ---------------------------------------------------------------------------
@@ -57,11 +81,11 @@ function ChannelCard({
   bindings,
   isDefault,
 }: {
-  channelId: string
-  label: string
-  accounts: ChannelAccountSnapshot[]
-  bindings: AgentBinding[]
-  isDefault: boolean
+  readonly channelId: string
+  readonly label: string
+  readonly accounts: ChannelAccountSnapshot[]
+  readonly bindings: AgentBinding[]
+  readonly isDefault: boolean
 }) {
   const s = summarize(accounts)
   const allConnected = s.connected === s.total && s.total > 0
@@ -75,20 +99,13 @@ function ChannelCard({
     <div
       className={cn(
         'rounded-2xl border p-5 transition-all duration-200 hover:scale-[1.01]',
-        allConnected
-          ? 'border-green-500/20 bg-card/80 backdrop-blur-sm'
-          : partial
-            ? 'border-yellow-500/20 bg-card/80 backdrop-blur-sm'
-            : 'border-border/50 bg-card/60',
+        channelBorderClass(allConnected, partial),
       )}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div
-          className={cn(
-            'flex h-12 w-12 items-center justify-center rounded-xl',
-            allConnected ? 'bg-green-500/10' : partial ? 'bg-yellow-500/10' : 'bg-muted/50',
-          )}
+          className={cn('flex h-12 w-12 items-center justify-center rounded-xl', iconBoxClass(allConnected, partial))}
         >
           {allConnected ? (
             <Wifi className="h-6 w-6 text-green-500" />
@@ -119,12 +136,7 @@ function ChannelCard({
               unbound
             </Badge>
           )}
-          <span
-            className={cn(
-              'h-3 w-3 rounded-full',
-              allConnected ? 'bg-green-500 animate-pulse' : partial ? 'bg-yellow-500' : 'bg-muted-foreground/20',
-            )}
-          />
+          <span className={cn('h-3 w-3 rounded-full', dotClass(allConnected, partial))} />
         </div>
       </div>
 
@@ -135,10 +147,7 @@ function ChannelCard({
       {/* Connection bar */}
       <div className="mt-3 h-1.5 rounded-full bg-muted/30 overflow-hidden">
         <div
-          className={cn(
-            'h-full rounded-full transition-all duration-500',
-            allConnected ? 'bg-green-500/60' : partial ? 'bg-yellow-500/60' : 'bg-muted-foreground/10',
-          )}
+          className={cn('h-full rounded-full transition-all duration-500', barClass(allConnected, partial))}
           style={{ width: `${Math.max(ratio, 2)}%` }}
         />
       </div>

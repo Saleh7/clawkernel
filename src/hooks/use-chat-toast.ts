@@ -59,7 +59,7 @@ export function useChatToast() {
         action: {
           label: 'Open',
           onClick: () => {
-            void navigate('/chat')
+            navigate('/chat')
           },
         },
       })

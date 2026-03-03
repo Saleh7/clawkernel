@@ -14,21 +14,21 @@ type Tab = 'per-agent' | 'heartbeat' | 'routing'
 type AgentListEntry = { id: string; name?: string; model?: AgentModelConfig }
 
 type Props = {
-  agentList: AgentListEntry[]
-  heartbeatModel: string | null
-  defaultModel: AgentModelConfig
-  imageModel: AgentModelConfig
-  models: ModelCatalogEntry[]
-  saving: boolean
-  saveError: string | null
-  onSetAgentModel: (agentId: string, model: string | null) => Promise<void>
-  onSetHeartbeatModel: (model: string | null) => Promise<void>
-  onSetDefaultModel: (model: string) => Promise<void>
-  onAddDefaultFallback: (fallback: string) => Promise<void>
-  onRemoveDefaultFallback: (fallback: string) => Promise<void>
-  onSetImageModel: (model: string) => Promise<void>
-  onAddImageFallback: (fallback: string) => Promise<void>
-  onRemoveImageFallback: (fallback: string) => Promise<void>
+  readonly agentList: AgentListEntry[]
+  readonly heartbeatModel: string | null
+  readonly defaultModel: AgentModelConfig
+  readonly imageModel: AgentModelConfig
+  readonly models: ModelCatalogEntry[]
+  readonly saving: boolean
+  readonly saveError: string | null
+  readonly onSetAgentModel: (agentId: string, model: string | null) => Promise<void>
+  readonly onSetHeartbeatModel: (model: string | null) => Promise<void>
+  readonly onSetDefaultModel: (model: string) => Promise<void>
+  readonly onAddDefaultFallback: (fallback: string) => Promise<void>
+  readonly onRemoveDefaultFallback: (fallback: string) => Promise<void>
+  readonly onSetImageModel: (model: string) => Promise<void>
+  readonly onAddImageFallback: (fallback: string) => Promise<void>
+  readonly onRemoveImageFallback: (fallback: string) => Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -36,10 +36,10 @@ type Props = {
 // ---------------------------------------------------------------------------
 
 type PerAgentTabProps = {
-  agentList: AgentListEntry[]
-  models: ModelCatalogEntry[]
-  saving: boolean
-  onSetAgentModel: (agentId: string, model: string | null) => Promise<void>
+  readonly agentList: AgentListEntry[]
+  readonly models: ModelCatalogEntry[]
+  readonly saving: boolean
+  readonly onSetAgentModel: (agentId: string, model: string | null) => Promise<void>
 }
 
 function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTabProps) {
@@ -236,10 +236,10 @@ function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTab
 // ---------------------------------------------------------------------------
 
 type HeartbeatTabProps = {
-  heartbeatModel: string | null
-  models: ModelCatalogEntry[]
-  saving: boolean
-  onSetHeartbeatModel: (model: string | null) => Promise<void>
+  readonly heartbeatModel: string | null
+  readonly models: ModelCatalogEntry[]
+  readonly saving: boolean
+  readonly onSetHeartbeatModel: (model: string | null) => Promise<void>
 }
 
 function HeartbeatTab({ heartbeatModel, models, saving, onSetHeartbeatModel }: HeartbeatTabProps) {

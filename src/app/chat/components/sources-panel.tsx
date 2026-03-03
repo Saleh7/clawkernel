@@ -13,7 +13,7 @@ function safeHref(url: string): string | undefined {
   }
 }
 
-export function SourcesButton({ sources, onClick }: { sources: Source[]; onClick: () => void }) {
+export function SourcesButton({ sources, onClick }: { readonly sources: Source[]; readonly onClick: () => void }) {
   if (sources.length === 0) return null
   return (
     <button
@@ -39,7 +39,15 @@ export function SourcesButton({ sources, onClick }: { sources: Source[]; onClick
   )
 }
 
-export function SourcesPanel({ sources, open, onClose }: { sources: Source[]; open: boolean; onClose: () => void }) {
+export function SourcesPanel({
+  sources,
+  open,
+  onClose,
+}: {
+  readonly sources: Source[]
+  readonly open: boolean
+  readonly onClose: () => void
+}) {
   if (!open) return null
   return (
     <>

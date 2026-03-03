@@ -11,9 +11,9 @@ const log = createLogger('qr-login')
 const WAIT_TIMEOUT_MS = 120_000
 
 type Props = {
-  label: string
-  client: GatewayClient | null
-  onRefresh: () => void
+  readonly label: string
+  readonly client: GatewayClient | null
+  readonly onRefresh: () => void
 }
 
 type QrState = 'idle' | 'loading' | 'scanning' | 'success' | 'error'

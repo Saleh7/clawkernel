@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import type { ModelCatalogEntry } from '@/lib/gateway/types'
 
 type Props = {
-  models: ModelCatalogEntry[]
+  readonly models: ModelCatalogEntry[]
 }
 
 function formatContextWindow(n: number | undefined): string {
@@ -25,7 +25,7 @@ function providerBadgeColor(provider: string): string {
   return 'text-muted-foreground border-border'
 }
 
-function ModelRow({ model }: { model: ModelCatalogEntry }) {
+function ModelRow({ model }: { readonly model: ModelCatalogEntry }) {
   const hasImage = model.input?.includes('image') ?? false
   return (
     <tr className="hover:bg-muted/10 transition-colors">

@@ -21,10 +21,10 @@ const PATH_PRESETS = [
 ]
 
 type Props = {
-  sending: boolean
-  lastResult: SendResult | null
-  history: HistoryEntry[]
-  onSend: (params: { method: RequestMethod; path: string; query: string; body: string }) => Promise<SendResult>
+  readonly sending: boolean
+  readonly lastResult: SendResult | null
+  readonly history: HistoryEntry[]
+  readonly onSend: (params: { method: RequestMethod; path: string; query: string; body: string }) => Promise<SendResult>
 }
 
 function formatBody(body: unknown): string {

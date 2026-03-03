@@ -32,9 +32,9 @@ export function ModelSelector({
   saving,
   onSave,
 }: {
-  cfg: WebSearchConfig
-  saving: boolean
-  onSave: (provider: string, model: string) => void
+  readonly cfg: WebSearchConfig
+  readonly saving: boolean
+  readonly onSave: (provider: string, model: string) => void
 }) {
   const provider = cfg.provider ?? 'brave'
   const model = currentModel(provider, cfg)

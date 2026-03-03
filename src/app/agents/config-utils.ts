@@ -103,7 +103,7 @@ export async function saveRawConfigWithRetry(
   patcher: (current: Record<string, unknown>) => Record<string, unknown>,
   method: 'config.set' | 'config.apply' = 'config.set',
 ): Promise<ConfigSnapshot> {
-  const current = (config.config ?? {}) as Record<string, unknown>
+  const current = config.config ?? {}
   const patched = patcher(current)
 
   try {
@@ -113,7 +113,7 @@ export async function saveRawConfigWithRetry(
     if (isHashConflict(msg)) {
       log.warn('Config hash conflict, retrying with fresh config')
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})
-      const freshCurrent = (freshConfig.config ?? {}) as Record<string, unknown>
+      const freshCurrent = freshConfig.config ?? {}
       const freshPatched = patcher(freshCurrent)
       await client.request(method, { raw: JSON.stringify(freshPatched, null, 2), baseHash: freshConfig.hash })
       return await client.request<ConfigSnapshot>('config.get', {})
