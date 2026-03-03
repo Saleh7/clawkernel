@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
-  "project": ["src/**/*.{ts,tsx}"],
-  "ignore": ["src/components/ui/**"]
+  "project": ["src/**/*.{ts,tsx}", "server/**/*.ts"],
+  "ignore": ["src/components/ui/**"],
+  "ignoreDependencies": ["drizzle-kit"]
 }

@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * ClawKernel CLI — static file server for the pre-built UI.
- * Config saved to ~/.clawkernel.json, injected into index.html at serve time.
- * No dependencies — uses Node.js built-ins only.
+ * ClawKernel CLI — setup wizard + server launcher.
+ * Config saved to ~/.clawkernel.json. Spawns bin/server.mjs (Hono) for
+ * static file serving + API routes. No dependencies — uses Node.js built-ins only.
  */
 
-import http     from 'node:http'
 import fs       from 'node:fs'
 import os       from 'node:os'
 import path     from 'node:path'
@@ -21,8 +20,6 @@ import { spawn }         from 'node:child_process'
 
 const __dirname   = path.dirname(fileURLToPath(import.meta.url))
 const DIST        = path.resolve(__dirname, '..', 'dist')
-const INDEX_HTML  = path.join(DIST, 'index.html')
-const ASSETS      = path.join(DIST, 'assets')
 const CONFIG_FILE = path.join(os.homedir(), '.clawkernel.json')
 
 // ---------------------------------------------------------------------------
@@ -89,7 +86,7 @@ for (let i = 0; i < args.length; i++) {
 //  Preflight
 // ---------------------------------------------------------------------------
 
-if (!fs.existsSync(INDEX_HTML)) {
+if (!fs.existsSync(path.join(DIST, 'index.html'))) {
   console.error(`
   ✖  No build found at dist/index.html.
 
@@ -206,109 +203,56 @@ const config = (reset ? null : loadConfig()) ?? await runSetup()
 const port   = portArg ?? config.dashboardPort ?? 4173
 
 // ---------------------------------------------------------------------------
-//  MIME types
+//  Spawn server.mjs (Hono — handles static files + /api/* routes)
 // ---------------------------------------------------------------------------
 
-const MIME_TYPES = new Map([
-  ['.html',  'text/html; charset=utf-8'],
-  ['.js',    'text/javascript; charset=utf-8'],
-  ['.mjs',   'text/javascript; charset=utf-8'],
-  ['.css',   'text/css; charset=utf-8'],
-  ['.json',  'application/json; charset=utf-8'],
-  ['.svg',   'image/svg+xml; charset=utf-8'],
-  ['.png',   'image/png'],  ['.jpg',   'image/jpeg'],
-  ['.jpeg',  'image/jpeg'], ['.gif',   'image/gif'],
-  ['.webp',  'image/webp'], ['.ico',   'image/x-icon'],
-  ['.woff',  'font/woff'],  ['.woff2', 'font/woff2'],
-  ['.ttf',   'font/ttf'],   ['.wasm',  'application/wasm'],
-  ['.map',   'application/json'],
-])
-const getMime = (f) => MIME_TYPES.get(path.extname(f).toLowerCase()) ?? 'application/octet-stream'
+const PKG_VERSION = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'),
+).version
 
-// ---------------------------------------------------------------------------
-//  Config injection into index.html (built once, cached for server lifetime)
-// ---------------------------------------------------------------------------
+const SERVER_MJS = path.join(__dirname, 'server.mjs')
 
-const indexHtml = Buffer.from(
-  fs.readFileSync(INDEX_HTML, 'utf8').replace(
-    '</head>',
-    `  <script>window.__CK_CONFIG__=${JSON.stringify({
-      gatewayUrl:   config.gatewayUrl,
-      gatewayToken: config.gatewayToken,
-      openclawHome: config.openclawHome,
-    })}</script>\n</head>`,
-  ),
-)
+if (!fs.existsSync(SERVER_MJS)) {
+  console.error(`
+  ✖  Server not found at ${SERVER_MJS}
 
-// ---------------------------------------------------------------------------
-//  Request handler
-// ---------------------------------------------------------------------------
+     If you installed via npm, this is a bug — please report it at:
+     https://github.com/Saleh7/clawkernel/issues
 
-const server = http.createServer((req, res) => {
-  let urlPath
-  try { urlPath = decodeURIComponent(new URL(req.url, 'http://x').pathname) }
-  catch { res.writeHead(400); res.end(); return }
+     If you cloned the repo, run:  npm run build
+`)
+  process.exit(1)
+}
 
-  const resolved = path.resolve(DIST, '.' + path.normalize(urlPath))
-  if (resolved !== DIST && !resolved.startsWith(DIST + path.sep)) {
-    res.writeHead(403); res.end(); return
-  }
-
-  const isFile = fs.existsSync(resolved) && fs.statSync(resolved).isFile()
-  const target = isFile ? resolved : INDEX_HTML
-
-  if (target === INDEX_HTML) {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.setHeader('Content-Length', indexHtml.length)
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-    res.end(indexHtml)
-    return
-  }
-
-  const isAsset = target.startsWith(ASSETS + path.sep)
-  res.setHeader('Cache-Control', isAsset ? 'public, max-age=31536000, immutable' : 'no-cache, no-store, must-revalidate')
-  res.setHeader('X-Content-Type-Options', 'nosniff')
-  res.writeHead(200, { 'Content-Type': getMime(target) })
-  fs.createReadStream(target).on('error', () => res.end()).pipe(res)
+const serverProc = spawn(process.execPath, [SERVER_MJS], {
+  // CWD = package root so that server.mjs can resolve dist/ correctly
+  cwd: path.resolve(__dirname, '..'),
+  env: {
+    ...process.env,
+    CK_GATEWAY_URL:   config.gatewayUrl,
+    CK_GATEWAY_TOKEN: config.gatewayToken ?? '',
+    CK_OPENCLAW_HOME: config.openclawHome ?? '~/.openclaw',
+    CK_PORT:          String(port),
+    CK_HOST:          host,
+    CK_OPEN_BROWSER:  openBrowser ? '1' : '0',
+    CK_VERSION:       PKG_VERSION,
+  },
+  stdio: 'inherit',
 })
 
-// ---------------------------------------------------------------------------
-//  Startup
-// ---------------------------------------------------------------------------
-
-server.on('error', (err) => {
-  console.error(err.code === 'EADDRINUSE'
-    ? `\n  ✖  Port ${port} is already in use. Try: clawkernel --port <number>\n`
-    : `\n  ✖  ${err.message}\n`)
+serverProc.on('error', (err) => {
+  console.error(`\n  ✖  Failed to start server: ${err.message}\n`)
   process.exit(1)
 })
 
-const displayHost = host === '0.0.0.0' ? 'localhost' : host
-const url         = `http://${displayHost}:${port}`
-
-server.listen(port, host, () => {
-  console.log(`  ${c.m}🦞 ClawKernel${c.r}\n`)
-  console.log(`  ${c.g}➜${c.r}  Local:    ${c.b}${url}${c.r}`)
-  if (host === '0.0.0.0') console.log(`  ${c.g}➜${c.r}  Network:  http://<your-ip>:${port}`)
-  console.log(`  ${c.g}➜${c.r}  Gateway:  ${config.gatewayUrl}`)
-  console.log(`  ${c.g}➜${c.r}  Config:   ${c.dim}${CONFIG_FILE}${c.r}`)
-  console.log(`\n  Press ${c.dim}Ctrl+C${c.r} to stop.\n`)
-
-  if (openBrowser) {
-    if (process.platform === 'win32') {
-      // `start` is a cmd.exe built-in — must be invoked via cmd /c
-      spawn('cmd', ['/c', 'start', '', url], { detached: true, stdio: 'ignore' }).unref()
-    } else {
-      spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { detached: true, stdio: 'ignore' }).unref()
-    }
-  }
+serverProc.on('exit', (code) => {
+  process.exit(code ?? 0)
 })
 
 // ---------------------------------------------------------------------------
-//  Graceful shutdown
+//  Graceful shutdown — forward signals to child process
 // ---------------------------------------------------------------------------
 
-const shutdown = () => { process.stdout.write('\n'); server.close(() => process.exit(0)) }
+const shutdown = () => { serverProc.kill('SIGTERM') }
 process.on('SIGINT',  shutdown)
 process.on('SIGTERM', shutdown)

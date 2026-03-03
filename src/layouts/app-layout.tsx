@@ -4,9 +4,11 @@ import { Toaster } from 'sonner'
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { PageSkeleton } from '@/components/page-skeleton'
+import { RestartBar } from '@/components/restart-bar'
 import { StatusBar } from '@/components/status-bar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { UpdateBanner } from '@/components/update-banner'
 import { useChatToast } from '@/hooks/use-chat-toast'
 import { useGateway } from '@/hooks/use-gateway'
 
@@ -19,6 +21,8 @@ export default function AppLayout() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
+          <UpdateBanner />
+          <RestartBar />
           <StatusBar />
           <ErrorBoundary>
             <Suspense fallback={<PageSkeleton />}>

@@ -9,7 +9,7 @@
 
 #### Web Search `/search`
 - **Web Search page** — new route `/search`; nav item (Search icon) in sidebar; wrapped with `PageErrorBoundary`
-- **Provider Status Bar** — 4 tiles from `config.get`: Active Provider (accent only when *that* provider's key is configured), Model, Cache TTL, Keys Configured (n/5 from config-stored keys only; full env-var detection in Phase 7)
+- **Provider Status Bar** — 4 tiles from `config.get`: Active Provider (accent only when *that* provider's key is configured), Model, Cache TTL, Keys Configured (n/5 from config-stored keys only; full env-var detection)
 - **Provider Cards** — 5 cards for all supported providers: `brave · perplexity · grok · gemini · kimi`; configured status from `config.get`; active badge; env var name shown; Perplexity card notes OpenRouter `baseUrl` override
 - **Model Selector** — shown when active provider has a model field; Perplexity: 3 preset buttons (sonar / sonar-pro / sonar-reasoning-pro); Grok / Gemini / Kimi: free-form text input with documented default as placeholder; saves via `config.patch` merge; re-syncs when config refreshes externally
 - **Search Playground** — agent dropdown (from gateway store) + session dropdown (filtered by agent); query input + result count (1 / 3 / 5 / 10); CLI equivalent preview with copy button; runs search via `chat.send` (not `chat.inject` — which does not trigger agent processing); streams response via Gateway `chat` broadcast events; result panel shows status badge · provider · agent · duration and renders response as markdown (same renderer as `/chat`)
@@ -30,7 +30,7 @@
 - **Audio page** — new route `/audio` with `PageErrorBoundary`; nav item (Volume2) in sidebar
 - **TTS Status card** — enabled toggle via `tts.enable` / `tts.disable`; auto-mode display (read-only; Enable → always, Disable → off); provider fallback chain; API key status for OpenAI, ElevenLabs, Edge TTS
 - **TTS Providers section** — provider cards from `tts.providers`; expand to show models and voices; "Set Active" via `tts.setProvider`; active provider highlighted
-- **Voice Sample Lab** — text presets + textarea → `tts.convert { text }` → shows provider, format, and server-side output path (browser playback requires Phase 7 backend)
+- **Voice Sample Lab** — text presets + textarea → `tts.convert { text }` → shows provider, format, and server-side output path (browser playback requires backend)
 - **Wake Word card** — triggers list from `voicewake.get`; inline add/remove + save via `voicewake.set { triggers }`
 - **Talk Config card** — read-only display from `talk.config`: voiceId, modelId, outputFormat, interruptOnSpeech, voiceAliases, seamColor; empty state with setup guide link
 - **Slash commands accordion** — reference panel for `/tts` slash commands (collapsed by default)
@@ -95,6 +95,32 @@
 - **Sorting & filtering** — sort by next run / last updated / name (asc/desc); filter by all / enabled / disabled; search by name
 - Shared cron formatters extracted to `src/lib/cron.ts` — `formatSchedule`, `formatRelative`, `formatDuration`, `cronToHuman`, `buildFailureGuide`
 - New route: `/cron` with sidebar navigation
+
+#### Backend Foundation
+- **Hono server** — new `server/index.ts` compiled via esbuild to `bin/server.mjs` (12.7 KB); `bin/clawkernel.mjs` now spawns the Hono server instead of running its own `http.createServer`; config passed via `CK_*` environment variables; dev mode auto-reads `~/.clawkernel.json` when env vars are absent
+- **SQLite database** — `better-sqlite3` + Drizzle ORM; `~/.clawkernel.db` created on startup with WAL journal mode; three tables: `preferences` (key-value UI settings), `token_alarms` , `usage_history`
+- **API routes:**
+  - `GET /api/health` — server health (`{ ok, version, uptime }`)
+  - `GET /api/version` — checks `registry.npmjs.org/clawkernel/latest` for updates; 1-hour in-memory cache; returns `{ current, latest, updateAvailable, isDismissed }`
+  - `POST /api/version/dismiss` — persists dismissed version in preferences table; Zod-validated input (`{ version: string }`)
+  - `POST /api/gateway/restart` — runs `openclaw gateway restart` via `child_process.execFile` with 35s timeout
+  - `GET /api/prefs` — returns managed preferences as key → value map
+  - `PATCH /api/prefs` — updates preferences; Zod `.strict()` schema rejects unrecognized keys; allowed keys: `auto_restart_gateway`, `dismissed_update_version`
+  - `POST /api/channels/setup` — stub (501) pending CLI API verification
+- **API auth** — optional `CK_API_TOKEN` env var; when set, all mutating endpoints (`POST`/`PATCH`) require `Authorization: Bearer <token>` header; GET endpoints remain public; auth status shown in server startup banner
+- **Async static file serving** — `fs/promises` (`readFile` + `stat`) in request handler; sync I/O only at startup; path traversal protection via `path.resolve` + `startsWith(DIST)` guard
+- **Dev fallback page** — when `dist/index.html` is missing (e.g. `npm run dev:server` before build), serves a minimal HTML page with clear instructions instead of crashing
+- **Update Banner** — dismissible banner in app layout when a newer ClawKernel version is available on npm; persists dismissed version server-side; 1-hour localStorage cache on the client; uses theme `primary` color tokens
+- **Restart Bar** — announcement bar using theme `warning` color tokens; triggered via `useRestartBarStore.getState().show()` from any component after config changes requiring manual restart; calls `POST /api/gateway/restart`; auto-hides on success; dismiss button for manual close
+- **Dev experience:**
+  - `npm run dev` runs both Vite (`:5173`) and Hono (`:4174`) via `concurrently`; Vite proxies `/api/*` to the Hono backend
+  - Vite plugin injects `window.__CK_CONFIG__` from `~/.clawkernel.json` during dev (production injection done by `bin/server.mjs`)
+  - Dev mode: Hono prints a single dim line (`API server ready on ... (proxied by Vite)`) instead of the full production banner
+  - Dev mode: non-API requests to `:4174` redirect to Vite `:5173` — prevents accidental use of the wrong port and losing HMR
+- **TypeScript server config** — `tsconfig.server.json` added to project references; `tsc -b` and `npm run typecheck` now validate both frontend and server code
+- **Biome + Knip** — `npm run check` and `npm run knip` now include `server/` directory
+- **`engines.node`** updated from `>=18` to `>=20` — aligns with `better-sqlite3` v12 pre-built binary support
+- **Dependencies:** `hono`, `@hono/node-server`, `better-sqlite3`, `drizzle-orm`, `zod` (runtime); `@types/better-sqlite3`, `drizzle-kit`, `esbuild`, `tsx`, `concurrently` (dev)
 
 ### Fixed
 
