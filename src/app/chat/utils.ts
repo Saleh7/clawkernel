@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import type { ChatMessage } from '@/lib/gateway/types'
-import type { ChatSettings, FileAttachment, RenderItem, Source } from './types'
+import type { FileAttachment, RenderItem, Source } from './types'
 import { IMAGE_QUALITY, MAX_IMAGE_DIM, MAX_TEXT_CHARS, TARGET_SIZE } from './types'
 
 // -- Envelope stripping -----------------------------------------------------
@@ -11,7 +11,7 @@ import { IMAGE_QUALITY, MAX_IMAGE_DIM, MAX_TEXT_CHARS, TARGET_SIZE } from './typ
 const INBOUND_CONTEXT_RE = /^Conversation info \(untrusted metadata\):\s*```json?\s*\{[\s\S]*?\}\s*```\s*/
 const TIMESTAMP_PREFIX = /^\[(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+[A-Z+\d]+\]\s*/
 const MEDIA_ATTACHED_RE = /\[media attached:[^\]]*\]\s*/g
-const FILE_BLOCK_RE = /<file\s+name="([^"]*?)"\s+mime="([^"]*?)">\n?([\s\S]*?)\n?<\/file>/g
+const FILE_BLOCK_RE = /<file\s+name="([^"]*?)"\s+mime="([^"]*?)">\n?([\s\S]*?)\n?<\/file>/
 
 export function extractFileAttachments(text: string): FileAttachment[] {
   const files: FileAttachment[] = []
@@ -28,7 +28,7 @@ function stripDisplayEnvelope(text: string): string {
   t = t.replace(INBOUND_CONTEXT_RE, '')
   t = t.replace(TIMESTAMP_PREFIX, '')
   t = t.replace(MEDIA_ATTACHED_RE, '')
-  t = t.replace(FILE_BLOCK_RE, '')
+  t = t.replace(new RegExp(FILE_BLOCK_RE.source, 'g'), '')
   return t.trim()
 }
 
@@ -120,21 +120,27 @@ function stripThinkingTags(text: string): string {
 export function extractThinking(msg: ChatMessage | undefined): string | null {
   if (!msg) return null
   if (thinkingCache.has(msg)) return thinkingCache.get(msg) ?? null
-  let result: string | null = null
+  const parts: string[] = []
   if (msg.content) {
     for (const b of msg.content) {
       if (b.type === 'thinking' && 'thinking' in b && b.thinking) {
-        result = b.thinking
-        break
+        parts.push(b.thinking)
       }
     }
   }
+  const result = parts.length > 0 ? parts.join('\n\n') : null
   thinkingCache.set(msg, result)
   return result
 }
 
-export function extractToolCalls(msg: ChatMessage | undefined) {
-  if (!msg?.content) return [] as { id: string; name: string; arguments: Record<string, unknown> }[]
+type ToolCall = {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+}
+
+export function extractToolCalls(msg: ChatMessage | undefined): ToolCall[] {
+  if (!msg?.content) return []
   return msg.content
     .filter((b): b is Extract<typeof b, { type: 'toolCall' }> => b.type === 'toolCall')
     .map((b) => ({
@@ -202,6 +208,11 @@ export function extractImages(msg: ChatMessage | undefined): ExtractedImage[] {
 
 // -- Sources extraction -----------------------------------------------------
 
+type ToolResultEntry = { content: string; isError: boolean; details?: Record<string, unknown> }
+type ToolResultsMap = Map<string, ToolResultEntry>
+
+const SOURCE_SNIPPET_MAX_CHARS = 200
+
 function getDomain(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, '')
@@ -215,16 +226,163 @@ function getFavicon(_domain: string): string {
   return ''
 }
 
+function isDisplayMessage(msg: ChatMessage): boolean {
+  return msg.role !== 'toolResult' && msg.role !== 'tool'
+}
+
+function collectAssistantSources(
+  toolCalls: ToolCall[],
+  toolResultsMap: ToolResultsMap,
+  pendingSources: Source[],
+): void {
+  if (toolCalls.length === 0) return
+
+  const seenUrls = new Set<string>()
+  for (const toolCall of toolCalls) {
+    if (toolCall.name === 'web_fetch') {
+      appendWebFetchSource(toolCall, toolResultsMap, seenUrls, pendingSources)
+      continue
+    }
+    if (toolCall.name === 'web_search') {
+      appendWebSearchSources(toolCall, toolResultsMap, seenUrls, pendingSources)
+    }
+  }
+}
+
+function appendWebFetchSource(
+  toolCall: ToolCall,
+  toolResultsMap: ToolResultsMap,
+  seenUrls: Set<string>,
+  pendingSources: Source[],
+): void {
+  const url = getWebFetchUrl(toolCall.arguments)
+  if (!url) return
+  if (seenUrls.has(url)) return
+
+  seenUrls.add(url)
+  const domain = getDomain(url)
+  const toolResult = toolResultsMap.get(toolCall.id)
+
+  pendingSources.push({
+    url,
+    title: getSourceTitle(domain, toolResult?.details),
+    domain,
+    favicon: getFavicon(domain),
+    snippet: getWebFetchSnippet(toolResult),
+  })
+}
+
+function getWebFetchUrl(args: Record<string, unknown>): string | null {
+  const url = args.url
+  return typeof url === 'string' ? url : null
+}
+
+function getSourceTitle(domain: string, details?: Record<string, unknown>): string {
+  if (typeof details?.title === 'string') return details.title
+  return domain
+}
+
+function getSnippetFromDetails(details?: Record<string, unknown>): string | undefined {
+  if (!details) return undefined
+
+  const snippet = details.snippet
+  if (typeof snippet === 'string' && snippet) return snippet
+
+  const description = details.description
+  if (typeof description === 'string') return description
+  if (typeof snippet === 'string') return snippet
+
+  return undefined
+}
+
+function getWebFetchSnippet(toolResult?: ToolResultEntry): string | undefined {
+  let snippet = getSnippetFromDetails(toolResult?.details)
+  if (!snippet && toolResult?.content) {
+    snippet = toolResult.content.slice(0, SOURCE_SNIPPET_MAX_CHARS)
+  }
+  return snippet
+}
+
+function appendWebSearchSources(
+  toolCall: ToolCall,
+  toolResultsMap: ToolResultsMap,
+  seenUrls: Set<string>,
+  pendingSources: Source[],
+): void {
+  const toolResult = toolResultsMap.get(toolCall.id)
+  const searchResults = parseWebSearchResults(toolResult?.content)
+
+  for (const searchResult of searchResults) {
+    const url = getSearchResultUrl(searchResult)
+    if (!url) continue
+    if (seenUrls.has(url)) continue
+
+    seenUrls.add(url)
+    const domain = getDomain(url)
+    pendingSources.push({
+      url,
+      title: getSearchResultTitle(searchResult, domain),
+      domain,
+      favicon: getFavicon(domain),
+      snippet: getSearchResultSnippet(searchResult),
+    })
+  }
+}
+
+function parseWebSearchResults(content: string | undefined): Array<Record<string, unknown>> {
+  if (!content) return []
+
+  try {
+    const parsed = JSON.parse(content)
+    if (!isRecord(parsed)) return []
+    if (!Array.isArray(parsed.results)) return []
+    return parsed.results.filter(isRecord)
+  } catch {
+    return []
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function getSearchResultUrl(searchResult: Record<string, unknown>): string | null {
+  const url = searchResult.url
+  return typeof url === 'string' ? url : null
+}
+
+function getSearchResultTitle(searchResult: Record<string, unknown>, domain: string): string {
+  const title = searchResult.title
+  return typeof title === 'string' && title ? title : domain
+}
+
+function getSearchResultSnippet(searchResult: Record<string, unknown>): string | undefined {
+  const description = searchResult.description
+  if (typeof description === 'string' && description) return description
+
+  const snippet = searchResult.snippet
+  if (typeof snippet === 'string') return snippet
+
+  return undefined
+}
+
+function shouldAttachPendingSources(msg: ChatMessage, toolCalls: ToolCall[], pendingSources: Source[]): boolean {
+  if (toolCalls.length > 0) return false
+  if (pendingSources.length === 0) return false
+  return Boolean(extractText(msg))
+}
+
 export function extractSourcesFromMessages(
   messages: ChatMessage[],
-  toolResultsMap: Map<string, { content: string; isError: boolean; details?: Record<string, unknown> }>,
+  toolResultsMap: ToolResultsMap,
 ): Map<number, Source[]> {
   const result = new Map<number, Source[]>()
   let pendingSources: Source[] = []
-  const display = messages.filter((m) => m.role !== 'toolResult' && m.role !== 'tool')
+  const display = messages.filter(isDisplayMessage)
 
   for (let i = 0; i < display.length; i++) {
     const msg = display[i]
+
     if (msg.role === 'user') {
       pendingSources = []
       continue
@@ -232,59 +390,19 @@ export function extractSourcesFromMessages(
     if (msg.role !== 'assistant') continue
 
     const toolCalls = extractToolCalls(msg)
-    const seen = new Set<string>()
+    collectAssistantSources(toolCalls, toolResultsMap, pendingSources)
 
-    for (const tc of toolCalls) {
-      if (tc.name === 'web_fetch') {
-        const url = tc.arguments?.url
-        if (typeof url !== 'string' || seen.has(url)) continue
-        seen.add(url)
-        const domain = getDomain(url)
-        const res = toolResultsMap.get(tc.id)
-        let title = domain
-        let snippet: string | undefined
-        if (res?.details) {
-          if (typeof res.details.title === 'string') title = res.details.title
-          if (typeof res.details.snippet === 'string') snippet = res.details.snippet
-          if (typeof res.details.description === 'string' && !snippet) snippet = res.details.description
-        }
-        if (!snippet && res?.content) snippet = res.content.slice(0, 200)
-        pendingSources.push({ url, title, domain, favicon: getFavicon(domain), snippet })
-      } else if (tc.name === 'web_search') {
-        const res = toolResultsMap.get(tc.id)
-        if (res?.content) {
-          try {
-            const parsed = JSON.parse(res.content)
-            const results = Array.isArray(parsed?.results) ? parsed.results : []
-            for (const r of results) {
-              if (typeof r.url !== 'string' || seen.has(r.url)) continue
-              seen.add(r.url)
-              const domain = getDomain(r.url)
-              pendingSources.push({
-                url: r.url,
-                title: r.title || domain,
-                domain,
-                favicon: getFavicon(domain),
-                snippet: r.description || r.snippet,
-              })
-            }
-          } catch {}
-        }
-      }
-    }
-
-    const text = extractText(msg)
-    if (text && toolCalls.length === 0 && pendingSources.length > 0) {
-      result.set(i, [...pendingSources])
-      pendingSources = []
-    }
+    if (!shouldAttachPendingSources(msg, toolCalls, pendingSources)) continue
+    result.set(i, [...pendingSources])
+    pendingSources = []
   }
+
   return result
 }
 
 // -- Message grouping -------------------------------------------------------
 
-export function groupMessages(messages: ChatMessage[], _settings: ChatSettings): RenderItem[] {
+export function groupMessages(messages: ChatMessage[]): RenderItem[] {
   const items: RenderItem[] = []
   let toolBatch: ChatMessage[] = []
   let toolIndices: number[] = []
@@ -332,13 +450,6 @@ export function groupMessages(messages: ChatMessage[], _settings: ChatSettings):
 
 // -- Formatting helpers -----------------------------------------------------
 
-export function extractAgentId(key: string) {
-  return key.split(':')[1] || key
-}
-export function sessionLabel(key: string) {
-  const p = key.split(':')
-  return p.length > 2 ? p.slice(2).join(':') : key
-}
 export function generateId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
@@ -401,8 +512,8 @@ export async function compressImage(file: File): Promise<string> {
         let quality = IMAGE_QUALITY
         let dataUrl = canvas.toDataURL(outType, quality)
         if (outType === 'image/jpeg') {
-          const target = TARGET_SIZE * 1.37
-          while (dataUrl.length > target && quality > 0.3) {
+          const target = TARGET_SIZE * 1.37 // Base64 overhead ratio (~4/3)
+          while (dataUrl.length > target && quality > 0.31) {
             quality -= 0.1
             dataUrl = canvas.toDataURL(outType, quality)
           }
@@ -453,7 +564,7 @@ export async function compressImageBitmap(file: File): Promise<string> {
 
     // Iteratively reduce quality for JPEG to hit target size
     if (outType === 'image/jpeg') {
-      while (blob.size > TARGET_SIZE && quality > 0.3) {
+      while (blob.size > TARGET_SIZE && quality > 0.31) {
         quality -= 0.1
         blob = await canvas.convertToBlob({ type: outType, quality })
       }

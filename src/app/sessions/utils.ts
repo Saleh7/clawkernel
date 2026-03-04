@@ -11,6 +11,11 @@ export function extractAgentId(key: string): string {
   return match?.[1] ?? 'unknown'
 }
 
+export function sessionLabel(key: string): string {
+  const p = key.split(':')
+  return p.length > 2 ? p.slice(2).join(':') : key
+}
+
 export function getDisplayName(s: GatewaySessionRow): string {
   return s.displayName || s.label || s.key.split(':').pop() || s.key
 }

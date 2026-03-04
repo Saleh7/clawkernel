@@ -3,6 +3,8 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { extractAgentId, sessionLabel } from '@/app/sessions/utils'
+import type { GatewayClient } from '@/lib/gateway/client'
 import type { ChatEventPayload, ChatMessage, ChatMessageContent } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
 import { selectClient, selectIsConnected, useGatewayStore } from '@/stores/gateway-store'
@@ -11,20 +13,19 @@ import { FILE_TYPES, IMAGE_TYPES, TEXT_READABLE_TYPES } from '../types'
 import {
   compressImage,
   compressImageBitmap,
-  extractAgentId,
   extractSourcesFromMessages,
   extractText,
   fileToBase64,
   generateId,
   groupMessages,
   readFileAsText,
-  sessionLabel,
 } from '../utils'
 
 const log = createLogger('chat')
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const HISTORY_PAGE_SIZE = 200
 const STOP_COMMANDS = new Set(['stop', 'esc', 'abort', 'wait', 'exit', '/stop'])
+const DEFAULT_CHAT_SETTINGS: ChatSettings = { showToolCalls: true, showThinking: true }
 
 // ---------------------------------------------------------------------------
 //  Message normalization helpers (matches OpenClaw UI controllers/chat.ts)
@@ -49,6 +50,176 @@ function normalizeAbortedMessage(message: unknown): ChatMessage | null {
   if (typeof m.role !== 'string' || m.role !== 'assistant') return null
   if (!Array.isArray(m.content)) return null
   return message as ChatMessage
+}
+
+type ToolResultMap = Map<string, { content: string; isError: boolean; details?: Record<string, unknown> }>
+type StreamBuffer = { text: string | null; msg: ChatMessage | null; runId: string | null }
+type ChatStateSetter = React.Dispatch<React.SetStateAction<ChatState>>
+type RefBox<T> = { current: T }
+
+function toHistoryMessages(messages: ChatMessage[] | undefined): ChatMessage[] {
+  return Array.isArray(messages) ? messages : []
+}
+
+function collectOptimisticMessages(messages: ChatMessage[]): ChatMessage[] {
+  const optimistic: ChatMessage[] = []
+  for (const message of messages) {
+    if (message.__optimisticId) optimistic.push(message)
+  }
+  return optimistic
+}
+
+function mergeServerMessages(serverMessages: ChatMessage[], currentMessages: ChatMessage[]): ChatMessage[] {
+  const optimistic = collectOptimisticMessages(currentMessages)
+  return optimistic.length > 0 ? [...serverMessages, ...optimistic] : serverMessages
+}
+
+function getStreamRunId(message: ChatMessage): string | null {
+  const runId = message.__streamRunId
+  return typeof runId === 'string' ? runId : null
+}
+
+function removeStreamPlaceholderMessages(messages: ChatMessage[]): ChatMessage[] {
+  const cleaned: ChatMessage[] = []
+  for (const message of messages) {
+    if (getStreamRunId(message)) continue
+    cleaned.push(message)
+  }
+  return cleaned
+}
+
+function removeOptimisticMessages(messages: ChatMessage[]): ChatMessage[] {
+  const cleaned: ChatMessage[] = []
+  for (const message of messages) {
+    if (message.__optimisticId) continue
+    cleaned.push(message)
+  }
+  return cleaned
+}
+
+function findStreamMessageIndex(messages: ChatMessage[], runId: string): number {
+  for (let i = 0; i < messages.length; i++) {
+    if (getStreamRunId(messages[i]) === runId) return i
+  }
+  return -1
+}
+
+function applyDeltaStreamState(prev: ChatState, buffer: StreamBuffer): ChatState {
+  const nextStream =
+    buffer.text !== null && buffer.text.length >= (prev.streaming?.length ?? 0) ? buffer.text : prev.streaming
+
+  let nextMessages = prev.messages
+  if (buffer.msg && buffer.runId) {
+    const streamMessage = { ...buffer.msg, __streamRunId: buffer.runId } as ChatMessage
+    const streamMessageIndex = findStreamMessageIndex(prev.messages, buffer.runId)
+    if (streamMessageIndex >= 0) {
+      nextMessages = prev.messages.slice()
+      nextMessages[streamMessageIndex] = streamMessage
+    } else {
+      nextMessages = [...prev.messages, streamMessage]
+    }
+  }
+
+  const nextRunId = buffer.runId ?? prev.runId
+  if (nextStream === prev.streaming && nextMessages === prev.messages && nextRunId === prev.runId) return prev
+
+  return { ...prev, runId: nextRunId, streaming: nextStream, messages: nextMessages }
+}
+
+function applyFinalEventState(prev: ChatState, finalMessage: ChatMessage | null): ChatState {
+  const cleanedMessages = removeStreamPlaceholderMessages(prev.messages)
+  if (finalMessage) {
+    return { ...prev, messages: [...cleanedMessages, finalMessage], streaming: null, runId: null }
+  }
+  return { ...prev, messages: removeOptimisticMessages(cleanedMessages), streaming: null, runId: null }
+}
+
+function buildAbortedFallbackMessage(streamedText: string): ChatMessage {
+  return {
+    role: 'assistant',
+    content: [{ type: 'text', text: streamedText }],
+    timestamp: Date.now(),
+  }
+}
+
+function applyAbortedEventState(prev: ChatState, abortedMessage: ChatMessage | null): ChatState {
+  const cleanedMessages = removeStreamPlaceholderMessages(prev.messages)
+  if (abortedMessage) {
+    return { ...prev, messages: [...cleanedMessages, abortedMessage], streaming: null, runId: null }
+  }
+
+  const streamedText = prev.streaming ?? ''
+  if (!streamedText.trim()) return { ...prev, messages: cleanedMessages, streaming: null, runId: null }
+
+  return {
+    ...prev,
+    messages: [...cleanedMessages, buildAbortedFallbackMessage(streamedText)],
+    streaming: null,
+    runId: null,
+  }
+}
+
+function isDifferentRunEvent(eventRunId: string | null | undefined, activeRunId: string | null): boolean {
+  if (!eventRunId || !activeRunId) return false
+  return eventRunId !== activeRunId
+}
+
+function flushBufferedStreamState(setChat: ChatStateSetter, streamBufferRef: RefBox<StreamBuffer>): void {
+  setChat((prev) => applyDeltaStreamState(prev, streamBufferRef.current))
+}
+
+async function reloadHistoryPreservingOptimistic(params: {
+  client: GatewayClient
+  selectedSession: string
+  historySessionRef: RefBox<string | null>
+  setChat: ChatStateSetter
+}): Promise<void> {
+  const { client, selectedSession, historySessionRef, setChat } = params
+
+  try {
+    const response = await client.request<{ messages?: ChatMessage[] }>('chat.history', {
+      sessionKey: selectedSession,
+      limit: HISTORY_PAGE_SIZE,
+    })
+    if (historySessionRef.current !== selectedSession) return
+
+    const serverMessages = toHistoryMessages(response.messages)
+    setChat((prev) => ({
+      ...prev,
+      messages: mergeServerMessages(serverMessages, prev.messages),
+    }))
+  } catch (error_) {
+    log.warn('History reload failed', error_)
+  }
+}
+
+async function loadSessionHistory(params: {
+  client: GatewayClient
+  selectedSession: string
+  historySessionRef: RefBox<string | null>
+  setChat: ChatStateSetter
+}): Promise<void> {
+  const { client, selectedSession, historySessionRef, setChat } = params
+
+  try {
+    const response = await client.request<{ messages?: ChatMessage[]; thinkingLevel?: string }>('chat.history', {
+      sessionKey: selectedSession,
+      limit: HISTORY_PAGE_SIZE,
+    })
+    if (historySessionRef.current !== selectedSession) return
+
+    const messages = toHistoryMessages(response.messages)
+    setChat((prev) => ({
+      ...prev,
+      messages,
+      thinkingLevel: response.thinkingLevel ?? null,
+      loading: false,
+      hasMore: messages.length >= HISTORY_PAGE_SIZE,
+    }))
+  } catch (error_) {
+    if (historySessionRef.current !== selectedSession) return
+    setChat((prev) => ({ ...prev, loading: false, error: String(error_) }))
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -80,10 +251,10 @@ export function useChat() {
   const [settings, setSettings] = useState<ChatSettings>(() => {
     try {
       const s = localStorage.getItem('clawkernel-chat-settings')
-      return s ? JSON.parse(s) : { showToolCalls: true, showThinking: true }
+      return s ? { ...DEFAULT_CHAT_SETTINGS, ...JSON.parse(s) } : DEFAULT_CHAT_SETTINGS
     } catch (err) {
       log.warn('Failed to parse chat settings from localStorage', err)
-      return { showToolCalls: true, showThinking: true }
+      return DEFAULT_CHAT_SETTINGS
     }
   })
 
@@ -158,7 +329,7 @@ export function useChat() {
 
   // -- Tool results map -----------------------------------------------------
   const toolResultsMap = useMemo(() => {
-    const map = new Map<string, { content: string; isError: boolean; details?: Record<string, unknown> }>()
+    const map: ToolResultMap = new Map()
     for (const msg of chat.messages) {
       if (msg.role !== 'toolResult' && msg.role !== 'tool') continue
       const callId = msg.toolCallId
@@ -192,7 +363,7 @@ export function useChat() {
     return -1
   }, [displayMessages])
 
-  const renderItems = useMemo(() => groupMessages(displayMessages, settings), [displayMessages, settings])
+  const renderItems = useMemo(() => groupMessages(displayMessages), [displayMessages])
 
   const indicesInToolGroups = useMemo(() => {
     const set = new Set<number>()
@@ -202,12 +373,44 @@ export function useChat() {
 
   const isStreaming = (chat.runId !== null && chat.streaming !== null) || sessionHasActiveRun
 
+  // -- Streaming events (throttled to ~30fps for smooth rendering) ----------
+  const streamBufferRef = useRef<StreamBuffer>({ text: null, msg: null, runId: null })
+  const streamRafRef = useRef<number | null>(null)
+  const historySessionRef = useRef<string | null>(null)
+  const flushQueueRef = useRef<() => void>(() => {})
+  const runIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    runIdRef.current = chat.runId
+  }, [chat.runId])
+
+  const flushBufferedStream = useCallback(() => {
+    streamRafRef.current = null
+    flushBufferedStreamState(setChat, streamBufferRef)
+  }, [])
+
+  const scheduleBufferedStreamFlush = useCallback(() => {
+    streamRafRef.current ??= requestAnimationFrame(flushBufferedStream)
+  }, [flushBufferedStream])
+
+  const reloadHistory = useCallback(() => {
+    if (!client || !selectedSession) return
+    if (historySessionRef.current !== selectedSession) return
+    void reloadHistoryPreservingOptimistic({
+      client,
+      selectedSession,
+      historySessionRef,
+      setChat,
+    })
+  }, [client, selectedSession])
+
   // -- Load history ---------------------------------------------------------
   useEffect(() => {
     if (!client || !connected || !selectedSession) return
+
     historySessionRef.current = selectedSession
-    setChat((p) => ({
-      ...p,
+    setChat((prev) => ({
+      ...prev,
       messages: [],
       loading: true,
       error: null,
@@ -215,221 +418,89 @@ export function useChat() {
       runId: null,
       hasMore: false,
     }))
-    client
-      .request<{ messages?: ChatMessage[]; thinkingLevel?: string }>('chat.history', {
-        sessionKey: selectedSession,
-        limit: HISTORY_PAGE_SIZE,
-      })
-      .then((res) => {
-        if (historySessionRef.current !== selectedSession) return
-        const msgs = Array.isArray(res.messages) ? res.messages : []
-        setChat((p) => ({
-          ...p,
-          messages: msgs,
-          thinkingLevel: res.thinkingLevel ?? null,
-          loading: false,
-          hasMore: msgs.length >= HISTORY_PAGE_SIZE,
-        }))
-      })
-      .catch((err) => {
-        if (historySessionRef.current !== selectedSession) return
-        setChat((p) => ({ ...p, loading: false, error: String(err) }))
-      })
+
+    void loadSessionHistory({
+      client,
+      selectedSession,
+      historySessionRef,
+      setChat,
+    })
   }, [client, connected, selectedSession])
 
-  // -- Streaming events (throttled to ~30fps for smooth rendering) ----------
-  const streamBufferRef = useRef<{ text: string | null; msg: ChatMessage | null; runId: string | null }>({
-    text: null,
-    msg: null,
-    runId: null,
-  })
-  const streamRafRef = useRef<number | null>(null)
-  const historySessionRef = useRef<string | null>(null)
-  const flushQueueRef = useRef<() => void>(() => {})
+  const handleChatEvent = useCallback(
+    (payload: unknown) => {
+      const event = payload as ChatEventPayload | undefined
+      if (event?.sessionKey !== selectedSession) return
+
+      if (isDifferentRunEvent(event.runId, runIdRef.current)) {
+        if (event.state !== 'final') return
+
+        const finalMessage = normalizeFinalMessage(event.message)
+        if (finalMessage) {
+          setChat((prev) => ({ ...prev, messages: [...prev.messages, finalMessage] }))
+          return
+        }
+
+        reloadHistory()
+        return
+      }
+
+      if (event.state === 'delta') {
+        streamBufferRef.current = {
+          text: extractText(event.message),
+          msg: event.message ?? null,
+          runId: event.runId ?? null,
+        }
+        scheduleBufferedStreamFlush()
+        return
+      }
+
+      if (event.state === 'final') {
+        const finalMessage = normalizeFinalMessage(event.message)
+        setChat((prev) => applyFinalEventState(prev, finalMessage))
+        if (!finalMessage) reloadHistory()
+        flushQueueRef.current()
+        return
+      }
+
+      if (event.state === 'error') {
+        setChat((prev) => ({ ...prev, streaming: null, runId: null, error: event.errorMessage ?? 'Chat error' }))
+        flushQueueRef.current()
+        return
+      }
+
+      if (event.state !== 'aborted') return
+
+      const abortedMessage = normalizeAbortedMessage(event.message)
+      setChat((prev) => applyAbortedEventState(prev, abortedMessage))
+      flushQueueRef.current()
+    },
+    [reloadHistory, scheduleBufferedStreamFlush, selectedSession],
+  )
 
   useEffect(() => {
     if (!client) return
-    const unsub = client.on('chat', (payload: unknown) => {
-      const p = payload as ChatEventPayload | undefined
-      if (!p || p.sessionKey !== selectedSession) return
 
-      // -- Handle events from a different run (e.g. sub-agent announce) ----
-      // Matches OpenClaw UI: if another run completes on the same session,
-      // append its final message without disrupting the current stream.
-      setChat((prev) => {
-        if (p.runId && prev.runId && p.runId !== prev.runId) {
-          if (p.state === 'final') {
-            const finalMsg = normalizeFinalMessage(p.message)
-            if (finalMsg) {
-              return { ...prev, messages: [...prev.messages, finalMsg] }
-            }
-            // Non-standard final (no assistant message) — reload history
-            if (client && selectedSession) {
-              client
-                .request<{ messages?: ChatMessage[] }>('chat.history', {
-                  sessionKey: selectedSession,
-                  limit: HISTORY_PAGE_SIZE,
-                })
-                .then((res) => {
-                  if (historySessionRef.current !== selectedSession) return
-                  const serverMsgs = Array.isArray(res.messages) ? res.messages : []
-                  setChat((p2) => {
-                    const optimistic = p2.messages.filter((m) => m.__optimisticId)
-                    return { ...p2, messages: optimistic.length > 0 ? [...serverMsgs, ...optimistic] : serverMsgs }
-                  })
-                })
-                .catch((err) => log.warn('History reload failed', err))
-            }
-          }
-          return prev
-        }
-        return prev
-      })
-
-      // -- Delta: buffer for RAF throttling --------------------------------
-      if (p.state === 'delta') {
-        const text = extractText(p.message)
-        streamBufferRef.current = { text, msg: p.message ?? null, runId: p.runId ?? null }
-        if (streamRafRef.current === null) {
-          streamRafRef.current = requestAnimationFrame(() => {
-            streamRafRef.current = null
-            const buf = streamBufferRef.current
-            setChat((prev) => {
-              const nextStream =
-                buf.text !== null && buf.text.length >= (prev.streaming?.length || 0) ? buf.text : prev.streaming
-              let nextMessages = prev.messages
-              if (buf.msg && buf.runId) {
-                const streamMsg = { ...buf.msg, __streamRunId: buf.runId } as ChatMessage
-                const streamMsgIdx = prev.messages.findIndex((m) => m.__streamRunId === buf.runId)
-                if (streamMsgIdx >= 0) {
-                  nextMessages = prev.messages.slice()
-                  nextMessages[streamMsgIdx] = streamMsg
-                } else {
-                  nextMessages = [...prev.messages, streamMsg]
-                }
-              }
-              if (nextStream === prev.streaming && nextMessages === prev.messages && (buf.runId || null) === prev.runId)
-                return prev
-              return { ...prev, runId: buf.runId || prev.runId, streaming: nextStream, messages: nextMessages }
-            })
-          })
-        }
-        return
-      }
-
-      // -- Final: append message from payload (matches OpenClaw UI) --------
-      // Reload history only when the final event doesn't carry a valid
-      // assistant message — mirrors OpenClaw's shouldReloadHistoryForFinalEvent.
-      if (p.state === 'final') {
-        const finalMsg = normalizeFinalMessage(p.message)
-        setChat((prev) => {
-          // Remove the RAF-buffered streaming placeholder
-          const cleaned = prev.messages.filter((m) => !m.__streamRunId)
-          if (finalMsg) {
-            // Payload has a valid assistant message — no reload needed.
-            // Keep the optimistic user message; the content is correct.
-            return { ...prev, messages: [...cleaned, finalMsg], streaming: null, runId: null }
-          }
-          // No usable message in payload — strip optimistic, reload from server below
-          return { ...prev, messages: cleaned.filter((m) => !m.__optimisticId), streaming: null, runId: null }
-        })
-        // Only reload when the server didn't send a usable assistant message
-        if (!finalMsg && client && selectedSession) {
-          client
-            .request<{ messages?: ChatMessage[] }>('chat.history', {
-              sessionKey: selectedSession,
-              limit: HISTORY_PAGE_SIZE,
-            })
-            .then((res) => {
-              if (historySessionRef.current !== selectedSession) return
-              const serverMsgs = Array.isArray(res.messages) ? res.messages : []
-              setChat((prev) => {
-                const optimistic = prev.messages.filter((m) => m.__optimisticId)
-                return { ...prev, messages: optimistic.length > 0 ? [...serverMsgs, ...optimistic] : serverMsgs }
-              })
-            })
-            .catch((err) => log.warn('History reload failed', err))
-        }
-        flushQueueRef.current()
-        return
-      }
-
-      // -- Error -----------------------------------------------------------
-      if (p.state === 'error') {
-        setChat((prev) => ({ ...prev, streaming: null, runId: null, error: p.errorMessage || 'Chat error' }))
-        flushQueueRef.current()
-        return
-      }
-
-      // -- Aborted: preserve any streamed text (matches OpenClaw UI) -------
-      if (p.state === 'aborted') {
-        setChat((prev) => {
-          // If the server sent an aborted message with content, use it
-          const abortedMsg = normalizeAbortedMessage(p.message)
-          // Remove streaming placeholder
-          const cleaned = prev.messages.filter((m) => !m.__streamRunId)
-          if (abortedMsg) {
-            return { ...prev, messages: [...cleaned, abortedMsg], streaming: null, runId: null }
-          }
-          // Otherwise preserve whatever was streamed so far
-          const streamedText = prev.streaming ?? ''
-          if (streamedText.trim()) {
-            return {
-              ...prev,
-              messages: [
-                ...cleaned,
-                {
-                  role: 'assistant',
-                  content: [{ type: 'text', text: streamedText }],
-                  timestamp: Date.now(),
-                } as ChatMessage,
-              ],
-              streaming: null,
-              runId: null,
-            }
-          }
-          return { ...prev, messages: cleaned, streaming: null, runId: null }
-        })
-        flushQueueRef.current()
-        return
-      }
-    })
+    const unsubscribe = client.on('chat', handleChatEvent)
     return () => {
-      unsub()
-      if (streamRafRef.current !== null) {
-        cancelAnimationFrame(streamRafRef.current)
-        streamRafRef.current = null
-      }
+      unsubscribe()
+      if (streamRafRef.current === null) return
+      cancelAnimationFrame(streamRafRef.current)
+      streamRafRef.current = null
     }
-  }, [client, selectedSession])
+  }, [client, handleChatEvent])
 
   // -- Reconnect / gap recovery ---------------------------------------------
   useEffect(() => {
     if (!client || !selectedSession) return
-    const reloadHistory = () => {
-      if (historySessionRef.current !== selectedSession) return
-      client
-        .request<{ messages?: ChatMessage[] }>('chat.history', {
-          sessionKey: selectedSession,
-          limit: HISTORY_PAGE_SIZE,
-        })
-        .then((res) => {
-          if (historySessionRef.current !== selectedSession) return
-          const serverMsgs = Array.isArray(res.messages) ? res.messages : []
-          setChat((prev) => {
-            const optimistic = prev.messages.filter((m) => m.__optimisticId)
-            return { ...prev, messages: optimistic.length > 0 ? [...serverMsgs, ...optimistic] : serverMsgs }
-          })
-        })
-        .catch((err) => log.warn('History reload failed', err))
-    }
-    const unsubGap = client.on('gap', reloadHistory)
-    const unsubReady = client.on('ready', reloadHistory)
+
+    const unsubscribeGap = client.on('gap', reloadHistory)
+    const unsubscribeReady = client.on('ready', reloadHistory)
     return () => {
-      unsubGap()
-      unsubReady()
+      unsubscribeGap()
+      unsubscribeReady()
     }
-  }, [client, selectedSession])
+  }, [client, reloadHistory, selectedSession])
 
   // -- File processing ------------------------------------------------------
   const processFile = useCallback(async (file: File) => {
@@ -470,21 +541,21 @@ export function useChat() {
       return
     }
 
+    let preview: string | null = null
     try {
       let base64: string | null = null,
         textContent: string | null = null,
-        truncated = false,
-        preview: string | null = null
+        truncated = false
       if (isImage) {
         preview = URL.createObjectURL(file)
         try {
           base64 = await compressImage(file)
-        } catch (compressErr) {
-          log.warn('compressImage failed, retrying via createImageBitmap', compressErr)
+        } catch (error_) {
+          log.warn('compressImage failed, retrying via createImageBitmap', error_)
           try {
             base64 = await compressImageBitmap(file)
-          } catch (bitmapErr) {
-            log.warn('compressImageBitmap also failed, using raw base64', bitmapErr)
+          } catch (error_) {
+            log.warn('compressImageBitmap also failed, using raw base64', error_)
             base64 = await fileToBase64(file)
           }
         }
@@ -510,6 +581,7 @@ export function useChat() {
         },
       ])
     } catch (err) {
+      if (preview) URL.revokeObjectURL(preview)
       setAttachments((p) => [
         ...p,
         {
@@ -550,11 +622,10 @@ export function useChat() {
       const items = e.clipboardData?.items
       if (!items) return
       const imageFiles: File[] = []
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith('image/')) {
-          const file = items[i].getAsFile()
-          if (file) imageFiles.push(file)
-        }
+      for (const item of Array.from(items)) {
+        if (!item.type.startsWith('image/')) continue
+        const file = item.getAsFile()
+        if (file) imageFiles.push(file)
       }
       if (imageFiles.length === 0) return
       e.preventDefault()
@@ -605,11 +676,6 @@ export function useChat() {
   useEffect(() => {
     isBusyRef.current = isStreaming || chat.sending
   }, [isStreaming, chat.sending])
-  const runIdRef = useRef<string | null>(null)
-  useEffect(() => {
-    runIdRef.current = chat.runId
-  }, [chat.runId])
-
   const removeQueueItem = useCallback((id: string) => {
     setQueue((q) => q.filter((item) => item.id !== id))
   }, [])
@@ -702,6 +768,7 @@ export function useChat() {
           idempotencyKey: payload.id,
           ...(payload.attachments.length > 0 ? { attachments: payload.attachments } : {}),
         })
+        setChat((prev) => ({ ...prev, sending: false }))
       } catch (err) {
         setChat((prev) => ({
           ...prev,
@@ -711,8 +778,6 @@ export function useChat() {
           error: String(err),
           messages: prev.messages.filter((m) => m.__optimisticId !== payload.id),
         }))
-      } finally {
-        setChat((prev) => ({ ...prev, sending: false }))
       }
     },
     [client, connected, selectedSession],
@@ -774,63 +839,32 @@ export function useChat() {
   const handleRetry = useCallback(
     async (userMessage: ChatMessage) => {
       if (!client || !connected || !selectedSession) return
+      if (isBusyRef.current) return
       const text = extractText(userMessage)
       if (!text?.trim()) return
 
-      const idempotencyKey = generateId()
-      setChat((prev) => ({
-        ...prev,
-        sending: true,
-        error: null,
-        messages: [
-          ...prev.messages,
-          {
-            role: 'user',
-            content: [{ type: 'text', text }],
-            timestamp: Date.now(),
-            __optimisticId: idempotencyKey,
-          } as ChatMessage,
-        ],
-        runId: idempotencyKey,
-        streaming: '',
-      }))
-
-      try {
-        await client.request('chat.send', {
-          sessionKey: selectedSession,
-          message: text,
-          deliver: false,
-          idempotencyKey,
-        })
-      } catch (err) {
-        setChat((prev) => ({
-          ...prev,
-          sending: false,
-          streaming: null,
-          runId: null,
-          error: String(err),
-          messages: prev.messages.filter((m) => m.__optimisticId !== idempotencyKey),
-        }))
-      } finally {
-        setChat((prev) => ({ ...prev, sending: false }))
-      }
+      const id = generateId()
+      const contentBlocks: ChatMessageContent[] = [{ type: 'text', text }]
+      await executeSend({ message: text, attachments: [], contentBlocks, id })
     },
-    [client, connected, selectedSession],
+    [client, connected, selectedSession, executeSend],
   )
 
   // -- Abort ----------------------------------------------------------------
   const handleAbort = useCallback(async () => {
     if (!client || !selectedSession) return
     try {
-      await client.request('chat.abort', { sessionKey: selectedSession, ...(chat.runId ? { runId: chat.runId } : {}) })
+      const runId = runIdRef.current
+      await client.request('chat.abort', { sessionKey: selectedSession, ...(runId ? { runId } : {}) })
     } catch (err) {
       log.warn('Chat abort failed', err)
     }
-  }, [client, selectedSession, chat.runId])
+  }, [client, selectedSession])
 
   // -- Load more (pagination) ------------------------------------------------
   const handleLoadMore = useCallback(async () => {
     if (!client || !connected || !selectedSession || chat.loadingMore || !chat.hasMore) return
+    if (chat.runId !== null) return
     setChat((p) => ({ ...p, loadingMore: true }))
     try {
       const currentCount = chat.messages.length
@@ -849,7 +883,7 @@ export function useChat() {
       log.warn('Load more history failed', err)
       setChat((p) => ({ ...p, loadingMore: false }))
     }
-  }, [client, connected, selectedSession, chat.loadingMore, chat.hasMore, chat.messages.length])
+  }, [client, connected, selectedSession, chat.loadingMore, chat.hasMore, chat.runId, chat.messages.length])
 
   // -- Refresh --------------------------------------------------------------
   const handleRefresh = useCallback(async () => {

@@ -105,6 +105,311 @@ type GatewayStore = {
   _handleEvent: (frame: GatewayEventFrame) => void
 }
 
+type StoreSetter = (partial: Partial<GatewayStore> | ((state: GatewayStore) => Partial<GatewayStore>)) => void
+type StoreGetter = () => GatewayStore
+type StoreEventHandler = (payload: unknown, set: StoreSetter, get: StoreGetter) => void
+
+type AgentEventPayload = {
+  runId?: string
+  sessionKey?: string
+  stream?: string
+  data?: Record<string, unknown>
+}
+
+type ChatRunEventPayload = {
+  runId?: string
+  sessionKey?: string
+  state?: string
+}
+
+const EVENT_LOG_LIMIT = 250
+const COMPACTION_CLEAR_DELAY_MS = 5000
+const FALLBACK_CLEAR_DELAY_MS = 8000
+const STALE_RUN_MAX_AGE_MS = 120_000
+
+function appendEventLogIfEnabled(event: string, payload: unknown, set: StoreSetter, get: StoreGetter): void {
+  if (!get().eventLogEnabled) return
+  set((state) => ({
+    eventLog: [{ ts: Date.now(), event, payload }, ...state.eventLog].slice(0, EVENT_LOG_LIMIT),
+  }))
+}
+
+function handleSessionsEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload) return
+  const sessionData = payload as SessionsListResult
+  set({ sessions: sessionData.sessions, sessionsDefaults: sessionData.defaults })
+}
+
+function handleHealthEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload) return
+  set({ health: payload as HealthSnapshot })
+}
+
+function handlePresenceEvent(payload: unknown, set: StoreSetter, get: StoreGetter): void {
+  if (!payload) return
+  set({ presence: { ...get().presence, ...(payload as Record<string, PresenceEntry>) } })
+}
+
+function handleConfigEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload) return
+  set({ config: payload as ConfigSnapshot })
+}
+
+function handleChannelsEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload) return
+  set({ channels: payload as ChannelsStatusSnapshot })
+}
+
+function handleSkillsEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload) return
+  set({ skills: payload as SkillStatusReport })
+}
+
+function handleCronStatusEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload) return
+  set({ cronStatus: payload as CronStatus })
+}
+
+function handleCronJobsEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload) return
+  const cronData = payload as { jobs: Array<CronJob> }
+  set({ cronJobs: cronData.jobs })
+}
+
+function parseAgentEventPayload(payload: unknown): AgentEventPayload | null {
+  if (!payload || typeof payload !== 'object') return null
+  return payload as AgentEventPayload
+}
+
+function trackToolRunFromAgentEvent(agentPayload: AgentEventPayload, set: StoreSetter, get: StoreGetter): void {
+  if (agentPayload.stream !== 'tool') return
+  if (!agentPayload.runId || !agentPayload.sessionKey) return
+  if (get().activeRuns[agentPayload.runId]) return
+
+  const runId = agentPayload.runId
+  const sessionKey = agentPayload.sessionKey
+  set((state) => ({
+    activeRuns: { ...state.activeRuns, [runId]: { sessionKey, startedAt: Date.now() } },
+  }))
+}
+
+let compactionTimerHandle: ReturnType<typeof setTimeout> | null = null
+let fallbackTimerHandle: ReturnType<typeof setTimeout> | null = null
+
+function clearStatusTimers(): void {
+  if (compactionTimerHandle !== null) {
+    clearTimeout(compactionTimerHandle)
+    compactionTimerHandle = null
+  }
+  if (fallbackTimerHandle !== null) {
+    clearTimeout(fallbackTimerHandle)
+    fallbackTimerHandle = null
+  }
+}
+
+function scheduleCompactionStatusClear(sessionKey: string, set: StoreSetter, get: StoreGetter): void {
+  if (compactionTimerHandle !== null) clearTimeout(compactionTimerHandle)
+  compactionTimerHandle = setTimeout(() => {
+    compactionTimerHandle = null
+    const current = get().compactionStatus
+    if (current && !current.active && current.sessionKey === sessionKey) {
+      set({ compactionStatus: null })
+    }
+  }, COMPACTION_CLEAR_DELAY_MS)
+}
+
+function handleCompactionStatus(agentPayload: AgentEventPayload, set: StoreSetter, get: StoreGetter): void {
+  if (agentPayload.stream !== 'compaction') return
+  if (!agentPayload.sessionKey) return
+
+  const phase = agentPayload.data?.phase
+  if (phase === 'start') {
+    set({
+      compactionStatus: {
+        sessionKey: agentPayload.sessionKey,
+        active: true,
+        startedAt: Date.now(),
+        completedAt: null,
+      },
+    })
+    return
+  }
+
+  if (phase !== 'end') return
+
+  const sessionKey = agentPayload.sessionKey
+  set((state) => ({
+    compactionStatus: {
+      sessionKey,
+      active: false,
+      startedAt: state.compactionStatus?.startedAt ?? Date.now(),
+      completedAt: Date.now(),
+    },
+  }))
+  scheduleCompactionStatusClear(sessionKey, set, get)
+}
+
+function getFallbackPhase(
+  stream: string | undefined,
+  data: Record<string, unknown>,
+): 'fallback' | 'fallback_cleared' | null {
+  if (stream === 'fallback') return 'fallback'
+  const phase = data.phase
+  if (phase === 'fallback' || phase === 'fallback_cleared') return phase
+  return null
+}
+
+function getFallbackReason(data: Record<string, unknown>): string | undefined {
+  if (typeof data.reasonSummary === 'string') return data.reasonSummary
+  if (typeof data.reason === 'string') return data.reason
+  return undefined
+}
+
+function getFallbackAttempts(data: Record<string, unknown>): string[] {
+  if (!Array.isArray(data.attemptSummaries)) return []
+  return data.attemptSummaries.filter((attempt): attempt is string => typeof attempt === 'string')
+}
+
+function getFallbackModels(
+  data: Record<string, unknown>,
+): { selected: string; active: string; previous: string | null } | null {
+  const selected =
+    resolveModelLabel(data.selectedProvider, data.selectedModel) ?? resolveModelLabel(data.fromProvider, data.fromModel)
+  const active =
+    resolveModelLabel(data.activeProvider, data.activeModel) ?? resolveModelLabel(data.toProvider, data.toModel)
+  if (!selected || !active) return null
+
+  const previous = resolveModelLabel(data.previousActiveProvider, data.previousActiveModel)
+  return { selected, active, previous }
+}
+
+function scheduleFallbackStatusClear(sessionKey: string, set: StoreSetter, get: StoreGetter): void {
+  if (fallbackTimerHandle !== null) clearTimeout(fallbackTimerHandle)
+  fallbackTimerHandle = setTimeout(() => {
+    fallbackTimerHandle = null
+    const current = get().fallbackStatus
+    if (current?.sessionKey === sessionKey) {
+      set({ fallbackStatus: null })
+    }
+  }, FALLBACK_CLEAR_DELAY_MS)
+}
+
+function handleFallbackStatus(agentPayload: AgentEventPayload, set: StoreSetter, get: StoreGetter): void {
+  if (!agentPayload.sessionKey) return
+  if (agentPayload.stream !== 'lifecycle' && agentPayload.stream !== 'fallback') return
+
+  const data = agentPayload.data ?? {}
+  const phase = getFallbackPhase(agentPayload.stream, data)
+  if (!phase) return
+
+  const models = getFallbackModels(data)
+  if (!models) return
+
+  const isCleared = phase === 'fallback_cleared'
+  set({
+    fallbackStatus: {
+      sessionKey: agentPayload.sessionKey,
+      phase: isCleared ? 'cleared' : 'active',
+      selected: models.selected,
+      active: isCleared ? models.selected : models.active,
+      previous: isCleared ? (models.previous ?? undefined) : undefined,
+      reason: getFallbackReason(data),
+      attempts: getFallbackAttempts(data),
+      occurredAt: Date.now(),
+    },
+  })
+
+  scheduleFallbackStatusClear(agentPayload.sessionKey, set, get)
+}
+
+function handleAgentEvent(payload: unknown, set: StoreSetter, get: StoreGetter): void {
+  const agentPayload = parseAgentEventPayload(payload)
+  if (!agentPayload) return
+
+  trackToolRunFromAgentEvent(agentPayload, set, get)
+  handleCompactionStatus(agentPayload, set, get)
+  handleFallbackStatus(agentPayload, set, get)
+}
+
+function parseChatRunEventPayload(payload: unknown): ChatRunEventPayload | null {
+  if (!payload || typeof payload !== 'object') return null
+  return payload as ChatRunEventPayload
+}
+
+function isChatTerminalState(state: string | undefined): boolean {
+  return state === 'final' || state === 'error' || state === 'aborted'
+}
+
+function handleChatDeltaRun(runId: string, sessionKey: string, set: StoreSetter, get: StoreGetter): void {
+  const existing = get().activeRuns[runId]
+  if (existing?.sessionKey === sessionKey) return
+
+  set((state) => ({
+    activeRuns: { ...state.activeRuns, [runId]: { sessionKey, startedAt: Date.now() } },
+  }))
+}
+
+function handleChatTerminalRun(runId: string, set: StoreSetter): void {
+  set((state) => {
+    const next = { ...state.activeRuns }
+    delete next[runId]
+    return { activeRuns: next, sessionRefreshHint: state.sessionRefreshHint + 1 }
+  })
+}
+
+function handleChatEvent(payload: unknown, set: StoreSetter, get: StoreGetter): void {
+  const chatPayload = parseChatRunEventPayload(payload)
+  if (!chatPayload?.runId || !chatPayload.sessionKey) return
+
+  if (chatPayload.state === 'delta') {
+    handleChatDeltaRun(chatPayload.runId, chatPayload.sessionKey, set, get)
+    return
+  }
+
+  if (!isChatTerminalState(chatPayload.state)) return
+  handleChatTerminalRun(chatPayload.runId, set)
+}
+
+function collectStaleRunIds(
+  activeRuns: Record<string, { sessionKey: string; startedAt: number }>,
+  now: number,
+): string[] {
+  const staleRunIds: string[] = []
+  for (const [runId, runState] of Object.entries(activeRuns)) {
+    if (now - runState.startedAt > STALE_RUN_MAX_AGE_MS) {
+      staleRunIds.push(runId)
+    }
+  }
+  return staleRunIds
+}
+
+function handleTickEvent(_payload: unknown, set: StoreSetter, get: StoreGetter): void {
+  const staleRunIds = collectStaleRunIds(get().activeRuns, Date.now())
+  if (staleRunIds.length === 0) return
+
+  set((state) => {
+    const next = { ...state.activeRuns }
+    for (const runId of staleRunIds) {
+      delete next[runId]
+    }
+    return { activeRuns: next }
+  })
+}
+
+const STORE_EVENT_HANDLERS: Record<string, StoreEventHandler> = {
+  sessions: handleSessionsEvent,
+  health: handleHealthEvent,
+  presence: handlePresenceEvent,
+  config: handleConfigEvent,
+  channels: handleChannelsEvent,
+  skills: handleSkillsEvent,
+  'cron.status': handleCronStatusEvent,
+  'cron.jobs': handleCronJobsEvent,
+  agent: handleAgentEvent,
+  chat: handleChatEvent,
+  tick: handleTickEvent,
+}
+
 // ---------------------------------------------------------------------------
 //  Store creation
 // ---------------------------------------------------------------------------
@@ -179,6 +484,8 @@ export const useGatewayStore = create<GatewayStore>()(
             msg.includes('unauthorized')
           ) {
             set({ scopeError: 'Insufficient permissions — check gateway auth configuration' })
+          } else {
+            log.warn('Initial data fetch failed', msg)
           }
         })
       })
@@ -222,6 +529,7 @@ export const useGatewayStore = create<GatewayStore>()(
       if (client) {
         client.stop()
       }
+      clearStatusTimers()
       set({
         client: null,
         state: 'disconnected',
@@ -249,7 +557,7 @@ export const useGatewayStore = create<GatewayStore>()(
     setConfig: (config) => set({ config }),
     setAgents: (agents) => set({ agents }),
     setSessions: (sessions, defaults) =>
-      set({ sessions, ...(defaults !== undefined ? { sessionsDefaults: defaults } : {}) }),
+      set(defaults === undefined ? { sessions } : { sessions, sessionsDefaults: defaults }),
     setCronData: (jobs, status) => set({ cronJobs: jobs, cronStatus: status }),
     clearEventLog: () => set({ eventLog: [] }),
 
@@ -274,189 +582,16 @@ export const useGatewayStore = create<GatewayStore>()(
     _handleEvent(frame: GatewayEventFrame) {
       const { event, payload } = frame
 
-      // Append to event log only when Events page is active
-      if (get().eventLogEnabled) {
-        set((s) => ({
-          eventLog: [{ ts: Date.now(), event, payload }, ...s.eventLog].slice(0, 250),
-        }))
+      appendEventLogIfEnabled(event, payload, set, get)
+
+      const handler = STORE_EVENT_HANDLERS[event]
+      if (handler) {
+        handler(payload, set, get)
+        return
       }
 
-      switch (event) {
-        case 'sessions': {
-          if (!payload) break
-          const sessionData = payload as SessionsListResult
-          set({ sessions: sessionData.sessions, sessionsDefaults: sessionData.defaults })
-          break
-        }
-        case 'health': {
-          if (payload) set({ health: payload as HealthSnapshot })
-          break
-        }
-        case 'presence': {
-          if (payload) {
-            set({ presence: { ...get().presence, ...(payload as Record<string, PresenceEntry>) } })
-          }
-          break
-        }
-        case 'config': {
-          if (payload) set({ config: payload as ConfigSnapshot })
-          break
-        }
-        case 'channels': {
-          if (payload) set({ channels: payload as ChannelsStatusSnapshot })
-          break
-        }
-        case 'skills': {
-          if (payload) set({ skills: payload as SkillStatusReport })
-          break
-        }
-        case 'cron.status': {
-          if (payload) set({ cronStatus: payload as CronStatus })
-          break
-        }
-        case 'cron.jobs': {
-          if (!payload) break
-          const cronData = payload as { jobs: Array<CronJob> }
-          set({ cronJobs: cronData.jobs })
-          break
-        }
-        case 'agent': {
-          if (!payload) break
-          const p = payload as {
-            runId?: string
-            sessionKey?: string
-            stream?: string
-            data?: Record<string, unknown>
-          }
-          const runId = p.runId
-          const sessionKey = p.sessionKey
-
-          if (runId && sessionKey && p.stream === 'tool') {
-            if (!get().activeRuns[runId]) {
-              set((s) => ({
-                activeRuns: { ...s.activeRuns, [runId]: { sessionKey, startedAt: Date.now() } },
-              }))
-            }
-          }
-
-          if (p.stream === 'compaction' && sessionKey) {
-            const phase = p.data?.phase as string | undefined
-            if (phase === 'start') {
-              set({ compactionStatus: { sessionKey, active: true, startedAt: Date.now(), completedAt: null } })
-            } else if (phase === 'end') {
-              set((s) => ({
-                compactionStatus: {
-                  sessionKey,
-                  active: false,
-                  startedAt: s.compactionStatus?.startedAt ?? Date.now(),
-                  completedAt: Date.now(),
-                },
-              }))
-              setTimeout(() => {
-                const current = get().compactionStatus
-                if (current && !current.active && current.sessionKey === sessionKey) {
-                  set({ compactionStatus: null })
-                }
-              }, 5000)
-            }
-          }
-
-          if ((p.stream === 'lifecycle' || p.stream === 'fallback') && sessionKey) {
-            const data = p.data ?? {}
-            const phase = p.stream === 'fallback' ? 'fallback' : (data.phase as string | undefined)
-            if (phase !== 'fallback' && phase !== 'fallback_cleared') break
-
-            const selected =
-              resolveModelLabel(data.selectedProvider, data.selectedModel) ??
-              resolveModelLabel(data.fromProvider, data.fromModel)
-            const active =
-              resolveModelLabel(data.activeProvider, data.activeModel) ??
-              resolveModelLabel(data.toProvider, data.toModel)
-            if (!selected || !active) break
-
-            const previous = resolveModelLabel(data.previousActiveProvider, data.previousActiveModel)
-            const reason =
-              typeof data.reasonSummary === 'string'
-                ? data.reasonSummary
-                : typeof data.reason === 'string'
-                  ? data.reason
-                  : undefined
-            const attempts = Array.isArray(data.attemptSummaries)
-              ? (data.attemptSummaries as string[]).filter((s) => typeof s === 'string')
-              : []
-
-            set({
-              fallbackStatus: {
-                sessionKey,
-                phase: phase === 'fallback_cleared' ? 'cleared' : 'active',
-                selected,
-                active: phase === 'fallback_cleared' ? selected : active,
-                previous: phase === 'fallback_cleared' ? (previous ?? undefined) : undefined,
-                reason: reason ?? undefined,
-                attempts,
-                occurredAt: Date.now(),
-              },
-            })
-            setTimeout(() => {
-              const current = get().fallbackStatus
-              if (current && current.sessionKey === sessionKey) {
-                set({ fallbackStatus: null })
-              }
-            }, 8000)
-          }
-
-          break
-        }
-        case 'chat': {
-          if (payload) {
-            const chatPayload = payload as { runId?: string; sessionKey?: string; state?: string }
-            const runId = chatPayload.runId
-            const sessionKey = chatPayload.sessionKey
-            if (runId && sessionKey) {
-              if (chatPayload.state === 'delta') {
-                // Only add if not already tracked — avoid new object on every token
-                const existing = get().activeRuns[runId]
-                if (!existing || existing.sessionKey !== sessionKey) {
-                  set((s) => ({
-                    activeRuns: { ...s.activeRuns, [runId]: { sessionKey, startedAt: Date.now() } },
-                  }))
-                }
-              } else if (
-                chatPayload.state === 'final' ||
-                chatPayload.state === 'error' ||
-                chatPayload.state === 'aborted'
-              ) {
-                set((s) => {
-                  const next = { ...s.activeRuns }
-                  delete next[runId]
-                  return { activeRuns: next, sessionRefreshHint: s.sessionRefreshHint + 1 }
-                })
-              }
-            }
-          }
-          break
-        }
-        case 'tick': {
-          // Prune stale activeRuns — if no event received for 30s, assume run ended
-          const STALE_MS = 30_000
-          const now = Date.now()
-          const runs = get().activeRuns
-          const staleKeys = Object.entries(runs)
-            .filter(([, v]) => now - v.startedAt > STALE_MS)
-            .map(([k]) => k)
-          if (staleKeys.length > 0) {
-            set((s) => {
-              const next = { ...s.activeRuns }
-              for (const k of staleKeys) delete next[k]
-              return { activeRuns: next }
-            })
-          }
-          break
-        }
-        default:
-          if (import.meta.env.DEV) {
-            log.debug(`Unhandled event: ${event}`, payload as Record<string, unknown>)
-          }
+      if (import.meta.env.DEV) {
+        log.debug(`Unhandled event: ${event}`, payload as Record<string, unknown>)
       }
     },
   })),

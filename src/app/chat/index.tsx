@@ -4,6 +4,7 @@
 
 import { ChevronLeft, OctagonX, Paperclip, Plus, RefreshCw, RotateCcw, Send, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { sessionLabel } from '@/app/sessions/utils'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   ChatContainerContent,
@@ -46,7 +47,6 @@ import { ToolGroup } from './components/tool-group'
 import { useChat } from './hooks/use-chat'
 import type { AttachmentFile, Source } from './types'
 import { ALL_ACCEPT } from './types'
-import { sessionLabel } from './utils'
 
 const log = createLogger('chat:page')
 
