@@ -20,7 +20,6 @@ type Props = {
   readonly isDefault: boolean
 }
 
-
 function summarize(accounts: ChannelAccountSnapshot[]) {
   let connected = 0,
     configured = 0,

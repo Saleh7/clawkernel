@@ -338,7 +338,6 @@ function BindingFormDialog({
   )
 }
 
-
 export function AgentBindings({ agentId, config, isDefault, client }: Props) {
   const [createOpen, setCreateOpen] = useState(false)
   const [editIndex, setEditIndex] = useState<number | null>(null)

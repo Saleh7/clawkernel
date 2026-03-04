@@ -110,7 +110,6 @@ function computeAgentData(
   }
 }
 
-
 function agentIdentityLabel(d: AgentDataResult | null | undefined): string | undefined {
   if (!d) return undefined
   return `${d.identity?.emoji ?? ''} ${d.identity?.name ?? d.agent.id}`.trim()

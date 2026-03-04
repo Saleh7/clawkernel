@@ -295,7 +295,6 @@ function ActivityFilter({
   )
 }
 
-
 export function AgentActivity({ agentId, client }: Props) {
   const eventLog = useGatewayStore((s) => s.eventLog)
   const cronJobs = useGatewayStore((s) => s.cronJobs)
