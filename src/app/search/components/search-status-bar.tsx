@@ -73,7 +73,8 @@ function StatusTile({ label, value, accent }: Tile) {
 export function SearchStatusBar({ cfg }: { readonly cfg: WebSearchConfig }) {
   const provider = cfg.provider ?? 'brave'
   const model = activeModel(cfg)
-  const ttl = cfg.cacheTtlMinutes != null ? `${cfg.cacheTtlMinutes}m` : '—'
+  const hasTtl = cfg.cacheTtlMinutes !== null && cfg.cacheTtlMinutes !== undefined
+  const ttl = hasTtl ? `${cfg.cacheTtlMinutes}m` : '—'
   const keys = keysConfigured(cfg)
   const activeConfigured = isActiveProviderConfigured(cfg)
 

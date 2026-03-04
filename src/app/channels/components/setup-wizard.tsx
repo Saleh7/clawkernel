@@ -38,6 +38,24 @@ type Props = {
   readonly onRefresh: () => void
 }
 
+function setupStepTitle(step: Step, label?: string): string {
+  if (step === 'choose') return 'Add Channel'
+  if (step === 'configure') return `Setup ${label ?? ''}`
+  return 'Setup Complete'
+}
+
+function setupStepLabel(step: Step): string {
+  if (step === 'choose') return 'Choose'
+  if (step === 'configure') return 'Configure'
+  return 'Done'
+}
+
+function setupTypeLabel(setupType: ChannelKnownMeta['setupType']): string {
+  if (setupType === 'token') return 'Token setup'
+  if (setupType === 'qr') return 'QR login'
+  return 'CLI setup'
+}
+
 export function SetupWizard({
   open,
   onOpenChange,
@@ -116,11 +134,7 @@ export function SetupWizard({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-4 w-4 text-primary" />
-            {step === 'choose'
-              ? 'Add Channel'
-              : step === 'configure'
-                ? `Setup ${current?.label ?? ''}`
-                : 'Setup Complete'}
+            {setupStepTitle(step, current?.label)}
           </DialogTitle>
           <DialogDescription>
             {step === 'choose' && 'Pick a channel to connect.'}
@@ -142,9 +156,7 @@ export function SetupWizard({
               >
                 {i + 1}
               </span>
-              <span className="text-muted-foreground">
-                {s === 'choose' ? 'Choose' : s === 'configure' ? 'Configure' : 'Done'}
-              </span>
+              <span className="text-muted-foreground">{setupStepLabel(s)}</span>
               {i < 2 && <span className="text-muted-foreground/40">→</span>}
             </div>
           ))}
@@ -168,13 +180,7 @@ export function SetupWizard({
                 <span className="text-lg">{ch.meta.icon}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium">{ch.label}</div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {ch.meta.setupType === 'token'
-                      ? 'Token setup'
-                      : ch.meta.setupType === 'qr'
-                        ? 'QR login'
-                        : 'CLI setup'}
-                  </div>
+                  <div className="text-[10px] text-muted-foreground">{setupTypeLabel(ch.meta.setupType)}</div>
                 </div>
                 <Badge
                   variant="outline"
@@ -282,8 +288,8 @@ export function SetupWizard({
             <div className="space-y-1">
               <p className="text-xs font-medium">Next steps:</p>
               <ol className="list-decimal space-y-1 pl-4 text-xs text-muted-foreground">
-                {current.meta.postSetup.map((s, i) => (
-                  <li key={i}>{s}</li>
+                {current.meta.postSetup.map((s) => (
+                  <li key={s}>{s}</li>
                 ))}
               </ol>
             </div>

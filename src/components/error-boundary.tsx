@@ -67,7 +67,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <button
               type="button"
-              onClick={() => window.location.reload()}
+              onClick={() => globalThis.location.reload()}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <svg

@@ -31,7 +31,10 @@ export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAl
   const availableModels = models.filter((m) => !cataloguedIds.has(m.id) && !cataloguedIds.has(`${m.provider}/${m.id}`))
   const byProvider = availableModels.reduce<Record<string, ModelCatalogEntry[]>>((acc, m) => {
     const p = m.provider || 'other'
-    ;(acc[p] ??= []).push(m)
+    if (!acc[p]) {
+      acc[p] = []
+    }
+    acc[p].push(m)
     return acc
   }, {})
 

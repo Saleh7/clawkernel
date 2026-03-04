@@ -55,7 +55,8 @@ function groupBySource(skills: SkillStatusEntry[]): Partial<Record<SourceGroup, 
   const out: Partial<Record<SourceGroup, SkillStatusEntry[]>> = {}
   for (const s of skills) {
     const key = toSourceGroup(s)
-    ;(out[key] ??= []).push(s)
+    out[key] ??= []
+    out[key].push(s)
   }
   return out
 }
@@ -194,6 +195,90 @@ export default function SkillsPage() {
     })
   }
 
+  let content: React.ReactNode
+  if (loading) {
+    content = (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 9 }, (_unused, n) => `skills-skeleton-${n + 1}`).map((id) => (
+          <div key={id} className="h-32 animate-pulse rounded-xl bg-muted/30" />
+        ))}
+      </div>
+    )
+  } else if (filtered.length === 0) {
+    content = (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-border/40 py-16 gap-3 text-center">
+        <Package className="h-8 w-8 text-muted-foreground/20" />
+        <p className="text-sm font-medium text-muted-foreground">
+          {search ? `No skills matching "${search}"` : 'No skills found'}
+        </p>
+      </div>
+    )
+  } else {
+    content = (
+      <div className="space-y-6">
+        {SOURCE_ORDER.filter((src) => (groups[src]?.length ?? 0) > 0).map((src) => {
+          const items = groups[src]!
+          const isCollapsed = collapsed.has(src)
+          return (
+            <div key={src}>
+              <button
+                type="button"
+                onClick={() => toggleSection(src)}
+                className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+                <span className="text-sm">{SOURCE_ICONS[src]}</span>
+                <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  {SOURCE_LABELS[src]}
+                </p>
+                <Badge variant="secondary" className="text-[9px]">
+                  {items.length}
+                </Badge>
+              </button>
+
+              {!isCollapsed &&
+                (viewMode === 'grid' ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {items.map((skill) => (
+                      <SkillCard
+                        key={skill.skillKey}
+                        skill={skill}
+                        enabled={enabledSet.has(skill.name)}
+                        busy={
+                          busyKey === skill.skillKey ||
+                          skill.install.some((o) => busyKey === `install:${skill.name}:${o.id}`)
+                        }
+                        onToggle={() => void handleToggle(skill.skillKey, !enabledSet.has(skill.name))}
+                        onInstall={(installId) => void handleInstall(skill.name, installId)}
+                        onSetApiKey={(apiKey) => void handleSetApiKey(skill.skillKey, apiKey)}
+                        onExpand={() => setDetailSkill(skill)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-border/40 overflow-hidden divide-y divide-border/30">
+                    {items.map((skill) => (
+                      <SkillRow
+                        key={skill.skillKey}
+                        skill={skill}
+                        enabled={enabledSet.has(skill.name)}
+                        onToggle={() => void handleToggle(skill.skillKey, !enabledSet.has(skill.name))}
+                        onExpand={() => setDetailSkill(skill)}
+                      />
+                    ))}
+                  </div>
+                ))}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
@@ -282,82 +367,7 @@ export default function SkillsPage() {
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="h-32 animate-pulse rounded-xl bg-muted/30" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border/40 py-16 gap-3 text-center">
-          <Package className="h-8 w-8 text-muted-foreground/20" />
-          <p className="text-sm font-medium text-muted-foreground">
-            {search ? `No skills matching "${search}"` : 'No skills found'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {SOURCE_ORDER.filter((src) => (groups[src]?.length ?? 0) > 0).map((src) => {
-            const items = groups[src]!
-            const isCollapsed = collapsed.has(src)
-            return (
-              <div key={src}>
-                <button
-                  type="button"
-                  onClick={() => toggleSection(src)}
-                  className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
-                >
-                  {isCollapsed ? (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                  <span className="text-sm">{SOURCE_ICONS[src]}</span>
-                  <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    {SOURCE_LABELS[src]}
-                  </p>
-                  <Badge variant="secondary" className="text-[9px]">
-                    {items.length}
-                  </Badge>
-                </button>
-
-                {!isCollapsed &&
-                  (viewMode === 'grid' ? (
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {items.map((skill) => (
-                        <SkillCard
-                          key={skill.skillKey}
-                          skill={skill}
-                          enabled={enabledSet.has(skill.name)}
-                          busy={
-                            busyKey === skill.skillKey ||
-                            skill.install.some((o) => busyKey === `install:${skill.name}:${o.id}`)
-                          }
-                          onToggle={() => void handleToggle(skill.skillKey, !enabledSet.has(skill.name))}
-                          onInstall={(installId) => void handleInstall(skill.name, installId)}
-                          onSetApiKey={(apiKey) => void handleSetApiKey(skill.skillKey, apiKey)}
-                          onExpand={() => setDetailSkill(skill)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-border/40 overflow-hidden divide-y divide-border/30">
-                      {items.map((skill) => (
-                        <SkillRow
-                          key={skill.skillKey}
-                          skill={skill}
-                          enabled={enabledSet.has(skill.name)}
-                          onToggle={() => void handleToggle(skill.skillKey, !enabledSet.has(skill.name))}
-                          onExpand={() => setDetailSkill(skill)}
-                        />
-                      ))}
-                    </div>
-                  ))}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {content}
 
       {/* Detail panel */}
       {detailSkill && (

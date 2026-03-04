@@ -67,7 +67,7 @@ function RunCard({ run, is24h }: { readonly run: CronRunLogEntry; readonly is24h
 
       {!expanded && run.summary && (
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground/85">
-          {run.summary.replace(/[*#|_`]/g, '').slice(0, 200)}
+          {run.summary.replaceAll(/[*#|_`]/g, '').slice(0, 200)}
         </p>
       )}
 

@@ -44,6 +44,12 @@ function isConfigured(provider: WebSearchProvider, cfg: WebSearchConfig): boolea
   return Boolean(cfg[provider]?.apiKey)
 }
 
+function providerCardClass(isActive: boolean, configured: boolean): string {
+  if (isActive) return 'border-emerald-500/30 bg-emerald-500/5'
+  if (configured) return 'border-border/60 bg-muted/20'
+  return 'border-border/30 bg-muted/10 opacity-60'
+}
+
 function ProviderCard({
   provider,
   cfg,
@@ -57,16 +63,7 @@ function ProviderCard({
   const configured = isConfigured(provider, cfg)
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border p-3.5 transition-colors',
-        isActive
-          ? 'border-emerald-500/30 bg-emerald-500/5'
-          : configured
-            ? 'border-border/60 bg-muted/20'
-            : 'border-border/30 bg-muted/10 opacity-60',
-      )}
-    >
+    <div className={cn('rounded-xl border p-3.5 transition-colors', providerCardClass(isActive, configured))}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

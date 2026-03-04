@@ -24,6 +24,7 @@ export function ToolCallBlock({
 }) {
   const [open, setOpen] = useState(false)
   const argsStr = JSON.stringify(args, null, 2)
+  const hasResult = result !== undefined
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -38,7 +39,7 @@ export function ToolCallBlock({
         >
           <Wrench className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span className="font-mono font-medium text-foreground">{name}</span>
-          {result !== undefined ? (
+          {hasResult ? (
             <Badge variant={isError ? 'destructive' : 'secondary'} className="ml-auto text-[10px]">
               {isError ? 'Error' : 'Done'}
             </Badge>
@@ -56,7 +57,7 @@ export function ToolCallBlock({
               <pre className="mt-1 whitespace-pre-wrap text-foreground/80 max-h-40 overflow-auto">{argsStr}</pre>
             </div>
           )}
-          {result !== undefined && (
+          {hasResult && (
             <div>
               <span
                 className={cn(
@@ -117,7 +118,7 @@ export function ToolGroup({
             >
               <Wrench className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span className="font-medium text-foreground">
-                {allToolCalls.length} tool{allToolCalls.length !== 1 ? 's' : ''} used
+                {allToolCalls.length} tool{allToolCalls.length === 1 ? '' : 's'} used
               </span>
               {allDone ? (
                 <Badge variant="secondary" className="ml-auto text-[10px]">

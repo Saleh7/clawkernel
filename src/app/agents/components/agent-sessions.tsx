@@ -56,10 +56,6 @@ type Props = {
 type SortKey = 'updated' | 'tokens' | 'name'
 type SortDir = 'asc' | 'desc'
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
-
 function sessionBelongsToAgent(key: string, agentId: string): boolean {
   return key.startsWith(`agent:${agentId}:`)
 }
@@ -72,6 +68,13 @@ function extractSessionType(key: string): string {
   if (key.includes(':group:')) return 'group'
   if (key.includes(':subagent:')) return 'subagent'
   return 'direct'
+}
+
+function sessionDotClass(isRunning: boolean, isActive: boolean, hasUpdatedAt: boolean): string {
+  if (isRunning) return 'bg-emerald-400 animate-pulse'
+  if (isActive) return 'bg-emerald-500'
+  if (hasUpdatedAt) return 'bg-amber-500/60'
+  return 'bg-muted-foreground/30'
 }
 
 const kindColors: Record<string, string> = {
@@ -155,16 +158,7 @@ function SessionCard({
         {/* Status indicator */}
         <div className="relative shrink-0">
           <div
-            className={cn(
-              'h-2.5 w-2.5 rounded-full',
-              isRunning
-                ? 'bg-emerald-400 animate-pulse'
-                : isActive
-                  ? 'bg-emerald-500'
-                  : session.updatedAt
-                    ? 'bg-amber-500/60'
-                    : 'bg-muted-foreground/30',
-            )}
+            className={cn('h-2.5 w-2.5 rounded-full', sessionDotClass(isRunning, isActive, Boolean(session.updatedAt)))}
           />
         </div>
 
@@ -321,7 +315,7 @@ function TokenStat({
     <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
       <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className={cn('mt-0.5 font-mono text-sm font-semibold', highlight ? 'text-primary' : 'text-foreground')}>
-        {value != null ? formatTokens(value) : '—'}
+        {value === null || value === undefined ? '—' : formatTokens(value)}
       </p>
     </div>
   )
@@ -407,10 +401,6 @@ function VirtualSessionCards({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  AgentSessions — main export
-// ---------------------------------------------------------------------------
 
 export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) {
   const [search, setSearch] = useState('')

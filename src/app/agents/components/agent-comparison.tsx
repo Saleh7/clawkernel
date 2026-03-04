@@ -24,10 +24,6 @@ type Props = {
 
 import type { ParsedConfig } from '../types'
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
-
 function sessionBelongsToAgent(key: string, agentId: string): boolean {
   return key.startsWith(`agent:${agentId}:`)
 }
@@ -114,9 +110,6 @@ function computeAgentData(
   }
 }
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
 
 function agentIdentityLabel(d: AgentDataResult | null | undefined): string | undefined {
   if (!d) return undefined
@@ -266,10 +259,6 @@ function AgentColumnHeader({ d }: { readonly d: AgentDataResult | null }) {
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  AgentComparison — main export
-// ---------------------------------------------------------------------------
 
 export function AgentComparison({ agents, sessions, config, identities, activeRuns, onClose }: Props) {
   const [agentAId, setAgentAId] = useState<string | null>(agents[0]?.id ?? null)

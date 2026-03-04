@@ -70,12 +70,12 @@ export function ProviderCard({ provider, isActive, saving, onSetActive }: Props)
           <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
             {provider.models.length > 0 && (
               <span>
-                {provider.models.length} model{provider.models.length !== 1 ? 's' : ''}
+                {provider.models.length} model{provider.models.length === 1 ? '' : 's'}
               </span>
             )}
             {provider.voices && provider.voices.length > 0 && (
               <span>
-                {provider.voices.length} voice{provider.voices.length !== 1 ? 's' : ''}
+                {provider.voices.length} voice{provider.voices.length === 1 ? '' : 's'}
               </span>
             )}
           </div>

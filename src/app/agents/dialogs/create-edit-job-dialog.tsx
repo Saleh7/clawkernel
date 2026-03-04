@@ -25,6 +25,17 @@ import {
   refreshCron,
 } from '../cron-utils'
 
+function scheduleKindLabel(kind: 'cron' | 'every' | 'at'): string {
+  if (kind === 'cron') return 'Cron Expression'
+  if (kind === 'every') return 'Interval'
+  return 'One-shot'
+}
+
+function submitButtonLabel(busy: boolean, isEdit: boolean): string {
+  if (busy) return isEdit ? 'Saving…' : 'Creating…'
+  return isEdit ? 'Save Changes' : 'Create Job'
+}
+
 export function CreateEditJobDialog({
   open,
   onOpenChange,
@@ -131,7 +142,7 @@ export function CreateEditJobDialog({
                     variant={form.scheduleKind === k ? 'default' : 'outline'}
                     onClick={() => update('scheduleKind', k)}
                   >
-                    {k === 'cron' ? 'Cron Expression' : k === 'every' ? 'Interval' : 'One-shot'}
+                    {scheduleKindLabel(k)}
                   </Button>
                 ))}
               </div>
@@ -323,7 +334,7 @@ export function CreateEditJobDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={busy}>
-            {busy ? (editJob ? 'Saving…' : 'Creating…') : editJob ? 'Save Changes' : 'Create Job'}
+            {submitButtonLabel(busy, Boolean(editJob))}
           </Button>
         </DialogFooter>
       </DialogContent>

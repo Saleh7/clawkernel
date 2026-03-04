@@ -19,8 +19,8 @@ function SessionsSkeleton() {
     <div className="p-4 sm:p-6 space-y-6">
       <PageHeader icon={Layers} title="Sessions" description="Manage active sessions" />
       <div className="space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-2xl" />
+        {Array.from({ length: 4 }, (_unused, n) => `sessions-skeleton-${n + 1}`).map((id) => (
+          <Skeleton key={id} className="h-14 w-full rounded-2xl" />
         ))}
       </div>
     </div>

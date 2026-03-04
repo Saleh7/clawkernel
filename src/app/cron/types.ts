@@ -144,7 +144,6 @@ export function jobToForm(job: CronJob): CronFormState {
   let staggerMs = 0
 
   if (s.kind === 'cron') {
-    scheduleKind = 'cron'
     cronExpr = s.expr
     cronTz = s.tz ?? ''
     staggerMs = s.staggerMs ?? 0

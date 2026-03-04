@@ -62,7 +62,7 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
     skill.missing.config.length > 0 ||
     skill.missing.os.length > 0
 
-  const handleKeySubmit = (e: React.FormEvent) => {
+  const handleKeySubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     const val = apiKeyRef.current?.value.trim()
     if (val) {

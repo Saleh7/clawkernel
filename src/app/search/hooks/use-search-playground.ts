@@ -83,7 +83,7 @@ export function useSearchPlayground() {
       // Subscribe to chat broadcast events before sending the message
       const unsub = client.on('chat', (payload: unknown) => {
         const p = payload as { runId?: string; state?: string; message?: unknown; errorMessage?: string } | undefined
-        if (!p || p.runId !== runIdRef.current) return
+        if (p?.runId !== runIdRef.current) return
 
         if (p.state === 'delta') {
           // Each delta carries the full accumulated text so far — set, don't append.

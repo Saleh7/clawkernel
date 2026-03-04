@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 type Theme = 'light' | 'dark' | 'system'
 
 function getSystemTheme(): 'light' | 'dark' {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 function applyTheme(theme: Theme) {
@@ -12,21 +12,21 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => {
+  const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem('clawkernel-theme') as Theme | null
     return stored ?? 'dark'
   })
 
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t)
-    localStorage.setItem('clawkernel-theme', t)
-    applyTheme(t)
+  const updateTheme = useCallback((nextTheme: Theme) => {
+    setTheme(nextTheme)
+    localStorage.setItem('clawkernel-theme', nextTheme)
+    applyTheme(nextTheme)
   }, [])
 
   // Apply on mount + listen for system changes
   useEffect(() => {
     applyTheme(theme)
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const mq = globalThis.matchMedia('(prefers-color-scheme: dark)')
     const handler = () => {
       if (theme === 'system') applyTheme('system')
     }
@@ -39,8 +39,8 @@ export function useTheme() {
   const cycle = useCallback(() => {
     const order: Theme[] = ['light', 'dark', 'system']
     const next = order[(order.indexOf(theme) + 1) % order.length]
-    setTheme(next)
-  }, [theme, setTheme])
+    updateTheme(next)
+  }, [theme, updateTheme])
 
-  return { theme, resolvedTheme, setTheme, cycle }
+  return { theme, resolvedTheme, setTheme: updateTheme, cycle }
 }

@@ -74,18 +74,36 @@ const IDENTITY_FIELD_MAP: Readonly<Record<string, keyof IdentityFields>> = {
   theme: 'theme',
 }
 
+function stripListPrefix(line: string): string {
+  const trimmed = line.trimStart()
+  return trimmed.startsWith('- ') ? trimmed.slice(2) : trimmed
+}
+
+function trimWrappingEmphasis(value: string): string {
+  let start = 0
+  let end = value.length
+
+  while (start < end && (value[start] === '*' || value[start] === '_')) {
+    start += 1
+  }
+  while (end > start && (value[end - 1] === '*' || value[end - 1] === '_')) {
+    end -= 1
+  }
+
+  return value.slice(start, end)
+}
+
 function parseIdentityMd(content: string): IdentityFields {
   const fields = { ...EMPTY_FIELDS }
   for (const line of content.split(/\r?\n/)) {
-    const cleaned = line.trim().replace(/^\s*-\s*/, '')
+    const cleaned = stripListPrefix(line).trim()
     const colonIdx = cleaned.indexOf(':')
     if (colonIdx === -1) continue
-    const label = cleaned.slice(0, colonIdx).replace(/[*_]/g, '').trim().toLowerCase()
-    const value = cleaned
-      .slice(colonIdx + 1)
-      .replace(/(?:^[*_]+|[*_]+$)/g, '')
-      .trim()
+
+    const label = cleaned.slice(0, colonIdx).replaceAll(/[*_]/g, '').trim().toLowerCase()
+    const value = trimWrappingEmphasis(cleaned.slice(colonIdx + 1)).trim()
     if (!value) continue
+
     const fieldKey = IDENTITY_FIELD_MAP[label]
     if (fieldKey) fields[fieldKey] = value
   }
@@ -297,8 +315,8 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
 
         {loading ? (
           <div className="space-y-3 py-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-14 animate-pulse rounded-lg bg-muted/30" />
+            {Array.from({ length: 4 }, (_unused, n) => `identity-skeleton-${n + 1}`).map((id) => (
+              <div key={id} className="h-14 animate-pulse rounded-lg bg-muted/30" />
             ))}
           </div>
         ) : (

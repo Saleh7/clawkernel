@@ -3,6 +3,32 @@ import { cn } from '@/lib/utils'
 import type { AttachmentFile } from '../types'
 import { FILE_ICONS } from '../types'
 
+function attachmentSizeLabel(attachment: AttachmentFile): React.ReactNode | null {
+  if (!attachment.textContent) return null
+  if (attachment.truncated) return <span className="text-yellow-500"> · Truncated (200K chars)</span>
+  return <span className="text-primary"> · Ready</span>
+}
+
+function AttachmentThumbnail({
+  attachment,
+  icon,
+}: {
+  readonly attachment: AttachmentFile
+  readonly icon: string | undefined
+}) {
+  if (attachment.preview) {
+    return <img src={attachment.preview} alt={attachment.file.name} className="h-8 w-8 rounded object-cover shrink-0" />
+  }
+  if (icon) {
+    return <div className="flex h-8 w-8 items-center justify-center rounded bg-muted shrink-0 text-base">{icon}</div>
+  }
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded bg-muted shrink-0">
+      <Paperclip className="h-3 w-3 text-muted-foreground" />
+    </div>
+  )
+}
+
 function AttachmentPreview({
   attachment,
   onRemove,
@@ -20,15 +46,7 @@ function AttachmentPreview({
         attachment.error ? 'border-destructive/40 bg-destructive/5' : 'border-border bg-card/50',
       )}
     >
-      {attachment.preview ? (
-        <img src={attachment.preview} alt={attachment.file.name} className="h-8 w-8 rounded object-cover shrink-0" />
-      ) : icon ? (
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-muted shrink-0 text-base">{icon}</div>
-      ) : (
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-muted shrink-0">
-          <Paperclip className="h-3 w-3 text-muted-foreground" />
-        </div>
-      )}
+      <AttachmentThumbnail attachment={attachment} icon={icon} />
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-medium text-foreground truncate">{attachment.file.name}</p>
         {attachment.error ? (
@@ -36,11 +54,7 @@ function AttachmentPreview({
         ) : (
           <p className="text-[9px] text-muted-foreground">
             {ext} · {(attachment.file.size / 1024).toFixed(0)} KB
-            {attachment.textContent && attachment.truncated ? (
-              <span className="text-yellow-500"> · Truncated (200K chars)</span>
-            ) : attachment.textContent ? (
-              <span className="text-primary"> · Ready</span>
-            ) : null}
+            {attachmentSizeLabel(attachment)}
           </p>
         )}
       </div>

@@ -33,7 +33,7 @@ export function SourcesButton({ sources, onClick }: { readonly sources: Source[]
       </div>
       <Link2 className="h-3 w-3" />
       <span>
-        {sources.length} source{sources.length !== 1 ? 's' : ''}
+        {sources.length} source{sources.length === 1 ? '' : 's'}
       </span>
     </button>
   )

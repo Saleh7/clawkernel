@@ -22,6 +22,12 @@ type Props = {
   readonly onSaved: () => void
 }
 
+function scheduleKindLabel(kind: 'cron' | 'every' | 'at'): string {
+  if (kind === 'cron') return 'Cron'
+  if (kind === 'every') return 'Interval'
+  return 'One-shot'
+}
+
 export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
   const [form, setForm] = useState<CronFormState>(() => jobToForm(job))
   const [busy, setBusy] = useState(false)
@@ -104,7 +110,7 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
               className="text-xs"
               onClick={() => update('scheduleKind', k)}
             >
-              {k === 'cron' ? 'Cron' : k === 'every' ? 'Interval' : 'One-shot'}
+              {scheduleKindLabel(k)}
             </Button>
           ))}
         </div>
@@ -251,7 +257,7 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
               onChange={(e) => update('deliveryBestEffort', e.target.checked)}
               className="rounded"
             />
-            Best effort (don't fail the job if delivery fails)
+            <span>Best effort (don't fail the job if delivery fails)</span>
           </label>
         )}
       </div>
@@ -265,7 +271,7 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
             onChange={(e) => update('enabled', e.target.checked)}
             className="rounded"
           />
-          Enabled
+          <span>Enabled</span>
         </label>
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input
@@ -274,7 +280,7 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
             onChange={(e) => update('deleteAfterRun', e.target.checked)}
             className="rounded"
           />
-          Delete after run
+          <span>Delete after run</span>
         </label>
         <div className="flex gap-4">
           <div className="flex items-center gap-2 text-xs">

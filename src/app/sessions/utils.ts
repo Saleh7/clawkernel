@@ -6,8 +6,10 @@ export { formatRelativeTime, formatTokens } from '@/lib/format'
 
 export const DISPLAY_PAGE_SIZE = 50
 
+const AGENT_KEY_RE = /^agent:([^:]+):/
+
 export function extractAgentId(key: string): string {
-  const match = key.match(/^agent:([^:]+):/)
+  const match = AGENT_KEY_RE.exec(key)
   return match?.[1] ?? 'unknown'
 }
 

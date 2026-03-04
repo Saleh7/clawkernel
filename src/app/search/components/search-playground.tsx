@@ -67,7 +67,7 @@ function ResultPanel({ state, agentId }: { readonly state: PlaygroundState; read
         {state.status === 'streaming' && (
           <span className="inline-flex items-center gap-1 rounded border border-sky-500/25 bg-sky-500/10 px-1.5 py-0.5 text-sky-300">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
-            streaming
+            <span>streaming</span>
           </span>
         )}
         {state.status === 'done' && (
@@ -292,7 +292,7 @@ export function SearchPlayground({
                 <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
                 <span className="h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:300ms]" />
               </span>
-              Searching…
+              <span>Searching…</span>
             </>
           ) : (
             <>

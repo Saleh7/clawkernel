@@ -53,67 +53,239 @@ export function extractText(msg: ChatMessage | undefined): string | null {
   if (!msg) return null
   if (textCache.has(msg)) return textCache.get(msg) ?? null
   const raw = getRawText(msg)
-  const result = raw ? (msg.role === 'user' ? stripDisplayEnvelope(raw) : stripThinkingTags(raw)) : null
+  let result: string | null = null
+  if (raw) {
+    result = msg.role === 'user' ? stripDisplayEnvelope(raw) : stripThinkingTags(raw)
+  }
   textCache.set(msg, result)
   return result
 }
 
 // -- Thinking tag stripping (ported from OpenClaw reasoning-tags.ts) --------
 
-const QUICK_TAG_RE = /<\s*\/?\s*(?:think(?:ing)?|thought|antthinking)\b/i
-const THINKING_TAG_RE = /<\s*(\/?)\s*(?:think(?:ing)?|thought|antthinking)\b[^<>]*>/gi
+const THINKING_TAG_NAMES = new Set(['think', 'thinking', 'thought', 'antthinking'])
 
 interface CodeRegion {
   start: number
   end: number
 }
 
-function findCodeRegions(text: string): CodeRegion[] {
-  const regions: CodeRegion[] = []
-  // Fenced code blocks
-  for (const m of text.matchAll(/(^|\n)(```|~~~)[^\n]*\n[\s\S]*?(?:\n\2(?:\n|$)|$)/g)) {
-    const start = (m.index ?? 0) + m[1].length
-    regions.push({ start, end: start + m[0].length - m[1].length })
+type ThinkingTagMatch = {
+  start: number
+  end: number
+  isClose: boolean
+}
+
+function maybeContainsThinkingTag(text: string): boolean {
+  const lower = text.toLowerCase()
+  return lower.includes('<think') || lower.includes('<thought') || lower.includes('<antthinking')
+}
+
+function isAsciiLetter(ch: string): boolean {
+  const code = ch.codePointAt(0) ?? 0
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122)
+}
+
+type RawTagBounds = {
+  start: number
+  end: number
+  rawInside: string
+}
+
+type ParsedThinkingTag = {
+  isClose: boolean
+}
+
+function nextRawTagBounds(text: string, cursor: number): RawTagBounds | null {
+  const start = text.indexOf('<', cursor)
+  if (start === -1) return null
+
+  const end = text.indexOf('>', start + 1)
+  if (end === -1) return null
+
+  return {
+    start,
+    end,
+    rawInside: text.slice(start + 1, end).trim(),
   }
-  // Inline code
-  for (const m of text.matchAll(/`+[^`]+`+/g)) {
-    const start = m.index ?? 0
-    const end = start + m[0].length
-    if (!regions.some((r) => start >= r.start && end <= r.end)) {
+}
+
+function readTagName(candidate: string): string | null {
+  let nameEnd = 0
+  while (nameEnd < candidate.length && isAsciiLetter(candidate[nameEnd])) {
+    nameEnd += 1
+  }
+  if (nameEnd === 0) return null
+  return candidate.slice(0, nameEnd).toLowerCase()
+}
+
+function parseThinkingTag(rawInside: string): ParsedThinkingTag | null {
+  if (!rawInside) return null
+
+  const isClose = rawInside.startsWith('/')
+  const candidate = isClose ? rawInside.slice(1).trimStart() : rawInside
+  const tagName = readTagName(candidate)
+  if (!tagName || !THINKING_TAG_NAMES.has(tagName)) return null
+
+  return { isClose }
+}
+
+function findThinkingTagMatches(text: string): ThinkingTagMatch[] {
+  const matches: ThinkingTagMatch[] = []
+  let cursor = 0
+
+  while (cursor < text.length) {
+    const bounds = nextRawTagBounds(text, cursor)
+    if (!bounds) break
+
+    const parsed = parseThinkingTag(bounds.rawInside)
+    if (parsed) {
+      matches.push({ start: bounds.start, end: bounds.end + 1, isClose: parsed.isClose })
+    }
+
+    cursor = bounds.end + 1
+  }
+
+  return matches
+}
+
+function isRegionInside(container: CodeRegion, targetStart: number, targetEnd: number): boolean {
+  return targetStart >= container.start && targetEnd <= container.end
+}
+
+function findFencedCodeRegions(text: string): CodeRegion[] {
+  const regions: CodeRegion[] = []
+  let cursor = 0
+
+  while (cursor < text.length) {
+    const lineStart = cursor === 0 || text[cursor - 1] === '\n'
+    if (!lineStart) {
+      cursor += 1
+      continue
+    }
+
+    let fence = ''
+    if (text.startsWith('```', cursor)) {
+      fence = '```'
+    } else if (text.startsWith('~~~', cursor)) {
+      fence = '~~~'
+    }
+    if (!fence) {
+      cursor += 1
+      continue
+    }
+
+    const openLineEnd = text.indexOf('\n', cursor)
+    const contentStart = openLineEnd === -1 ? text.length : openLineEnd + 1
+
+    let regionEnd = text.length
+    const closingFenceStart = text.indexOf(`\n${fence}`, contentStart)
+    if (closingFenceStart !== -1) {
+      const closingLineStart = closingFenceStart + 1
+      const closingLineEnd = text.indexOf('\n', closingLineStart)
+      regionEnd = closingLineEnd === -1 ? text.length : closingLineEnd + 1
+    }
+
+    regions.push({ start: cursor, end: regionEnd })
+    cursor = regionEnd
+  }
+
+  return regions
+}
+
+function countBackticks(text: string, start: number): number {
+  let tickCount = 0
+  while (text[start + tickCount] === '`') {
+    tickCount += 1
+  }
+  return tickCount
+}
+
+function findInlineCodeEnd(text: string, start: number, tickCount: number): number {
+  let searchFrom = start + tickCount
+
+  while (searchFrom < text.length) {
+    const nextTick = text.indexOf('`', searchFrom)
+    if (nextTick === -1) return -1
+
+    const runCount = countBackticks(text, nextTick)
+    if (runCount === tickCount && nextTick > start + tickCount) {
+      return nextTick + tickCount
+    }
+
+    searchFrom = nextTick + runCount
+  }
+
+  return -1
+}
+
+function findInlineCodeRegions(text: string, fencedRegions: CodeRegion[]): CodeRegion[] {
+  const regions: CodeRegion[] = []
+  let cursor = 0
+
+  while (cursor < text.length) {
+    if (text[cursor] !== '`') {
+      cursor += 1
+      continue
+    }
+
+    const start = cursor
+    const tickCount = countBackticks(text, start)
+    const end = findInlineCodeEnd(text, start, tickCount)
+
+    if (end === -1) {
+      cursor = start + tickCount
+      continue
+    }
+
+    const insideFenced = fencedRegions.some((region) => isRegionInside(region, start, end))
+    if (!insideFenced) {
       regions.push({ start, end })
     }
+
+    cursor = end
   }
-  return regions.sort((a, b) => a.start - b.start)
+
+  return regions
+}
+
+function findCodeRegions(text: string): CodeRegion[] {
+  const fenced = findFencedCodeRegions(text)
+  const inline = findInlineCodeRegions(text, fenced)
+  return [...fenced, ...inline].sort((a, b) => a.start - b.start)
 }
 
 function stripThinkingTags(text: string): string {
-  if (!text || !QUICK_TAG_RE.test(text)) return text
+  if (!text || !maybeContainsThinkingTag(text)) return text
 
   const codeRegions = findCodeRegions(text)
   const isInCode = (pos: number) => codeRegions.some((r) => pos >= r.start && pos < r.end)
+  const tagMatches = findThinkingTagMatches(text)
+  if (tagMatches.length === 0) return text
 
-  THINKING_TAG_RE.lastIndex = 0
   let result = ''
   let lastIndex = 0
   let inThinking = false
 
-  for (const match of text.matchAll(THINKING_TAG_RE)) {
-    const idx = match.index ?? 0
-    const isClose = match[1] === '/'
-
-    if (isInCode(idx)) continue
+  for (const match of tagMatches) {
+    if (isInCode(match.start)) continue
 
     if (!inThinking) {
-      result += text.slice(lastIndex, idx)
-      if (!isClose) inThinking = true
-    } else if (isClose) {
+      result += text.slice(lastIndex, match.start)
+      if (!match.isClose) {
+        inThinking = true
+      }
+    } else if (match.isClose) {
       inThinking = false
     }
 
-    lastIndex = idx + match[0].length
+    lastIndex = match.end
   }
 
-  if (!inThinking) result += text.slice(lastIndex)
+  if (!inThinking) {
+    result += text.slice(lastIndex)
+  }
+
   return result.trim()
 }
 
@@ -450,8 +622,24 @@ export function groupMessages(messages: ChatMessage[]): RenderItem[] {
 
 // -- Formatting helpers -----------------------------------------------------
 
+function fallbackRandomIdPart(): string {
+  if (typeof crypto === 'object' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(8)
+    crypto.getRandomValues(bytes)
+    let token = ''
+    for (const byte of bytes) {
+      token += byte.toString(16).padStart(2, '0')
+    }
+    return token
+  }
+  return `${Date.now().toString(16)}-${Math.random().toString(36).slice(2)}`
+}
+
 export function generateId() {
-  return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  if (typeof crypto === 'object' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${fallbackRandomIdPart()}`
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -562,7 +750,6 @@ export async function compressImageBitmap(file: File): Promise<string> {
     let quality = IMAGE_QUALITY
     let blob = await canvas.convertToBlob({ type: outType, quality })
 
-    // Iteratively reduce quality for JPEG to hit target size
     if (outType === 'image/jpeg') {
       while (blob.size > TARGET_SIZE && quality > 0.31) {
         quality -= 0.1
@@ -573,7 +760,7 @@ export async function compressImageBitmap(file: File): Promise<string> {
     const buf = await blob.arrayBuffer()
     const bytes = new Uint8Array(buf)
     let binary = ''
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    for (const byte of bytes) binary += String.fromCodePoint(byte)
     const b64 = btoa(binary)
     if (!b64) throw new Error('Failed to encode via OffscreenCanvas')
     return b64
@@ -596,17 +783,13 @@ export async function fileToBase64(file: File): Promise<string> {
 }
 
 export async function readFileAsText(file: File): Promise<{ text: string; truncated: boolean }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const full = reader.result as string
-      resolve(
-        full.length > MAX_TEXT_CHARS
-          ? { text: full.slice(0, MAX_TEXT_CHARS), truncated: true }
-          : { text: full, truncated: false },
-      )
+  try {
+    const full = await file.text()
+    if (full.length > MAX_TEXT_CHARS) {
+      return { text: full.slice(0, MAX_TEXT_CHARS), truncated: true }
     }
-    reader.onerror = () => reject(new Error('Failed to read file'))
-    reader.readAsText(file)
-  })
+    return { text: full, truncated: false }
+  } catch {
+    throw new Error('Failed to read file')
+  }
 }

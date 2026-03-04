@@ -85,8 +85,8 @@ function SidebarProvider({
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    globalThis.addEventListener('keydown', handleKeyDown)
+    return () => globalThis.removeEventListener('keydown', handleKeyDown)
   }, [toggleSidebar])
 
   const state = open ? 'expanded' : 'collapsed'
@@ -554,10 +554,7 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  const width = React.useMemo(() => (showIcon ? '72%' : '84%'), [showIcon])
 
   return (
     <div

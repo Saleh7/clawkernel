@@ -82,8 +82,9 @@ function compilePattern(pattern: string): CompiledPattern {
   if (!normalized) return { kind: 'exact', value: '' }
   if (normalized === '*') return { kind: 'all' }
   if (!normalized.includes('*')) return { kind: 'exact', value: normalized }
-  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return { kind: 'regex', value: new RegExp(`^${escaped.replaceAll('\\*', '.*')}$`) }
+  const escaped = normalized.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
+  const wildcardPattern = escaped.replaceAll(String.raw`\*`, '.*')
+  return { kind: 'regex', value: new RegExp(`^${wildcardPattern}$`) }
 }
 
 function compilePatterns(patterns?: string[]): CompiledPattern[] {

@@ -7,33 +7,32 @@
 let highlighterPromise: Promise<any> | null = null
 
 function getHighlighter(): Promise<any> {
-  if (!highlighterPromise) {
-    highlighterPromise = (async () => {
-      const { createHighlighterCore } = await import('shiki/core')
-      const { createOnigurumaEngine } = await import('shiki/engine/oniguruma')
+  const promise = (highlighterPromise ??= (async () => {
+    const { createHighlighterCore } = await import('shiki/core')
+    const { createOnigurumaEngine } = await import('shiki/engine/oniguruma')
 
-      return createHighlighterCore({
-        engine: createOnigurumaEngine(import('shiki/wasm')),
-        themes: [import('shiki/themes/vitesse-dark.mjs'), import('shiki/themes/vitesse-light.mjs')],
-        langs: [
-          import('shiki/langs/javascript.mjs'),
-          import('shiki/langs/typescript.mjs'),
-          import('shiki/langs/jsx.mjs'),
-          import('shiki/langs/tsx.mjs'),
-          import('shiki/langs/json.mjs'),
-          import('shiki/langs/html.mjs'),
-          import('shiki/langs/css.mjs'),
-          import('shiki/langs/bash.mjs'),
-          import('shiki/langs/shell.mjs'),
-          import('shiki/langs/python.mjs'),
-          import('shiki/langs/markdown.mjs'),
-          import('shiki/langs/yaml.mjs'),
-          import('shiki/langs/sql.mjs'),
-        ],
-      })
-    })()
-  }
-  return highlighterPromise
+    return createHighlighterCore({
+      engine: createOnigurumaEngine(import('shiki/wasm')),
+      themes: [import('shiki/themes/vitesse-dark.mjs'), import('shiki/themes/vitesse-light.mjs')],
+      langs: [
+        import('shiki/langs/javascript.mjs'),
+        import('shiki/langs/typescript.mjs'),
+        import('shiki/langs/jsx.mjs'),
+        import('shiki/langs/tsx.mjs'),
+        import('shiki/langs/json.mjs'),
+        import('shiki/langs/html.mjs'),
+        import('shiki/langs/css.mjs'),
+        import('shiki/langs/bash.mjs'),
+        import('shiki/langs/shell.mjs'),
+        import('shiki/langs/python.mjs'),
+        import('shiki/langs/markdown.mjs'),
+        import('shiki/langs/yaml.mjs'),
+        import('shiki/langs/sql.mjs'),
+      ],
+    })
+  })())
+
+  return promise
 }
 
 /**

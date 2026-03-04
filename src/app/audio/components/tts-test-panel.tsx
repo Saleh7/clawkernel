@@ -20,6 +20,12 @@ type Props = {
   readonly onConvert: (text: string) => Promise<TtsTestResult | null>
 }
 
+function generateButtonLabel(converting: boolean, saving: boolean): string {
+  if (converting) return 'Generating…'
+  if (saving) return 'Switching provider…'
+  return 'Generate Speech'
+}
+
 export function TtsTestPanel({ providers, activeProvider, saving, converting, onSetProvider, onConvert }: Props) {
   const [text, setText] = useState(SAMPLE_PRESETS[0] ?? '')
   const [selectedProvider, setSelectedProvider] = useState(activeProvider)
@@ -113,8 +119,7 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
         {/* Voice */}
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Voice
-            <span className="ml-1 text-muted-foreground/50 normal-case font-normal">(reference only)</span>
+            Voice <span className="text-muted-foreground/50 normal-case font-normal">(reference only)</span>
           </p>
           {availableVoices.length > 0 ? (
             <select
@@ -144,7 +149,7 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
       {/* Generate button */}
       <Button onClick={() => void handleGenerate()} disabled={isBusy || !text.trim()} className="gap-2">
         <Volume2 className="h-3.5 w-3.5" />
-        {converting ? 'Generating…' : saving ? 'Switching provider…' : 'Generate Speech'}
+        {generateButtonLabel(converting, saving)}
       </Button>
 
       {/* Result */}

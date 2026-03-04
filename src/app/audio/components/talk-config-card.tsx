@@ -25,7 +25,7 @@ export function TalkConfigCard({ talk, seamColor }: Props) {
             <ConfigField label="Output Format" value={talk?.outputFormat ?? '—'} />
             <ConfigField
               label="Interrupt on Speech"
-              value={talk?.interruptOnSpeech !== false ? 'Enabled' : 'Disabled'}
+              value={talk?.interruptOnSpeech === false ? 'Disabled' : 'Enabled'}
             />
             {seamColor && <ConfigField label="Seam Color" value={seamColor} />}
           </div>

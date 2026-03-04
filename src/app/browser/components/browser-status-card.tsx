@@ -18,8 +18,8 @@ export function BrowserStatusCard({ status, loading, disabled, error }: Props) {
           <p className="text-sm font-semibold">Browser Status</p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded-lg bg-muted/40" />
+          {Array.from({ length: 4 }, (_unused, n) => `browser-status-skeleton-${n + 1}`).map((id) => (
+            <div key={id} className="h-12 animate-pulse rounded-lg bg-muted/40" />
           ))}
         </div>
       </div>
@@ -112,28 +112,43 @@ export function BrowserStatusCard({ status, loading, disabled, error }: Props) {
   )
 }
 
+type BrowserPillMode = 'ready' | 'starting' | 'stopped'
+
+function getBrowserPillMode(running: boolean, cdpReady: boolean): BrowserPillMode {
+  if (running && cdpReady) return 'ready'
+  if (running) return 'starting'
+  return 'stopped'
+}
+
+const BROWSER_PILL_TONE: Record<BrowserPillMode, string> = {
+  ready: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+  starting: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+  stopped: 'border-border bg-muted/30 text-muted-foreground',
+}
+
+const BROWSER_PILL_LABEL: Record<BrowserPillMode, string> = {
+  ready: 'Ready',
+  starting: 'Starting',
+  stopped: 'Not running',
+}
+
+function BrowserPillIcon({ mode }: { readonly mode: BrowserPillMode }) {
+  if (mode === 'ready') return <CheckCircle2 className="h-3 w-3" />
+  if (mode === 'starting') return <CircleDashed className="h-3 w-3" />
+  return <CircleX className="h-3 w-3" />
+}
+
 function StatusPill({ running, cdpReady }: { readonly running: boolean; readonly cdpReady: boolean }) {
-  const ready = running && cdpReady
-  const partial = running && !cdpReady
+  const mode = getBrowserPillMode(running, cdpReady)
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
-        ready
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-          : partial
-            ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-            : 'border-border bg-muted/30 text-muted-foreground',
+        BROWSER_PILL_TONE[mode],
       )}
     >
-      {ready ? (
-        <CheckCircle2 className="h-3 w-3" />
-      ) : partial ? (
-        <CircleDashed className="h-3 w-3" />
-      ) : (
-        <CircleX className="h-3 w-3" />
-      )}
-      {ready ? 'Ready' : partial ? 'Starting' : 'Not running'}
+      <BrowserPillIcon mode={mode} />
+      {BROWSER_PILL_LABEL[mode]}
     </span>
   )
 }

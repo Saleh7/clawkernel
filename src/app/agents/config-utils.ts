@@ -28,10 +28,6 @@ function isHashConflict(msg: string): boolean {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Agent config patch (config.set / config.apply)
-// ---------------------------------------------------------------------------
-
 /**
  * Patches a specific agent entry in config and returns the full patched config string.
  * Returns null if the agent is not found in the config list.
@@ -124,10 +120,6 @@ export async function saveRawConfigWithRetry(
   return await client.request<ConfigSnapshot>('config.get', {})
 }
 
-// ---------------------------------------------------------------------------
-// config.patch helper (merge-patch, used by channel components)
-// ---------------------------------------------------------------------------
-
 /**
  * Send config.patch with automatic hash-conflict retry.
  *
@@ -156,7 +148,7 @@ export async function patchConfigWithRetry(
   const buildParams = (hash: string | null | undefined) => ({
     raw,
     ...(hash ? { baseHash: hash } : {}),
-    ...(restartDelayMs !== undefined ? { restartDelayMs } : {}),
+    ...(restartDelayMs === undefined ? {} : { restartDelayMs }),
   })
 
   try {

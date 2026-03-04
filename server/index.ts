@@ -8,7 +8,6 @@
 //  Serves the Vite dist/ build + all /api/* routes.
 // ---------------------------------------------------------------------------
 
-import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import os from 'node:os'
@@ -53,7 +52,7 @@ const HOST = process.env.CK_HOST ?? 'localhost'
 const GATEWAY_URL = process.env.CK_GATEWAY_URL ?? localCfg.gatewayUrl ?? ''
 const GATEWAY_TOKEN = process.env.CK_GATEWAY_TOKEN ?? localCfg.gatewayToken ?? ''
 const OPENCLAW_HOME = process.env.CK_OPENCLAW_HOME ?? localCfg.openclawHome ?? '~/.openclaw'
-const OPEN_BROWSER = process.env.CK_OPEN_BROWSER === '1'
+
 const API_TOKEN = process.env.CK_API_TOKEN ?? ''
 
 const COLOR = process.stdout.isTTY && !process.env.NO_COLOR
@@ -235,13 +234,4 @@ serve({ fetch: app.fetch, port: PORT, hostname: HOST }, () => {
     console.log(`  ${clr.g}➜${clr.r}  Auth:     ${clr.dim}CK_API_TOKEN is set — mutating endpoints protected${clr.r}`)
   }
   console.log(`\n  Press ${clr.dim}Ctrl+C${clr.r} to stop.\n`)
-
-  if (OPEN_BROWSER) {
-    if (process.platform === 'win32') {
-      spawn('cmd', ['/c', 'start', '', serverUrl], { detached: true, stdio: 'ignore' }).unref()
-    } else {
-      const bin = process.platform === 'darwin' ? 'open' : 'xdg-open'
-      spawn(bin, [serverUrl], { detached: true, stdio: 'ignore' }).unref()
-    }
-  }
 })

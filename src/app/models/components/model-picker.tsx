@@ -29,7 +29,10 @@ export function ModelPicker({
 
   const byProvider = available.reduce<Record<string, ModelCatalogEntry[]>>((acc, m) => {
     const p = m.provider || 'other'
-    ;(acc[p] ??= []).push(m)
+    if (!acc[p]) {
+      acc[p] = []
+    }
+    acc[p].push(m)
     return acc
   }, {})
 

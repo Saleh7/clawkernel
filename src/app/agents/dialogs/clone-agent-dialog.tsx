@@ -37,6 +37,22 @@ type Props = {
   readonly onCloned?: (agentId: string) => void
 }
 
+function modelDescription(model: unknown): string {
+  if (!model) return 'none'
+  if (typeof model === 'string') return model
+  if (typeof model !== 'object') return 'configured'
+
+  const primary = (model as { primary?: unknown }).primary
+  if (typeof primary === 'string' && primary) return primary
+  return 'configured'
+}
+
+function toolsDescription(tools: unknown): string {
+  if (!tools || typeof tools !== 'object') return 'default'
+  const profile = (tools as { profile?: unknown }).profile
+  return typeof profile === 'string' && profile ? profile : 'full'
+}
+
 // ---------------------------------------------------------------------------
 //  CloneAgentDialog
 // ---------------------------------------------------------------------------
@@ -179,19 +195,13 @@ export function CloneAgentDialog({
             <div className="space-y-2">
               <ToggleOption
                 label="Model Configuration"
-                description={
-                  sourceEntry?.model
-                    ? `${typeof sourceEntry.model === 'string' ? sourceEntry.model : (sourceEntry.model as { primary?: string })?.primary || 'configured'}`
-                    : 'none'
-                }
+                description={modelDescription(sourceEntry?.model)}
                 checked={cloneModel}
                 onChange={setCloneModel}
               />
               <ToggleOption
                 label="Tool Profile"
-                description={
-                  sourceEntry?.tools ? `${(sourceEntry.tools as { profile?: string })?.profile || 'full'}` : 'default'
-                }
+                description={toolsDescription(sourceEntry?.tools)}
                 checked={cloneTools}
                 onChange={setCloneTools}
               />
@@ -240,10 +250,6 @@ export function CloneAgentDialog({
     </Dialog>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  ToggleOption
-// ---------------------------------------------------------------------------
 
 function ToggleOption({
   label,

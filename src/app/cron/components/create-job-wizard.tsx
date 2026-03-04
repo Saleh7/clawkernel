@@ -33,6 +33,18 @@ import {
 const log = createLogger('cron:wizard')
 const TOTAL_STEPS = 5
 
+function stepMarkerClass(step: number, markerStep: number): string {
+  if (markerStep === step) return 'w-4 bg-primary'
+  if (markerStep < step) return 'w-1.5 bg-primary/60'
+  return 'w-1.5 bg-muted'
+}
+
+function scheduleKindLabel(kind: 'cron' | 'every' | 'at'): string {
+  if (kind === 'cron') return 'Cron'
+  if (kind === 'every') return 'Interval'
+  return 'One-shot'
+}
+
 type Props = {
   readonly open: boolean
   readonly onOpenChange: (v: boolean) => void
@@ -133,13 +145,7 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
             <span>{stepLabel(step)}</span>
             <span className="flex items-center gap-1.5">
               {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'h-1.5 rounded-full transition-all',
-                    i + 1 === step ? 'w-4 bg-primary' : i + 1 < step ? 'w-1.5 bg-primary/60' : 'w-1.5 bg-muted',
-                  )}
-                />
+                <div key={i} className={cn('h-1.5 rounded-full transition-all', stepMarkerClass(step, i + 1))} />
               ))}
               <span className="ml-1 text-xs text-muted-foreground/60">
                 {step}/{TOTAL_STEPS}
@@ -254,7 +260,7 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
                           className="text-xs"
                           onClick={() => update('scheduleKind', k)}
                         >
-                          {k === 'cron' ? 'Cron' : k === 'every' ? 'Interval' : 'One-shot'}
+                          {scheduleKindLabel(k)}
                         </Button>
                       ))}
                     </div>
@@ -457,7 +463,7 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
                       onChange={(e) => update('deliveryBestEffort', e.target.checked)}
                       className="rounded"
                     />
-                    Best effort delivery
+                    <span>Best effort delivery</span>
                   </label>
                 )}
                 {form.deliveryMode === 'announce' && !form.deliveryTo && (

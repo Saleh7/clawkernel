@@ -108,19 +108,25 @@ export function AgentFiles({ agentId, client }: Props) {
     setOpenTabs((prev) => prev.filter((t) => t !== name))
     if (activeFile === name) {
       const remaining = openTabs.filter((t) => t !== name)
-      setActiveFile(remaining.length > 0 ? remaining[remaining.length - 1] : null)
+      setActiveFile(remaining.at(-1) ?? null)
     }
   }
 
   const saveFile = async () => {
     if (!client || !activeFile) return
     setSaving(true)
+
+    const fileName = activeFile
+    const nextContent = drafts[fileName] ?? ''
+
     try {
-      await client.request('agents.files.set', { agentId, name: activeFile, content: drafts[activeFile] ?? '' })
-      setContents((p) => ({ ...p, [activeFile!]: drafts[activeFile!] ?? '' }))
-    } catch (_err) {
+      await client.request('agents.files.set', { agentId, name: fileName, content: nextContent })
+      setContents((prev) => ({ ...prev, [fileName]: nextContent }))
+    } catch (error_) {
+      log.warn('Failed to save file', error_)
       toast.error('Failed to save file')
     }
+
     setSaving(false)
   }
 
@@ -143,13 +149,75 @@ export function AgentFiles({ agentId, client }: Props) {
       const parts = f.name.split('/')
       if (parts.length > 1) {
         const folder = parts.slice(0, -1).join('/')
-        ;(tree[folder] ??= []).push(f)
+        if (!tree[folder]) {
+          tree[folder] = []
+        }
+        tree[folder].push(f)
       } else {
         tree['/'].push(f)
       }
     }
     return tree
   }, [files])
+
+  let explorerContent: React.ReactNode
+  if (loading) {
+    explorerContent = (
+      <div className="p-3 space-y-2">
+        {Array.from({ length: 5 }, (_unused, n) => `explorer-skeleton-${n + 1}`).map((id) => (
+          <Skeleton key={id} className="h-8 w-full" />
+        ))}
+      </div>
+    )
+  } else if (files.length === 0) {
+    explorerContent = (
+      <div className="p-6 text-center">
+        <File className="mx-auto h-5 w-5 text-muted-foreground/20 mb-2" />
+        <p className="text-xs text-muted-foreground/40">No files</p>
+      </div>
+    )
+  } else {
+    explorerContent = (
+      <div className="py-1">
+        {Object.entries(folders).map(([folder, folderFiles]) => (
+          <div key={folder}>
+            {folder !== '/' && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5">
+                <span className="text-sm">📁</span>
+                <span className="text-[10px] font-semibold text-muted-foreground/60">{folder}</span>
+              </div>
+            )}
+            {folderFiles.map((f) => (
+              <button
+                type="button"
+                key={f.name}
+                onClick={() => void selectFile(f.name)}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-all duration-150',
+                  'hover:bg-accent/50',
+                  activeFile === f.name && 'bg-accent/80',
+                  folder !== '/' && 'pl-6',
+                )}
+              >
+                <span className="text-sm shrink-0">{getFileEmoji(f.name)}</span>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={cn(
+                      'font-mono text-[11px] truncate',
+                      activeFile === f.name ? 'text-primary' : 'text-foreground',
+                    )}
+                  >
+                    {f.name.split('/').pop()}
+                  </p>
+                </div>
+                {f.missing && <AlertTriangle className="h-3 w-3 text-yellow-500 shrink-0" />}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
@@ -174,59 +242,7 @@ export function AgentFiles({ agentId, client }: Props) {
               <span className="truncate">{workspace.split('/').pop()}</span>
             </div>
           )}
-          <ScrollArea className="flex-1">
-            {loading ? (
-              <div className="p-3 space-y-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full" />
-                ))}
-              </div>
-            ) : files.length === 0 ? (
-              <div className="p-6 text-center">
-                <File className="mx-auto h-5 w-5 text-muted-foreground/20 mb-2" />
-                <p className="text-xs text-muted-foreground/40">No files</p>
-              </div>
-            ) : (
-              <div className="py-1">
-                {Object.entries(folders).map(([folder, folderFiles]) => (
-                  <div key={folder}>
-                    {folder !== '/' && (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5">
-                        <span className="text-sm">📁</span>
-                        <span className="text-[10px] font-semibold text-muted-foreground/60">{folder}</span>
-                      </div>
-                    )}
-                    {folderFiles.map((f) => (
-                      <button
-                        type="button"
-                        key={f.name}
-                        onClick={() => void selectFile(f.name)}
-                        className={cn(
-                          'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-all duration-150',
-                          'hover:bg-accent/50',
-                          activeFile === f.name && 'bg-accent/80',
-                          folder !== '/' && 'pl-6',
-                        )}
-                      >
-                        <span className="text-sm shrink-0">{getFileEmoji(f.name)}</span>
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={cn(
-                              'font-mono text-[11px] truncate',
-                              activeFile === f.name ? 'text-primary' : 'text-foreground',
-                            )}
-                          >
-                            {f.name.split('/').pop()}
-                          </p>
-                        </div>
-                        {f.missing && <AlertTriangle className="h-3 w-3 text-yellow-500 shrink-0" />}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+          <ScrollArea className="flex-1">{explorerContent}</ScrollArea>
         </div>
 
         {/* === EDITOR AREA === */}
@@ -314,18 +330,21 @@ export function AgentFiles({ agentId, client }: Props) {
                 <div className="flex flex-1 overflow-hidden relative">
                   {/* Line numbers gutter */}
                   <div className="w-10 shrink-0 bg-muted/20 border-r border-border/30 pt-3 select-none overflow-hidden">
-                    {Array.from({ length: Math.max(lineCount, 25) }).map((_, i) => (
+                    {Array.from({ length: Math.max(lineCount, 25) }, (_unused, n) => n + 1).map((lineNumber) => (
                       <div
-                        key={i}
+                        key={lineNumber}
                         className="px-2 text-right font-mono text-[10px] leading-[1.65rem] text-muted-foreground/20"
                       >
-                        {i + 1}
+                        {lineNumber}
                       </div>
                     ))}
                   </div>
                   <Textarea
                     value={drafts[activeFile] ?? ''}
-                    onChange={(e) => setDrafts((p) => ({ ...p, [activeFile!]: e.target.value }))}
+                    onChange={(e) => {
+                      if (!activeFile) return
+                      setDrafts((prev) => ({ ...prev, [activeFile]: e.target.value }))
+                    }}
                     className="flex-1 resize-none p-3 font-mono text-xs leading-[1.65rem] text-foreground placeholder:text-muted-foreground/20 border-0 shadow-none focus-visible:ring-0 rounded-none min-h-0"
                     placeholder="File content…"
                     spellCheck={false}

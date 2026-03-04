@@ -33,7 +33,10 @@ function formatBody(body: unknown): string {
   try {
     return JSON.stringify(body, null, 2)
   } catch {
-    return String(body)
+    if (typeof body === 'number' || typeof body === 'boolean' || typeof body === 'bigint') {
+      return `${body}`
+    }
+    return '[unserializable payload]'
   }
 }
 

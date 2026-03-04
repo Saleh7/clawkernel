@@ -35,23 +35,30 @@ export function SessionsList({
     return <EmptyState filtered={isFiltered} />
   }
 
+  let viewContent: React.ReactNode
+  if (viewMode === 'flat') {
+    viewContent = <div className="relative isolate space-y-2">{visibleSessions.map(renderCard)}</div>
+  } else if (viewMode === 'tree') {
+    viewContent = (
+      <div className="space-y-1">
+        {treeRoots?.map((node) => (
+          <SessionTreeItem key={node.session.key} node={node} renderCard={renderCard} />
+        ))}
+      </div>
+    )
+  } else {
+    viewContent = (
+      <div className="space-y-4">
+        {grouped?.map(([agent, agentSessions]) => (
+          <AgentGroup key={agent} agent={agent} sessions={agentSessions} renderCard={renderCard} />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
-      {viewMode === 'flat' ? (
-        <div className="relative isolate space-y-2">{visibleSessions.map(renderCard)}</div>
-      ) : viewMode === 'tree' ? (
-        <div className="space-y-1">
-          {treeRoots?.map((node) => (
-            <SessionTreeItem key={node.session.key} node={node} renderCard={renderCard} />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {grouped?.map(([agent, agentSessions]) => (
-            <AgentGroup key={agent} agent={agent} sessions={agentSessions} renderCard={renderCard} />
-          ))}
-        </div>
-      )}
+      {viewContent}
 
       {hasMoreSessions && (
         <div className="flex flex-wrap items-center justify-center gap-2 pt-3">

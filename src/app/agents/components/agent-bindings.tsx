@@ -74,10 +74,6 @@ const CHANNEL_OPTIONS = [
 ]
 const PEER_KINDS = ['direct', 'group']
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
-
 function bindingToString(b: AgentBinding): string {
   const parts: string[] = [b.match.channel]
   if (b.match.accountId) parts.push(`account:${b.match.accountId}`)
@@ -124,7 +120,6 @@ function BindingCard({
   onDelete,
 }: {
   readonly binding: AgentBinding
-  readonly index: number
   readonly onEdit: () => void
   readonly onDelete: () => void
 }) {
@@ -343,9 +338,6 @@ function BindingFormDialog({
   )
 }
 
-// ---------------------------------------------------------------------------
-//  AgentBindings — main export
-// ---------------------------------------------------------------------------
 
 export function AgentBindings({ agentId, config, isDefault, client }: Props) {
   const [createOpen, setCreateOpen] = useState(false)
@@ -481,11 +473,10 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
         />
       ) : (
         <div className="space-y-2">
-          {agentBindingsWithIndex.map(({ binding }, localIdx) => (
+          {agentBindingsWithIndex.map(({ binding, globalIndex }, localIdx) => (
             <BindingCard
-              key={localIdx}
+              key={globalIndex}
               binding={binding}
-              index={localIdx}
               onEdit={() => openEdit(localIdx)}
               onDelete={() => setDeleteIndex(localIdx)}
             />
@@ -501,9 +492,9 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
             Other Agents' Bindings ({otherAgentBindings.length})
           </p>
           <div className="space-y-1.5">
-            {otherAgentBindings.map((b, i) => (
+            {otherAgentBindings.map((b) => (
               <div
-                key={i}
+                key={`${b.agentId}-${bindingToString(b)}`}
                 className="flex items-center gap-2 rounded-lg border border-border/20 bg-muted/10 px-3 py-2 text-[10px] text-muted-foreground/50"
               >
                 <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[9px]">

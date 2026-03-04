@@ -16,8 +16,6 @@ import { ACTIVE_SESSION_MS } from '@/lib/session-constants'
 import { cn } from '@/lib/utils'
 import { extractAgentId, formatRelativeTime, formatTokens, getDisplayName } from '../utils'
 
-// ---------------------------------------------------------------------------
-
 const StatusDot = memo(function StatusDot({ isRunning, updatedAt }: { isRunning: boolean; updatedAt: number | null }) {
   const active = !!updatedAt && Date.now() - updatedAt < ACTIVE_SESSION_MS
   const recent = !!updatedAt && Date.now() - updatedAt < 3_600_000
@@ -33,8 +31,6 @@ const StatusDot = memo(function StatusDot({ isRunning, updatedAt }: { isRunning:
   if (recent) return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" aria-hidden />
   return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-muted-foreground/40" aria-hidden />
 })
-
-// ---------------------------------------------------------------------------
 
 const KIND_COLORS: Record<string, string> = {
   direct: 'bg-violet-500/10 text-violet-500 border-violet-500/20',

@@ -1,5 +1,4 @@
 // ---------------------------------------------------------------------------
-//  Agent Cron — Job cards + main export
 // ---------------------------------------------------------------------------
 
 import {
@@ -46,6 +45,11 @@ type Props = {
   readonly client: GatewayClient | null
 }
 
+function schedulerStatusLabel(cronStatus: CronStatus | null): string {
+  if (!cronStatus) return 'Loading…'
+  return cronStatus.enabled ? 'Scheduler Active' : 'Scheduler Inactive'
+}
+
 // ---------------------------------------------------------------------------
 //  CronJobCard
 // ---------------------------------------------------------------------------
@@ -68,7 +72,7 @@ function CronJobCard({
   const now = Date.now()
   const timeToNext = nextRun ? nextRun - now : null
   const progressPct =
-    timeToNext != null && timeToNext > 0 ? Math.max(0, Math.min(100, 100 - (timeToNext / 3600_000) * 100)) : 0
+    timeToNext != null && timeToNext > 0 ? Math.max(0, Math.min(100, 100 - (timeToNext / 3_600_000) * 100)) : 0
 
   const [toggling, setToggling] = useState(false)
   const [running, setRunning] = useState(false)
@@ -232,10 +236,6 @@ function CronJobCard({
   )
 }
 
-// ---------------------------------------------------------------------------
-//  AgentCron — Main Export
-// ---------------------------------------------------------------------------
-
 export function AgentCron({ agentId, cronJobs, cronStatus, client }: Props) {
   const { is24h } = useTimeFormat()
   const jobs = cronJobs.filter((j) => j.agentId === agentId)
@@ -256,9 +256,7 @@ export function AgentCron({ agentId, cronJobs, cronStatus, client }: Props) {
                 cronStatus?.enabled ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/30',
               )}
             />
-            <span className="text-sm font-semibold text-foreground">
-              {cronStatus ? (cronStatus.enabled ? 'Scheduler Active' : 'Scheduler Inactive') : 'Loading…'}
-            </span>
+            <span className="text-sm font-semibold text-foreground">{schedulerStatusLabel(cronStatus)}</span>
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />

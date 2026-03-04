@@ -7,5 +7,5 @@ import { selectClient, useGatewayStore } from '@/stores/gateway-store'
  */
 export function useSessionDialogClient(clientProp?: GatewayClient | null): GatewayClient | null {
   const storeClient = useGatewayStore(selectClient)
-  return clientProp !== undefined ? clientProp : storeClient
+  return clientProp === undefined ? storeClient : clientProp
 }

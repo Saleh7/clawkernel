@@ -20,9 +20,6 @@ type Props = {
   readonly isDefault: boolean
 }
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
 
 function summarize(accounts: ChannelAccountSnapshot[]) {
   let connected = 0,
@@ -95,6 +92,15 @@ function ChannelCard({
   const isBound = bindings.length > 0
   const receivesTraffic = isBound || isDefault
 
+  let connectivityIcon: React.ReactNode
+  if (allConnected) {
+    connectivityIcon = <Wifi className="h-6 w-6 text-green-500" />
+  } else if (s.connected > 0) {
+    connectivityIcon = <Wifi className="h-6 w-6 text-yellow-500" />
+  } else {
+    connectivityIcon = <WifiOff className="h-6 w-6 text-muted-foreground/40" />
+  }
+
   return (
     <div
       className={cn(
@@ -107,13 +113,7 @@ function ChannelCard({
         <div
           className={cn('flex h-12 w-12 items-center justify-center rounded-xl', iconBoxClass(allConnected, partial))}
         >
-          {allConnected ? (
-            <Wifi className="h-6 w-6 text-green-500" />
-          ) : s.connected > 0 ? (
-            <Wifi className="h-6 w-6 text-yellow-500" />
-          ) : (
-            <WifiOff className="h-6 w-6 text-muted-foreground/40" />
-          )}
+          {connectivityIcon}
         </div>
         <div className="flex items-center gap-2">
           {receivesTraffic ? (
@@ -176,24 +176,23 @@ function ChannelCard({
             <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
               Bindings ({bindings.length})
             </p>
-            {bindings.map((b, i) => (
-              <div
-                key={i}
-                className="rounded-md border border-border/30 bg-background/40 px-2.5 py-1.5 text-[10px] font-mono text-muted-foreground"
-              >
-                {formatBinding(b)}
-              </div>
-            ))}
+            {bindings.map((b) => {
+              const bindingText = formatBinding(b)
+              return (
+                <div
+                  key={`${channelId}-${bindingText}`}
+                  className="rounded-md border border-border/30 bg-background/40 px-2.5 py-1.5 text-[10px] font-mono text-muted-foreground"
+                >
+                  {bindingText}
+                </div>
+              )
+            })}
           </div>
         </>
       )}
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  AgentChannels — main export
-// ---------------------------------------------------------------------------
 
 export function AgentChannels({ agentId, channels, config, isDefault }: Props) {
   const agentBindings = useMemo(() => {

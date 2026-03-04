@@ -54,7 +54,7 @@ function ModelCard({
     setSelectedFallback('')
   }
 
-  const excludeFromFallback = [primary !== '—' ? primary : '', ...fallbacks].filter(Boolean)
+  const excludeFromFallback = [primary === '—' ? '' : primary, ...fallbacks].filter(Boolean)
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/80 p-4">

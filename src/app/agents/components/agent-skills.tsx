@@ -41,11 +41,20 @@ import { useAgentConfigSave } from '../hooks/use-agent-config-save'
 import type { ParsedConfig } from '../types'
 import { AgentTabEmptyState } from './agent-tab-empty-state'
 
+function resolveSkillSource(skill: SkillStatusEntry): 'workspace' | 'built-in' | 'installed' {
+  if (skill.bundled) return 'built-in'
+  if (skill.source === 'workspace') return 'workspace'
+  return 'installed'
+}
+
 function groupBySource(skills: SkillStatusEntry[]): Record<string, SkillStatusEntry[]> {
   const groups: Record<string, SkillStatusEntry[]> = {}
-  for (const s of skills) {
-    const src = s.bundled ? 'built-in' : s.source === 'workspace' ? 'workspace' : 'installed'
-    ;(groups[src] ??= []).push(s)
+  for (const skill of skills) {
+    const source = resolveSkillSource(skill)
+    if (!groups[source]) {
+      groups[source] = []
+    }
+    groups[source].push(skill)
   }
   return groups
 }
@@ -235,6 +244,86 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
     })
   }
 
+  let content: React.ReactNode
+  if (loading) {
+    content = (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }, (_unused, n) => `agent-skill-skeleton-${n + 1}`).map((id) => (
+          <Skeleton key={id} className="h-28 rounded-xl" />
+        ))}
+      </div>
+    )
+  } else if (filtered.length === 0) {
+    content = (
+      <AgentTabEmptyState
+        icon={search ? Search : Package}
+        title={search ? `No skills matching "${search}"` : 'No skills found'}
+      />
+    )
+  } else {
+    content = (
+      <div className="space-y-6">
+        {sourceOrder
+          .filter((s) => groups[s]?.length)
+          .map((src) => {
+            const groupedSkills = groups[src]
+            if (!groupedSkills) return null
+
+            const collapsed = collapsedSections.has(src)
+            return (
+              <div key={src}>
+                <button
+                  type="button"
+                  onClick={() => toggleSection(src)}
+                  className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+                >
+                  {collapsed ? (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                  <span className="text-sm">{sourceIcons[src]}</span>
+                  <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    {sourceLabels[src]}
+                  </p>
+                  <Badge variant="secondary" className="text-[9px]">
+                    {groupedSkills.length}
+                  </Badge>
+                </button>
+
+                {!collapsed &&
+                  (viewMode === 'grid' ? (
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {groupedSkills.map((skill) => (
+                        <SkillCard
+                          key={skill.skillKey}
+                          skill={skill}
+                          enabled={isEnabled(skill.name)}
+                          onToggle={() => toggleSkill(skill.name)}
+                          onInstall={(installId) => void handleInstall(skill.name, installId)}
+                          onUpdate={(patch) => void handleSkillUpdate(patch)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {groupedSkills.map((skill) => (
+                        <SkillRow
+                          key={skill.skillKey}
+                          skill={skill}
+                          enabled={isEnabled(skill.name)}
+                          onToggle={() => toggleSkill(skill.name)}
+                        />
+                      ))}
+                    </div>
+                  ))}
+              </div>
+            )
+          })}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* ── Header: Stats + Actions ── */}
@@ -304,7 +393,7 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
           />
           {search && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/40">
-              {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+              {filtered.length} result{filtered.length === 1 ? '' : 's'}
             </span>
           )}
         </div>
@@ -329,75 +418,7 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
       </div>
 
       {/* ── Content ── */}
-      {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <AgentTabEmptyState
-          icon={search ? Search : Package}
-          title={search ? `No skills matching "${search}"` : 'No skills found'}
-        />
-      ) : (
-        <div className="space-y-6">
-          {sourceOrder
-            .filter((s) => groups[s]?.length)
-            .map((src) => {
-              const collapsed = collapsedSections.has(src)
-              return (
-                <div key={src}>
-                  <button
-                    type="button"
-                    onClick={() => toggleSection(src)}
-                    className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
-                  >
-                    {collapsed ? (
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                    <span className="text-sm">{sourceIcons[src]}</span>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                      {sourceLabels[src]}
-                    </p>
-                    <Badge variant="secondary" className="text-[9px]">
-                      {groups[src]!.length}
-                    </Badge>
-                  </button>
-
-                  {!collapsed &&
-                    (viewMode === 'grid' ? (
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {groups[src]!.map((skill) => (
-                          <SkillCard
-                            key={skill.skillKey}
-                            skill={skill}
-                            enabled={isEnabled(skill.name)}
-                            onToggle={() => toggleSkill(skill.name)}
-                            onInstall={(installId) => void handleInstall(skill.name, installId)}
-                            onUpdate={(patch) => void handleSkillUpdate(patch)}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {groups[src]!.map((skill) => (
-                          <SkillRow
-                            key={skill.skillKey}
-                            skill={skill}
-                            enabled={isEnabled(skill.name)}
-                            onToggle={() => toggleSkill(skill.name)}
-                          />
-                        ))}
-                      </div>
-                    ))}
-                </div>
-              )
-            })}
-        </div>
-      )}
+      {content}
     </div>
   )
 }

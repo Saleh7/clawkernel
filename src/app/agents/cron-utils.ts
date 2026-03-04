@@ -71,7 +71,6 @@ export function jobToFormState(job: CronJob): JobFormState {
   let atDatetime = ''
 
   if (s.kind === 'cron') {
-    scheduleKind = 'cron'
     cronExpr = s.expr
     cronTz = s.tz ?? ''
   } else if (s.kind === 'every') {
@@ -82,7 +81,6 @@ export function jobToFormState(job: CronJob): JobFormState {
       intervalUnit = 'hours'
     } else if (sec >= 60 && sec % 60 === 0) {
       intervalValue = String(sec / 60)
-      intervalUnit = 'minutes'
     } else {
       intervalValue = String(sec)
       intervalUnit = 'seconds'
@@ -114,12 +112,18 @@ export function jobToFormState(job: CronJob): JobFormState {
   }
 }
 
+function intervalUnitMultiplier(unit: JobFormState['intervalUnit']): number {
+  if (unit === 'hours') return 3_600_000
+  if (unit === 'minutes') return 60_000
+  return 1_000
+}
+
 export function formStateToSchedule(f: JobFormState): CronSchedule {
   if (f.scheduleKind === 'cron') {
     return { kind: 'cron', expr: f.cronExpr, ...(f.cronTz ? { tz: f.cronTz } : {}) }
   }
   if (f.scheduleKind === 'every') {
-    const multiplier = f.intervalUnit === 'hours' ? 3_600_000 : f.intervalUnit === 'minutes' ? 60_000 : 1_000
+    const multiplier = intervalUnitMultiplier(f.intervalUnit)
     const ms = Number(f.intervalValue)
     if (!Number.isFinite(ms) || ms <= 0) throw new Error('Interval must be a positive number')
     return { kind: 'every', everyMs: ms * multiplier }

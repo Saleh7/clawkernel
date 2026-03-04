@@ -25,6 +25,12 @@ import { ToolCallBlock } from './tool-group'
 //  File Attachment Card (inline in chat bubbles)
 // ---------------------------------------------------------------------------
 
+function imageBaseKey(image: ReturnType<typeof extractImages>[number]): string {
+  if (image.kind === 'url') return `url:${image.url}`
+  if (image.kind === 'omitted') return `omitted:${image.mediaType}:${image.bytes}`
+  return `data:${image.mediaType}:${image.data.slice(0, 48)}`
+}
+
 function FileAttachmentCard({ file, align }: { readonly file: FileAttachment; readonly align: 'start' | 'end' }) {
   const ext = file.name.split('.').pop()?.toUpperCase() || ''
   const icon = FILE_ICONS[file.mime] || '📎'
@@ -151,6 +157,27 @@ export const ChatBubble = memo(
     const timestamp = message.timestamp
     const showTools = toolCalls.length > 0 && settings.showToolCalls && !hideToolCalls
 
+    // Pre-compute stable keys for images and file attachments (avoids IIFE in JSX)
+    const keyedImages = (() => {
+      const counts = new Map<string, number>()
+      return images.map((img, idx) => {
+        const base = imageBaseKey(img)
+        const n = (counts.get(base) ?? 0) + 1
+        counts.set(base, n)
+        return { img, key: `${base}-${n}`, index: idx + 1 }
+      })
+    })()
+
+    const keyedFiles = (() => {
+      const counts = new Map<string, number>()
+      return fileAttachments.map((file) => {
+        const base = `${file.name}:${file.mime}:${file.content.length}`
+        const n = (counts.get(base) ?? 0) + 1
+        counts.set(base, n)
+        return { file, key: `${base}-${n}` }
+      })
+    })()
+
     const hasVisibleContent =
       fileAttachments.length > 0 ||
       images.length > 0 ||
@@ -176,12 +203,12 @@ export const ChatBubble = memo(
           {/* Images */}
           {images.length > 0 && (
             <div className={cn('flex flex-wrap gap-2 mb-1', isUser ? 'justify-end' : 'justify-start')}>
-              {images.map((img, i) => {
+              {keyedImages.map(({ img, key, index }) => {
                 if (img.kind === 'omitted') {
                   const sizeKB = img.bytes > 0 ? `${Math.round(img.bytes / 1024)} KB` : ''
                   return (
                     <div
-                      key={i}
+                      key={key}
                       className="flex flex-col items-center justify-center gap-1.5 w-[160px] h-[100px] rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground"
                     >
                       <ImageOff className="h-5 w-5" />
@@ -194,15 +221,15 @@ export const ChatBubble = memo(
                 const src = img.kind === 'url' ? img.url : `data:${img.mediaType};base64,${img.data}`
                 return (
                   <button
-                    key={i}
+                    key={key}
                     type="button"
                     onClick={() => onImageClick?.(src)}
                     className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
-                    aria-label={`View attachment ${i + 1}`}
+                    aria-label={`View attachment ${index}`}
                   >
                     <img
                       src={src}
-                      alt={`Attachment ${i + 1}`}
+                      alt={`Attachment ${index}`}
                       loading="lazy"
                       className="max-w-[300px] max-h-[300px] rounded-xl object-cover border border-border hover:opacity-90 transition-opacity"
                     />
@@ -215,8 +242,8 @@ export const ChatBubble = memo(
           {/* File attachments */}
           {fileAttachments.length > 0 && (
             <div className="flex flex-col gap-1.5 mb-1">
-              {fileAttachments.map((f, i) => (
-                <FileAttachmentCard key={`${f.name}-${i}`} file={f} align={isUser ? 'end' : 'start'} />
+              {keyedFiles.map(({ file, key }) => (
+                <FileAttachmentCard key={key} file={file} align={isUser ? 'end' : 'start'} />
               ))}
             </div>
           )}
@@ -270,7 +297,7 @@ export const ChatBubble = memo(
               >
                 <Markdown className={isUser ? 'user-markdown' : undefined}>{text}</Markdown>
               </div>
-              <MessageActionsBar text={text} onRetry={!isUser ? onRetry : undefined} />
+              <MessageActionsBar text={text} onRetry={isUser ? undefined : onRetry} />
             </div>
           )}
 

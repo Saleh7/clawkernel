@@ -119,7 +119,7 @@ export function ProviderStatus({
                   <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
                   <span className="text-xs font-semibold text-foreground">{provider}</span>
                   <span className="text-[10px] text-muted-foreground/60">
-                    {count} model{count !== 1 ? 's' : ''}
+                    {count} model{count === 1 ? '' : 's'}
                   </span>
                 </div>
               ))}

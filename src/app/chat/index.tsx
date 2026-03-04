@@ -95,6 +95,12 @@ function handleEscapeKey(ctx: EscapeContext): void {
   }
 }
 
+function chatInputPlaceholder(connected: boolean, hasAttachments: boolean): string {
+  if (!connected) return 'Connecting to gateway…'
+  if (hasAttachments) return 'Add a message or paste more images…'
+  return 'Type a message… (paste images with Ctrl+V)'
+}
+
 export default function ChatPage() {
   const c = useChat()
   const [sessionResetting, setSessionResetting] = useState(false)
@@ -116,8 +122,8 @@ export default function ChatPage() {
         })
       }
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    globalThis.addEventListener('keydown', handler)
+    return () => globalThis.removeEventListener('keydown', handler)
   }, [c.lightboxSrc, c.sourcesPanel, c.attachments, c.setLightboxSrc, c.setSourcesPanel, c.removeAttachment])
 
   const handleNewSession = () => void execSessionReset(c.selectedSession!, 'new', c.handleRefresh, setSessionResetting)
@@ -131,10 +137,15 @@ export default function ChatPage() {
   if (!c.selectedSession) {
     messageArea = <EmptyState hasSession={false} />
   } else if (c.chat.loading) {
+    const loadingRows = Array.from({ length: 5 }, (_unused, n) => ({
+      id: `chat-loading-${n + 1}`,
+      reverse: n % 2 === 1,
+    }))
+
     messageArea = (
       <div className="flex-1 p-4 space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className={cn('flex gap-3 px-4', i % 2 === 0 ? '' : 'flex-row-reverse')}>
+        {loadingRows.map((row) => (
+          <div key={row.id} className={cn('flex gap-3 px-4', row.reverse && 'flex-row-reverse')}>
             <Skeleton className="h-8 w-8 rounded-full shrink-0" />
             <div className="space-y-2">
               <Skeleton className="h-4 w-48" />
@@ -170,10 +181,10 @@ export default function ChatPage() {
               </Button>
             </div>
           )}
-          {c.renderItems.map((item, ri) => {
+          {c.renderItems.map((item) => {
             if (item.kind === 'divider') {
               return (
-                <div key={`div-${ri}`} className="flex items-center gap-3 px-6 py-3">
+                <div key={`div-${item.timestamp ?? item.label}`} className="flex items-center gap-3 px-6 py-3">
                   <div className="flex-1 border-t border-dashed border-primary/25" />
                   <span className="text-[11px] font-medium text-primary/60 select-none">{item.label}</span>
                   <div className="flex-1 border-t border-dashed border-primary/25" />
@@ -275,12 +286,8 @@ export default function ChatPage() {
         )}
 
         <ConnectionBanner state={c.connectionState} error={c.chat.error} />
-        {compactionStatus && compactionStatus.sessionKey === c.selectedSession && (
-          <CompactionIndicator active={compactionStatus.active} />
-        )}
-        {fallbackStatus && fallbackStatus.sessionKey === c.selectedSession && (
-          <FallbackIndicator status={fallbackStatus} />
-        )}
+        {compactionStatus?.sessionKey === c.selectedSession && <CompactionIndicator active={compactionStatus.active} />}
+        {fallbackStatus?.sessionKey === c.selectedSession && <FallbackIndicator status={fallbackStatus} />}
 
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-2.5 bg-background/80 backdrop-blur-sm">
@@ -465,13 +472,7 @@ export default function ChatPage() {
             >
               <AttachmentStrip attachments={c.attachments} onRemove={c.removeAttachment} />
               <PromptInputTextarea
-                placeholder={
-                  c.connected
-                    ? c.attachments.length > 0
-                      ? 'Add a message or paste more images…'
-                      : 'Type a message… (paste images with Ctrl+V)'
-                    : 'Connecting to gateway…'
-                }
+                placeholder={chatInputPlaceholder(c.connected, c.attachments.length > 0)}
                 className="text-sm"
                 dir={detectTextDirection(c.inputValue)}
                 onPaste={c.handlePaste}

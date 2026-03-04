@@ -7,18 +7,25 @@ import { formatTokens } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { AgentInfo } from '../types'
 
+function connectionMessage(state: string, isRestarting: boolean): string {
+  if (isRestarting) return 'Gateway restarting, reconnecting…'
+  if (state === 'connecting' || state === 'authenticating') return 'Connecting…'
+  if (state === 'reconnecting') return 'Reconnecting…'
+  return 'Disconnected'
+}
+
+function contextMeterTone(pct: number): string {
+  if (pct > 80) return 'text-destructive'
+  if (pct > 60) return 'text-[var(--warn)]'
+  return 'text-primary'
+}
+
 // -- Connection Banner ------------------------------------------------------
 
 export function ConnectionBanner({ state, error }: { readonly state: string; readonly error?: string | null }) {
   if (state === 'connected') return null
   const isRestarting = error?.includes('Gateway restarting')
-  const message = isRestarting
-    ? 'Gateway restarting, reconnecting…'
-    : state === 'connecting' || state === 'authenticating'
-      ? 'Connecting…'
-      : state === 'reconnecting'
-        ? 'Reconnecting…'
-        : 'Disconnected'
+  const message = connectionMessage(state, Boolean(isRestarting))
 
   return (
     <div
@@ -194,7 +201,7 @@ export function ContextMeter({ used, max }: { readonly used?: number; readonly m
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="4"
-                className={cn(pct > 80 ? 'text-destructive' : pct > 60 ? 'text-[var(--warn)]' : 'text-primary')}
+                className={cn(contextMeterTone(pct))}
                 strokeLinecap="round"
                 strokeDasharray={`${(pct / 100) * 97.4} 97.4`}
               />
@@ -223,16 +230,16 @@ export function ImageLightbox({ src, onClose }: { readonly src: string; readonly
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    globalThis.addEventListener('keydown', handler)
+    return () => globalThis.removeEventListener('keydown', handler)
   }, [onClose])
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-label="Image viewer"
-      className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 m-0 flex max-h-none max-w-none items-center justify-center border-0 bg-transparent p-0 animate-in fade-in duration-200"
     >
       {/* Backdrop — tabIndex={-1} keeps it out of tab order while still being clickable */}
       <button
@@ -255,6 +262,6 @@ export function ImageLightbox({ src, onClose }: { readonly src: string; readonly
         alt="Full size"
         className="relative z-10 max-w-[90vw] max-h-[90vh] rounded-lg object-contain shadow-2xl animate-in zoom-in-95 duration-200"
       />
-    </div>
+    </dialog>
   )
 }

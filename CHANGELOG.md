@@ -4,6 +4,51 @@
 
 ## [Unreleased]
 
+### Fixed
+
+#### Chat Core (`use-chat.ts`)
+- **handleLoadMore streaming guard** — early return when `chat.runId !== null` prevents message list corruption during active streaming (was: load-more replaced optimistic + stream placeholder messages → duplicate messages)
+- **handleRetry busy guard** — added `isBusyRef.current` check; prevents parallel `chat.send` calls during active streaming
+- **handleAbort per-frame re-render** — uses `runIdRef.current` instead of `chat.runId` closure; deps reduced to `[client, selectedSession]`; eliminates callback re-creation on every streaming delta
+- **handleRetry consolidation** — refactored to call `executeSend` instead of duplicating try/catch/request logic; removed fragile `finally` block (double setState on error path)
+- **Blob URL leak on image compression failure** — `preview` hoisted above try block; `URL.revokeObjectURL(preview)` called in catch
+- **Settings schema migration** — `localStorage` settings merged with `DEFAULT_CHAT_SETTINGS` constant; missing fields from older schema get correct defaults instead of `undefined`
+
+#### Chat Utilities (`chat/utils.ts`)
+- **Thinking block extraction** — `extractThinking` now collects all thinking blocks and joins with `\n\n` (was: only first block, `break` on match)
+- **Stateful regex footgun** — removed `/g` flag from module-level `FILE_BLOCK_RE` constant; added at call sites via `new RegExp(source, 'g')`
+- **Floating-point quality guard** — compression loop guard changed from `> 0.3` to `> 0.31`; avoids one extra compression pass from `0.30000000000000004 > 0.3`
+- **generateId uniqueness** — fallback (no `crypto.randomUUID`) now uses `crypto.getRandomValues` hex; final fallback adds `Math.random()` suffix to `Date.now()` for same-millisecond uniqueness
+- **replaceAll with /g regex** — changed redundant `replaceAll(new RegExp(..., 'g'))` to `replace(new RegExp(..., 'g'))`
+
+#### Gateway Store (`gateway-store.ts`)
+- **Timer leak across connection cycles** — compaction/fallback timer handles stored in module-level variables; `clearStatusTimers()` called in `disconnect()`; previous timers cleared before scheduling new ones
+- **Silent eager-fetch errors** — added `log.warn` for non-scope/permission errors in `connect()` catch block
+- **Stale run indicator** — increased `STALE_RUN_MAX_AGE_MS` from 30s to 120s; matches Gateway's minimum agent timeout for tool-heavy runs
+- **Event handler indirection** — `STORE_EVENT_HANDLERS` uses direct function references instead of arrow wrappers
+
+#### Gateway Client (`client.ts`)
+- **Reconnect jitter** — `secureRandomUnit` fallback changed from deterministic `0.5` to `Math.random()`; prevents thundering herd when `crypto.getRandomValues` unavailable
+- **Binary encoding APIs** — reverted `codePointAt`/`fromCodePoint` to `charCodeAt`/`fromCharCode` in `device-identity.ts`; correct API for binary byte data (0-255)
+
+#### Server (`server/index.ts`)
+- **Removed `openBrowser`** — deleted auto-browser-open feature (`--open` / `-o` CLI flag, `CK_OPEN_BROWSER` env, `spawn` import, Windows `cmd.exe` code path)
+
+### Changed
+
+#### Code Quality
+- **Complexity reduction** — `stripThinkingTags` rewritten from regex state machine to manual parser (smaller functions, no global regex state); component JSX ternaries pre-computed as variables
+- **Type safety** — `window.__CK_CONFIG__` access replaced with typed `getRuntimeConfig()` helper; `navigator` access via `getBrowserNavigator()` with `NavigatorWithUAData` type; `(navigator as any)` eliminated
+- **Index keys eliminated** — array index keys replaced with content-based stable keys in `bubble.tsx`, `session-sidebar.tsx`; IIFE pattern refactored to pre-computed `keyedImages`/`keyedFiles`
+- **Base64 overhead comment** — documented `TARGET_SIZE * 1.37` as `// Base64 overhead ratio (~4/3)`
+
+#### Deduplication
+- **`extractAgentId` / `sessionLabel`** — deleted from `chat/utils.ts`; `sessionLabel` added to `sessions/utils.ts`; imports updated in `use-chat.ts` and `chat/index.tsx`
+- **Unused `_settings` param** — removed from `groupMessages`; `ChatSettings` import removed from `chat/utils.ts`
+
+#### Comment Cleanup
+- Removed 31 low-value comments (obvious restatements, redundant separator labels, self-documenting component names) across 16 files; preserved all security, protocol, and domain rationale comments
+
 ---
 
 ## [2026.2.25] — 22026.2.25

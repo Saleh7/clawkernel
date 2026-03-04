@@ -43,10 +43,6 @@ type FeedItem = {
   payload?: unknown
 }
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
-
 const MAX_ITEMS = 200
 
 async function fetchJobRuns(
@@ -91,7 +87,11 @@ function describeEvent(event: string, payload: unknown): string {
   const p = (payload && typeof payload === 'object' ? payload : {}) as Record<string, unknown>
   if (event === 'chat') {
     const state = (p.state as string) ?? 'unknown'
-    const runId = p.runId ? ` · run ${String(p.runId).slice(0, 8)}` : ''
+
+    const runIdValue = p.runId
+    const runId =
+      typeof runIdValue === 'string' || typeof runIdValue === 'number' ? ` · run ${String(runIdValue).slice(0, 8)}` : ''
+
     return `${state}${runId}`
   }
   if (event === 'sessions') return 'Session list updated'
@@ -193,10 +193,6 @@ const FILTER_OPTIONS: { id: EventCategory; label: string }[] = [
   { id: 'sessions', label: 'Sessions' },
 ]
 
-// ---------------------------------------------------------------------------
-//  PayloadViewer
-// ---------------------------------------------------------------------------
-
 function PayloadViewer({ payload }: { readonly payload: unknown }) {
   const [open, setOpen] = useState(false)
   if (payload === undefined || payload === null) return null
@@ -265,10 +261,6 @@ const ActivityItem = memo(function ActivityItem({ item, now }: { readonly item: 
   )
 })
 
-// ---------------------------------------------------------------------------
-//  ActivityFilter
-// ---------------------------------------------------------------------------
-
 function ActivityFilter({
   active,
   onChange,
@@ -303,9 +295,6 @@ function ActivityFilter({
   )
 }
 
-// ---------------------------------------------------------------------------
-//  AgentActivity — main export
-// ---------------------------------------------------------------------------
 
 export function AgentActivity({ agentId, client }: Props) {
   const eventLog = useGatewayStore((s) => s.eventLog)

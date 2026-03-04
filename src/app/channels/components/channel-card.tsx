@@ -32,6 +32,12 @@ function accountStatus(a: ChannelAccountSnapshot): 'connected' | 'partial' | 'of
   return 'offline'
 }
 
+function bestChannelStatus(accounts: ChannelAccountSnapshot[]): 'connected' | 'partial' | 'offline' {
+  if (accounts.some((a) => a.connected)) return 'connected'
+  if (accounts.some((a) => a.running)) return 'partial'
+  return 'offline'
+}
+
 const STATUS_DOT: Record<string, string> = {
   connected: 'bg-success',
   partial: 'bg-warning',
@@ -57,11 +63,7 @@ export function ChannelCard({ channelId, label, accounts, client, onRefresh }: P
   const isConfigured = accounts.some((a) => a.configured)
   const isEnabled = accounts.some((a) => a.enabled !== false)
   const connectedCount = accounts.filter((a) => a.connected).length
-  const bestStatus = accounts.some((a) => a.connected)
-    ? 'connected'
-    : accounts.some((a) => a.running)
-      ? 'partial'
-      : 'offline'
+  const bestStatus = bestChannelStatus(accounts)
 
   const handleToggleEnabled = async () => {
     if (!client?.connected || !config) return
@@ -69,14 +71,15 @@ export function ChannelCard({ channelId, label, accounts, client, onRefresh }: P
     const next = !isEnabled
     try {
       const channelPatch: Record<string, unknown> = { enabled: next }
+      const accountPatches: Record<string, { enabled: boolean }> = {}
       for (const a of accounts) {
-        if (a.accountId) {
-          channelPatch.accounts = {
-            ...((channelPatch.accounts as Record<string, unknown>) ?? {}),
-            [a.accountId]: { enabled: next },
-          }
-        }
+        if (!a.accountId) continue
+        accountPatches[a.accountId] = { enabled: next }
       }
+      if (Object.keys(accountPatches).length > 0) {
+        channelPatch.accounts = accountPatches
+      }
+
       const patch = { channels: { [channelId]: channelPatch } }
       await patchConfigWithRetry(client, config, JSON.stringify(patch), 2000)
       setShowToggle(false)

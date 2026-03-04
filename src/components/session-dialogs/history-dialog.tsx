@@ -40,6 +40,12 @@ function extractText(msg: ChatMessage): string {
     .slice(0, 500)
 }
 
+function roleContainerClass(role: ChatMessage['role']): string {
+  if (role === 'assistant') return 'border-primary/20 bg-primary/5'
+  if (role === 'user') return 'border-border/40 bg-background/60'
+  return 'border-border/20 bg-muted/30'
+}
+
 export function HistoryDialog({ open, onOpenChange, session, client: clientProp }: HistoryDialogProps) {
   const client = useSessionDialogClient(clientProp)
 
@@ -83,6 +89,65 @@ export function HistoryDialog({ open, onOpenChange, session, client: clientProp 
     }
   }, [open, session, client])
 
+  let historyContent: React.ReactNode
+  if (loading) {
+    historyContent = (
+      <div className="space-y-3 p-2">
+        {Array.from({ length: 5 }, (_unused, n) => `history-skeleton-${n + 1}`).map((id) => (
+          <Skeleton key={id} className="h-16 rounded-lg" />
+        ))}
+      </div>
+    )
+  } else if (errorMessage) {
+    historyContent = (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <MessageSquare className="h-8 w-8 text-destructive/40" />
+        <p className="mt-2 text-sm text-destructive">{errorMessage}</p>
+      </div>
+    )
+  } else if (messages.length === 0) {
+    historyContent = (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <MessageSquare className="h-8 w-8 text-muted-foreground/20" />
+        <p className="mt-2 text-sm text-muted-foreground">No messages in this session</p>
+      </div>
+    )
+  } else {
+    historyContent = (
+      <div className="space-y-2 p-2">
+        {(() => {
+          const keyCounts = new Map<string, number>()
+
+          return messages.map((msg) => {
+            const text = extractText(msg)
+            if (!text && msg.role !== 'tool') return null
+
+            const baseKey = `${msg.role}:${msg.timestamp ?? 'na'}:${text.slice(0, 40)}`
+            const occurrence = (keyCounts.get(baseKey) ?? 0) + 1
+            keyCounts.set(baseKey, occurrence)
+
+            return (
+              <div
+                key={`${baseKey}:${occurrence}`}
+                className={cn('rounded-lg border px-3 py-2', roleContainerClass(msg.role))}
+              >
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[9px] uppercase">
+                    {msg.role || 'unknown'}
+                  </Badge>
+                  {msg.timestamp && <span className="font-mono">{formatTimestamp(msg.timestamp)}</span>}
+                </div>
+                {text && (
+                  <p className="mt-1.5 whitespace-pre-wrap text-xs text-foreground/90 leading-relaxed">{text}</p>
+                )}
+              </div>
+            )
+          })
+        })()}
+      </div>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh]">
@@ -95,55 +160,7 @@ export function HistoryDialog({ open, onOpenChange, session, client: clientProp 
             {session?.key} — last 50 messages
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-[50vh]">
-          {loading ? (
-            <div className="space-y-3 p-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 rounded-lg" />
-              ))}
-            </div>
-          ) : errorMessage ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <MessageSquare className="h-8 w-8 text-destructive/40" />
-              <p className="mt-2 text-sm text-destructive">{errorMessage}</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <MessageSquare className="h-8 w-8 text-muted-foreground/20" />
-              <p className="mt-2 text-sm text-muted-foreground">No messages in this session</p>
-            </div>
-          ) : (
-            <div className="space-y-2 p-2">
-              {messages.map((msg, i) => {
-                const text = extractText(msg)
-                if (!text && msg.role !== 'tool') return null
-                return (
-                  <div
-                    key={i}
-                    className={cn(
-                      'rounded-lg border px-3 py-2',
-                      msg.role === 'assistant'
-                        ? 'border-primary/20 bg-primary/5'
-                        : msg.role === 'user'
-                          ? 'border-border/40 bg-background/60'
-                          : 'border-border/20 bg-muted/30',
-                    )}
-                  >
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                      <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[9px] uppercase">
-                        {msg.role || 'unknown'}
-                      </Badge>
-                      {msg.timestamp && <span className="font-mono">{formatTimestamp(msg.timestamp)}</span>}
-                    </div>
-                    {text && (
-                      <p className="mt-1.5 whitespace-pre-wrap text-xs text-foreground/90 leading-relaxed">{text}</p>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </ScrollArea>
+        <ScrollArea className="h-[50vh]">{historyContent}</ScrollArea>
       </DialogContent>
     </Dialog>
   )

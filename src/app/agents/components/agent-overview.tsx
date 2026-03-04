@@ -56,10 +56,6 @@ import type { ParsedConfig } from '../types'
 
 type ModelChoice = { id: string; name: string; provider: string; contextWindow?: number; reasoning?: boolean }
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
-
 function resolveModel(model?: unknown): { primary: string; fallbacks: string[] } {
   if (!model) return { primary: '', fallbacks: [] }
   if (typeof model === 'string') return { primary: model.trim(), fallbacks: [] }
@@ -165,10 +161,6 @@ function Cell({
   )
 }
 
-// ---------------------------------------------------------------------------
-//  AgentOverview — main export
-// ---------------------------------------------------------------------------
-
 export function AgentOverview({
   agent,
   agentsList,
@@ -227,11 +219,15 @@ export function AgentOverview({
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean)
-      const modelValue = primaryDraft.trim()
-        ? fallbacksArr.length > 0
-          ? { primary: primaryDraft.trim(), fallbacks: fallbacksArr }
-          : primaryDraft.trim()
-        : undefined
+      const trimmedPrimary = primaryDraft.trim()
+      let modelValue: string | { primary: string; fallbacks: string[] } | undefined
+      if (!trimmedPrimary) {
+        modelValue = undefined
+      } else if (fallbacksArr.length > 0) {
+        modelValue = { primary: trimmedPrimary, fallbacks: fallbacksArr }
+      } else {
+        modelValue = trimmedPrimary
+      }
 
       if (modelValue) {
         return { ...entry, model: modelValue }

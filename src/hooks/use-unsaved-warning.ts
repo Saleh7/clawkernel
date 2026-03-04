@@ -19,11 +19,11 @@ export function useUnsavedWarning(isDirty: boolean, onSave?: () => void) {
       }
     }
 
-    window.addEventListener('beforeunload', beforeUnload)
-    if (onSave) window.addEventListener('keydown', keyDown)
+    globalThis.addEventListener('beforeunload', beforeUnload)
+    if (onSave) globalThis.addEventListener('keydown', keyDown)
     return () => {
-      window.removeEventListener('beforeunload', beforeUnload)
-      if (onSave) window.removeEventListener('keydown', keyDown)
+      globalThis.removeEventListener('beforeunload', beforeUnload)
+      if (onSave) globalThis.removeEventListener('keydown', keyDown)
     }
   }, [isDirty, onSave])
 }

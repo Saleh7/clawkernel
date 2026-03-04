@@ -38,7 +38,7 @@ const c = COLOR
 const args = process.argv.slice(2)
 let portArg     = null   // null = not explicitly set; falls back to config.dashboardPort
 let host        = 'localhost'
-let openBrowser = false
+
 let reset       = false
 
 for (let i = 0; i < args.length; i++) {
@@ -55,9 +55,6 @@ for (let i = 0; i < args.length; i++) {
   } else if (arg === '--host' && args[i + 1]) {
     host = args[++i]
 
-  } else if (arg === '--open' || arg === '-o') {
-    openBrowser = true
-
   } else if (arg === '--reset') {
     reset = true
 
@@ -70,7 +67,6 @@ for (let i = 0; i < args.length; i++) {
   Options:
     --port, -p <number>   Override dashboard port  (default: saved config or 4173)
     --host <host>         Host to bind to          (default: localhost)
-    --open, -o            Open browser on startup
     --reset               Re-run the setup wizard
     --help, -h            Show this help
 `)
@@ -234,7 +230,7 @@ const serverProc = spawn(process.execPath, [SERVER_MJS], {
     CK_OPENCLAW_HOME: config.openclawHome ?? '~/.openclaw',
     CK_PORT:          String(port),
     CK_HOST:          host,
-    CK_OPEN_BROWSER:  openBrowser ? '1' : '0',
+
     CK_VERSION:       PKG_VERSION,
   },
   stdio: 'inherit',

@@ -42,7 +42,6 @@ export function useSearchConfig() {
     }
   }, [client])
 
-  // Boot: fetch on connect
   useEffect(() => {
     if (connected) void refresh()
   }, [connected, refresh])

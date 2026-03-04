@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Bot, MessageSquare, RefreshCw, Search, User } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -89,26 +89,37 @@ function PreviewHoverCard({ entry }: { readonly entry: SessionsPreviewEntry | nu
   }
   return (
     <div className="space-y-1.5 max-w-64">
-      {entry.items.slice(-4).map((item, i) => {
-        const isUser = item.role === 'user'
-        const text = item.text.length > 120 ? `${item.text.slice(0, 117)}…` : item.text
-        return (
-          <div key={i} className={cn('flex flex-col gap-0.5', isUser ? 'items-end' : 'items-start')}>
-            <span className="text-[9px] font-medium text-muted-foreground uppercase flex items-center gap-1">
-              {isUser ? <User className="h-2.5 w-2.5" /> : <Bot className="h-2.5 w-2.5" />}
-              {item.role}
-            </span>
+      {(() => {
+        const keyCounts = new Map<string, number>()
+        return entry.items.slice(-4).map((item) => {
+          const isUser = item.role === 'user'
+          const text = item.text.length > 120 ? `${item.text.slice(0, 117)}…` : item.text
+
+          const baseKey = `${item.role}:${item.text.slice(0, 80)}`
+          const occurrence = (keyCounts.get(baseKey) ?? 0) + 1
+          keyCounts.set(baseKey, occurrence)
+
+          return (
             <div
-              className={cn(
-                'rounded-lg px-2 py-1 text-[11px] leading-snug max-w-full break-words',
-                isUser ? 'bg-primary/10 text-primary-foreground/80' : 'bg-muted text-muted-foreground',
-              )}
+              key={`${baseKey}:${occurrence}`}
+              className={cn('flex flex-col gap-0.5', isUser ? 'items-end' : 'items-start')}
             >
-              {text}
+              <span className="text-[9px] font-medium text-muted-foreground uppercase flex items-center gap-1">
+                {isUser ? <User className="h-2.5 w-2.5" /> : <Bot className="h-2.5 w-2.5" />}
+                {item.role}
+              </span>
+              <div
+                className={cn(
+                  'rounded-lg px-2 py-1 text-[11px] leading-snug max-w-full break-words',
+                  isUser ? 'bg-primary/10 text-primary-foreground/80' : 'bg-muted text-muted-foreground',
+                )}
+              >
+                {text}
+              </div>
             </div>
-          </div>
-        )
-      })}
+          )
+        })
+      })()}
     </div>
   )
 }
@@ -374,13 +385,13 @@ export function SessionSidebar({
 
   // Re-evaluate session statuses only when there are recent/running sessions
   // that may transition. Uses 30s interval instead of 1s to reduce re-renders.
-  const [, setTick] = useState(0)
+  const [, forceTick] = useReducer((value: number) => value + 1, 0)
   const hasActiveOrRecent = sessions.some(
     (s) => activeSessions.has(s.key) || (s.updatedAt && Date.now() - s.updatedAt < RECENT_THRESHOLD_MS),
   )
   useEffect(() => {
     if (!hasActiveOrRecent) return
-    const id = setInterval(() => setTick((t) => t + 1), 30_000)
+    const id = setInterval(() => forceTick(), 30_000)
     return () => clearInterval(id)
   }, [hasActiveOrRecent])
 

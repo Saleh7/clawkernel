@@ -9,6 +9,12 @@ import { formatDuration } from '../cron-utils'
 
 const log = createLogger('agents:cron:run-history')
 
+function runStatusDotClass(status: string | undefined): string {
+  if (status === 'ok') return 'bg-green-500'
+  if (status === 'error') return 'bg-destructive'
+  return 'bg-muted-foreground/40'
+}
+
 export function RunHistoryPanel({ jobId, client }: { readonly jobId: string; readonly client: GatewayClient | null }) {
   const [runs, setRuns] = useState<CronRunLogEntry[] | null>(null)
   const [open, setOpen] = useState(false)
@@ -45,22 +51,13 @@ export function RunHistoryPanel({ jobId, client }: { readonly jobId: string; rea
       {open && (
         <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto">
           {loading && <Skeleton className="h-6 w-full" />}
-          {runs && runs.length === 0 && <p className="text-[10px] text-muted-foreground/40">No runs yet</p>}
+          {runs?.length === 0 && <p className="text-[10px] text-muted-foreground/40">No runs yet</p>}
           {runs?.map((r) => (
             <div
               key={`${r.ts}-${r.jobId}`}
               className="flex items-center gap-2 text-[10px] text-muted-foreground px-2 py-1 rounded-lg bg-muted/20"
             >
-              <span
-                className={cn(
-                  'h-1.5 w-1.5 rounded-full shrink-0',
-                  r.status === 'ok'
-                    ? 'bg-green-500'
-                    : r.status === 'error'
-                      ? 'bg-destructive'
-                      : 'bg-muted-foreground/40',
-                )}
-              />
+              <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', runStatusDotClass(r.status))} />
               <span className="font-mono">{r.status ?? '—'}</span>
               <span className="text-muted-foreground/50">{new Date(r.ts).toLocaleString()}</span>
               {r.durationMs != null && (

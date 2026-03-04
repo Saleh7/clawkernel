@@ -56,9 +56,17 @@ export function DmPairingQueue({ client, onRefresh }: Props) {
       setBusy(key)
       try {
         const updated = await saveRawConfigWithRetry(client, config, (current) => {
-          const channels = { ...((current.channels as Record<string, unknown>) ?? {}) }
-          const ch = { ...((channels[channel] as Record<string, unknown>) ?? {}) }
-          const allowFrom = [...((ch.allowFrom as string[]) ?? [])]
+          const currentChannels = current.channels
+          const channels =
+            currentChannels && typeof currentChannels === 'object'
+              ? { ...(currentChannels as Record<string, unknown>) }
+              : {}
+
+          const channelValue = channels[channel]
+          const ch =
+            channelValue && typeof channelValue === 'object' ? { ...(channelValue as Record<string, unknown>) } : {}
+
+          const allowFrom = Array.isArray(ch.allowFrom) ? [...ch.allowFrom] : []
           if (!allowFrom.includes(code)) allowFrom.push(code)
           ch.allowFrom = allowFrom
           channels[channel] = ch

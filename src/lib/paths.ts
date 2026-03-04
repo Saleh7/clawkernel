@@ -6,11 +6,26 @@
 //  in the UI — the actual resolved path always comes from the Gateway.
 // ---------------------------------------------------------------------------
 
-const OPENCLAW_HOME = (
-  window.__CK_CONFIG__?.openclawHome ??
-  import.meta.env.VITE_OPENCLAW_HOME ??
-  '~/.openclaw'
-).replace(/\/+$/, '')
+type RuntimeConfig = {
+  openclawHome?: string
+}
+
+function getRuntimeConfig(): RuntimeConfig | undefined {
+  const globalScope = globalThis as typeof globalThis & { __CK_CONFIG__?: RuntimeConfig }
+  return globalScope.__CK_CONFIG__
+}
+
+function trimTrailingSlashes(pathValue: string): string {
+  let end = pathValue.length
+  while (end > 0 && pathValue[end - 1] === '/') {
+    end -= 1
+  }
+  return pathValue.slice(0, end)
+}
+
+const OPENCLAW_HOME = trimTrailingSlashes(
+  getRuntimeConfig()?.openclawHome ?? import.meta.env.VITE_OPENCLAW_HOME ?? '~/.openclaw',
+)
 
 /**
  * Returns the default workspace path suggestion for a given agent ID.

@@ -13,6 +13,16 @@ type GatewaySettings = {
   password?: string
 }
 
+type RuntimeConfig = {
+  gatewayUrl?: string
+  gatewayToken?: string
+}
+
+function getRuntimeConfig(): RuntimeConfig | undefined {
+  const globalScope = globalThis as typeof globalThis & { __CK_CONFIG__?: RuntimeConfig }
+  return globalScope.__CK_CONFIG__
+}
+
 function loadSettings(): GatewaySettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
@@ -20,12 +30,12 @@ function loadSettings(): GatewaySettings {
       const parsed = JSON.parse(raw) as GatewaySettings
       if (parsed.url) return parsed
     }
-  } catch {
-    // ignore
-  }
+  } catch {}
+  const runtimeConfig = getRuntimeConfig()
+
   return {
-    url: window.__CK_CONFIG__?.gatewayUrl ?? import.meta.env.VITE_GATEWAY_URL ?? 'ws://localhost:18789',
-    token: window.__CK_CONFIG__?.gatewayToken ?? import.meta.env.VITE_GATEWAY_TOKEN ?? '',
+    url: runtimeConfig?.gatewayUrl ?? import.meta.env.VITE_GATEWAY_URL ?? 'ws://localhost:18789',
+    token: runtimeConfig?.gatewayToken ?? import.meta.env.VITE_GATEWAY_TOKEN ?? '',
   }
 }
 

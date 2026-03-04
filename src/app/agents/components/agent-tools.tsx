@@ -232,8 +232,8 @@ export function AgentTools({ agentId, config, client }: Props) {
       <div className="space-y-5">
         <Skeleton className="h-36 rounded-2xl" />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
+          {Array.from({ length: 10 }, (_unused, n) => `agent-tool-skeleton-${n + 1}`).map((id) => (
+            <Skeleton key={id} className="h-28 rounded-xl" />
           ))}
         </div>
       </div>

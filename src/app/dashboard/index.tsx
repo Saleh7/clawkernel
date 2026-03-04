@@ -24,6 +24,17 @@ function latencyStatus(ms: number): 'success' | 'warning' | 'error' {
   return 'error'
 }
 
+function channelsMetricStatus(connected: number, total: number): 'success' | 'warning' | 'error' {
+  if (connected === total) return 'success'
+  if (connected > 0) return 'warning'
+  return 'error'
+}
+
+function cronMetricStatus(failingJobs: number, cronEnabled: boolean | undefined): 'success' | 'error' | undefined {
+  if (failingJobs > 0) return 'error'
+  return cronEnabled ? 'success' : undefined
+}
+
 export default function DashboardPage() {
   const connected = useGatewayStore(selectIsConnected)
   const agentsList = useGatewayStore(selectAgents)
@@ -56,6 +67,10 @@ export default function DashboardPage() {
 
   const enabledJobs = useMemo(() => cronJobs.filter((j) => j.enabled).length, [cronJobs])
 
+  const hasLatency = latencyMs !== null && latencyMs !== undefined
+  const latencyValue = hasLatency ? `${latencyMs}ms` : '—'
+  const latencyTone = hasLatency ? latencyStatus(latencyMs) : undefined
+
   return (
     <main className="flex-1 space-y-4 p-3 sm:space-y-6 sm:p-6">
       <div className="flex items-center justify-between">
@@ -71,12 +86,7 @@ export default function DashboardPage() {
           value={connected ? 'Connected' : 'Offline'}
           status={connected ? 'success' : 'error'}
         />
-        <MetricTile
-          icon={Activity}
-          label="Latency"
-          value={latencyMs != null ? `${latencyMs}ms` : '—'}
-          status={latencyMs != null ? latencyStatus(latencyMs) : undefined}
-        />
+        <MetricTile icon={Activity} label="Latency" value={latencyValue} status={latencyTone} />
         <MetricTile
           icon={Bot}
           label="Agents"
@@ -89,20 +99,14 @@ export default function DashboardPage() {
           label="Channels"
           value={`${connectedChannels.length}/${channels.length}`}
           sub="connected"
-          status={
-            connectedChannels.length === channels.length
-              ? 'success'
-              : connectedChannels.length > 0
-                ? 'warning'
-                : 'error'
-          }
+          status={channelsMetricStatus(connectedChannels.length, channels.length)}
         />
         <MetricTile
           icon={Timer}
           label="Cron"
           value={cronStatus?.enabled ? `${enabledJobs} active` : 'Disabled'}
           sub={failingJobs > 0 ? `${failingJobs} failing` : undefined}
-          status={failingJobs > 0 ? 'error' : cronStatus?.enabled ? 'success' : undefined}
+          status={cronMetricStatus(failingJobs, cronStatus?.enabled)}
         />
       </section>
 

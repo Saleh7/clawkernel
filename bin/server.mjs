@@ -1,5 +1,4 @@
 // server/index.ts
-import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import os2 from "node:os";
@@ -237,7 +236,6 @@ var HOST = process.env.CK_HOST ?? "localhost";
 var GATEWAY_URL = process.env.CK_GATEWAY_URL ?? localCfg.gatewayUrl ?? "";
 var GATEWAY_TOKEN = process.env.CK_GATEWAY_TOKEN ?? localCfg.gatewayToken ?? "";
 var OPENCLAW_HOME = process.env.CK_OPENCLAW_HOME ?? localCfg.openclawHome ?? "~/.openclaw";
-var OPEN_BROWSER = process.env.CK_OPEN_BROWSER === "1";
 var API_TOKEN = process.env.CK_API_TOKEN ?? "";
 var COLOR = process.stdout.isTTY && !process.env.NO_COLOR;
 var clr = COLOR ? { m: "\x1B[95m", g: "\x1B[92m", dim: "\x1B[2m", b: "\x1B[1m", r: "\x1B[0m" } : { m: "", g: "", dim: "", b: "", r: "" };
@@ -383,12 +381,4 @@ serve({ fetch: app.fetch, port: PORT, hostname: HOST }, () => {
   console.log(`
   Press ${clr.dim}Ctrl+C${clr.r} to stop.
 `);
-  if (OPEN_BROWSER) {
-    if (process.platform === "win32") {
-      spawn("cmd", ["/c", "start", "", serverUrl], { detached: true, stdio: "ignore" }).unref();
-    } else {
-      const bin = process.platform === "darwin" ? "open" : "xdg-open";
-      spawn(bin, [serverUrl], { detached: true, stdio: "ignore" }).unref();
-    }
-  }
 });

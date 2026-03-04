@@ -36,6 +36,12 @@ function PlatformIcon({ platform, className }: { readonly platform?: string; rea
   return <Monitor className={className} />
 }
 
+function pendingRequestsTitle(count: number): string {
+  if (count === 0) return 'No pending requests'
+  const suffix = count > 1 ? 's' : ''
+  return `${count} pending request${suffix}`
+}
+
 export function PairingBell() {
   const client = useGatewayStore(selectClient)
   const connected = useGatewayStore(selectIsConnected)
@@ -118,7 +124,7 @@ export function PairingBell() {
               'relative flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground',
               count > 0 && 'text-primary',
             )}
-            title={count > 0 ? `${count} pending request${count > 1 ? 's' : ''}` : 'No pending requests'}
+            title={pendingRequestsTitle(count)}
           >
             <Bell className={cn('h-4 w-4', isNew && 'animate-bounce')} />
             {count > 0 && (

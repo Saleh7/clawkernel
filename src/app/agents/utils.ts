@@ -3,9 +3,9 @@ import type { AgentIdentityResult, GatewayAgentRow } from '@/lib/gateway/types'
 export function normalizeAgentId(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/(?:^-|-$)/g, '')
+    .replaceAll(/[^a-z0-9_-]/g, '-')
+    .replaceAll(/-+/g, '-')
+    .replaceAll(/(?:^-|-$)/g, '')
 }
 
 /** Guard against URLs/paths being rendered as emoji — matches official isLikelyEmoji */
@@ -13,8 +13,8 @@ function isLikelyEmoji(value: string): boolean {
   const trimmed = value.trim()
   if (!trimmed || trimmed.length > 16) return false
   let hasNonAscii = false
-  for (let i = 0; i < trimmed.length; i += 1) {
-    if (trimmed.charCodeAt(i) > 127) {
+  for (const ch of trimmed) {
+    if ((ch.codePointAt(0) ?? 0) > 127) {
       hasNonAscii = true
       break
     }

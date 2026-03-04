@@ -93,24 +93,24 @@ export function DeleteAgentDialog({ agentId, agentName, isDefault, client, onDel
         onConfirm={handleDelete}
       >
         {/* Delete files checkbox */}
-        <label
-          htmlFor="delete-files-checkbox"
-          className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3 cursor-pointer"
-        >
+        <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
           <input
             id="delete-files-checkbox"
             type="checkbox"
             checked={deleteFiles}
             onChange={(e) => setDeleteFiles(e.target.checked)}
+            aria-describedby="delete-files-checkbox-help"
             className="mt-0.5 h-4 w-4 rounded border-border accent-destructive"
           />
           <div>
-            <p className="text-sm font-medium text-foreground">Also delete workspace files</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <label htmlFor="delete-files-checkbox" className="cursor-pointer text-sm font-medium text-foreground">
+              Also delete workspace files
+            </label>
+            <p id="delete-files-checkbox-help" className="mt-0.5 text-[11px] text-muted-foreground">
               Moves workspace directory, agent dir, and session transcripts to trash.
             </p>
           </div>
-        </label>
+        </div>
 
         {/* Error */}
         {error && (

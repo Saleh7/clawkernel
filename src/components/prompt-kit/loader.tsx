@@ -21,14 +21,16 @@ export function TypingLoader({
     lg: 'h-6',
   }
 
+  const typingDelays = [0, 250, 500]
+
   return (
     <div className={cn('flex items-center space-x-1', containerSizes[size], className)}>
-      {[...Array(3)].map((_, i) => (
+      {typingDelays.map((delayMs) => (
         <div
-          key={i}
+          key={`typing-dot-${delayMs}`}
           className={cn('bg-muted-foreground animate-[typing_1s_infinite] rounded-full', dotSizes[size])}
           style={{
-            animationDelay: `${i * 250}ms`,
+            animationDelay: `${delayMs}ms`,
           }}
         />
       ))}

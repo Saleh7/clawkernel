@@ -47,6 +47,12 @@ const DEVICE_AUTH_STORAGE_KEY = 'clawkernel.device.auth.v1'
 type DeviceAuthEntry = { token: string; role: string; scopes: string[]; updatedAtMs: number }
 type DeviceAuthStore = { version: 1; deviceId: string; tokens: Record<string, DeviceAuthEntry> }
 
+type NavigatorWithUAData = Navigator & {
+  userAgentData?: {
+    platform?: string
+  }
+}
+
 function loadDeviceAuthToken(deviceId: string, role: string): string | null {
   try {
     const raw = localStorage.getItem(DEVICE_AUTH_STORAGE_KEY)
@@ -85,6 +91,27 @@ function clearDeviceAuthToken(deviceId: string, role: string): void {
   } catch {}
 }
 
+function getBrowserNavigator(): NavigatorWithUAData | null {
+  if (typeof navigator === 'object') {
+    return navigator as NavigatorWithUAData
+  }
+  return null
+}
+
+function resolveClientPlatform(nav: NavigatorWithUAData | null): string {
+  const platform = nav?.userAgentData?.platform
+  if (typeof platform === 'string' && platform) return platform
+  return 'web'
+}
+
+function resolveUserAgent(nav: NavigatorWithUAData | null): string | undefined {
+  return nav?.userAgent
+}
+
+function resolveLocale(nav: NavigatorWithUAData | null): string | undefined {
+  return nav?.language
+}
+
 // ---------------------------------------------------------------------------
 //  Pending request tracking
 // ---------------------------------------------------------------------------
@@ -121,17 +148,18 @@ type GatewayClientEvents = {
 type EventName = keyof GatewayClientEvents
 type EventCallback<TKey extends EventName> = GatewayClientEvents[TKey]
 
-// ---------------------------------------------------------------------------
-//  UUID generator
-// ---------------------------------------------------------------------------
-
 function uuid(): string {
   return crypto.randomUUID()
 }
 
-// ---------------------------------------------------------------------------
-//  GatewayClient
-// ---------------------------------------------------------------------------
+function secureRandomUnit(): number {
+  if (typeof crypto !== 'object' || typeof crypto.getRandomValues !== 'function') {
+    return Math.random()
+  }
+  const values = new Uint32Array(1)
+  crypto.getRandomValues(values)
+  return values[0] / (0xffffffff + 1)
+}
 
 const log = createLogger('gateway:client')
 
@@ -208,7 +236,7 @@ export class GatewayClient {
   }
 
   async request<T = unknown>(method: string, params?: unknown, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS): Promise<T> {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (this.ws?.readyState !== WebSocket.OPEN) {
       throw new Error('gateway not connected')
     }
 
@@ -345,7 +373,6 @@ export class GatewayClient {
 
     if (frame.type === 'res') {
       this.handleResponse(parsed as GatewayResponseFrame)
-      return
     }
   }
 
@@ -354,7 +381,7 @@ export class GatewayClient {
   // =========================================================================
 
   private async sendConnect(): Promise<void> {
-    if (this.connectSent || !this.ws || this.ws.readyState !== WebSocket.OPEN) return
+    if (this.connectSent || this.ws?.readyState !== WebSocket.OPEN) return
     this.connectSent = true
 
     if (this.connectTimer !== null) {
@@ -416,6 +443,8 @@ export class GatewayClient {
       }
     }
 
+    const nav = getBrowserNavigator()
+
     const params = {
       minProtocol: 3,
       maxProtocol: 3,
@@ -423,10 +452,7 @@ export class GatewayClient {
         id: 'openclaw-control-ui',
         displayName: 'WebClaw',
         version: this.opts.clientVersion,
-        platform:
-          typeof navigator !== 'undefined'
-            ? ((navigator as any).userAgentData?.platform ?? navigator.platform ?? 'web')
-            : 'web',
+        platform: resolveClientPlatform(nav),
         mode: 'webchat',
         instanceId: this.opts.instanceId,
       },
@@ -438,8 +464,8 @@ export class GatewayClient {
         token: authToken,
         password: this.opts.password || undefined,
       },
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-      locale: typeof navigator !== 'undefined' ? navigator.language : undefined,
+      userAgent: resolveUserAgent(nav),
+      locale: resolveLocale(nav),
     }
 
     this.request<GatewayHelloOk>('connect', params, 10_000)
@@ -522,7 +548,7 @@ export class GatewayClient {
 
     this.setState('reconnecting')
 
-    const jitter = Math.random() * JITTER_MAX
+    const jitter = secureRandomUnit() * JITTER_MAX
     const delay = this.backoffMs + jitter
     this.backoffMs = Math.min(this.backoffMs * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS)
 

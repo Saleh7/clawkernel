@@ -15,9 +15,12 @@ export function useChannels() {
   const refresh = useCallback(async () => {
     if (!client?.connected) return
     try {
+      const existingConfig = useGatewayStore.getState().config
+      const configRequest = existingConfig ? null : client.request<ConfigSnapshot>('config.get', {})
+
       const [channelsResult, configResult] = await Promise.all([
         client.request<ChannelsStatusSnapshot>('channels.status', {}),
-        !useGatewayStore.getState().config ? client.request<ConfigSnapshot>('config.get', {}) : null,
+        configRequest,
       ])
       if (channelsResult) useGatewayStore.setState({ channels: channelsResult })
       if (configResult) useGatewayStore.getState().setConfig(configResult)

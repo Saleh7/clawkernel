@@ -98,8 +98,8 @@ export function ModelsList({ models }: Props) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          Available Models
-          <span className="ml-2 text-[10px] normal-case font-normal text-muted-foreground/50">
+          Available Models{' '}
+          <span className="text-[10px] normal-case font-normal text-muted-foreground/50">
             {models.length} total
             {search && ` · ${filtered.length} matching`}
           </span>

@@ -42,6 +42,16 @@ type PerAgentTabProps = {
   readonly onSetAgentModel: (agentId: string, model: string | null) => Promise<void>
 }
 
+function getAgentModelPrimary(model: AgentModelConfig | undefined, fallback: string): string {
+  if (typeof model === 'string') return model
+  return model?.primary ?? fallback
+}
+
+function getOverrideSelection(hasOverride: boolean, model: AgentModelConfig | undefined): string {
+  if (!hasOverride) return ''
+  return getAgentModelPrimary(model, '')
+}
+
 function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTabProps) {
   const [overrideAgent, setOverrideAgent] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState('')
@@ -97,6 +107,57 @@ function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTab
             {agentList.map((agent) => {
               const hasOverride = agent.model != null
               const isEditing = overrideAgent === agent.id
+
+              let modelCell: React.ReactNode
+              if (isEditing) {
+                modelCell = (
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1 min-w-0">
+                      <ModelPicker
+                        models={models}
+                        value={selectedModel}
+                        onChange={setSelectedModel}
+                        placeholder="Select model…"
+                        disabled={saving}
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-7 px-2 text-xs shrink-0"
+                      disabled={saving || !selectedModel}
+                      onClick={() => void handleSetOverride(agent.id)}
+                    >
+                      {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Set'}
+                    </Button>
+                    <button
+                      type="button"
+                      aria-label="Cancel override"
+                      className="rounded p-1 text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors"
+                      onClick={() => {
+                        setOverrideAgent(null)
+                        setSelectedModel('')
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )
+              } else if (hasOverride) {
+                modelCell = (
+                  <div className="flex items-center gap-1.5">
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-foreground">
+                      {getAgentModelPrimary(agent.model, '?')}
+                    </code>
+                    <Badge variant="secondary" className="text-[9px]">
+                      override
+                    </Badge>
+                  </div>
+                )
+              } else {
+                modelCell = <span className="text-[11px] text-muted-foreground/40 italic">→ global default</span>
+              }
+
               return (
                 <tr key={agent.id} className="hover:bg-muted/10 transition-colors">
                   {/* Agent name/id */}
@@ -108,52 +169,7 @@ function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTab
                   </td>
 
                   {/* Current model / inline picker */}
-                  <td className="px-4 py-2.5">
-                    {isEditing ? (
-                      <div className="flex gap-2 items-center">
-                        <div className="flex-1 min-w-0">
-                          <ModelPicker
-                            models={models}
-                            value={selectedModel}
-                            onChange={setSelectedModel}
-                            placeholder="Select model…"
-                            disabled={saving}
-                          />
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="h-7 px-2 text-xs shrink-0"
-                          disabled={saving || !selectedModel}
-                          onClick={() => void handleSetOverride(agent.id)}
-                        >
-                          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Set'}
-                        </Button>
-                        <button
-                          type="button"
-                          aria-label="Cancel override"
-                          className="rounded p-1 text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors"
-                          onClick={() => {
-                            setOverrideAgent(null)
-                            setSelectedModel('')
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ) : hasOverride ? (
-                      <div className="flex items-center gap-1.5">
-                        <code className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-foreground">
-                          {typeof agent.model === 'string' ? agent.model : (agent.model?.primary ?? '?')}
-                        </code>
-                        <Badge variant="secondary" className="text-[9px]">
-                          override
-                        </Badge>
-                      </div>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground/40 italic">→ global default</span>
-                    )}
-                  </td>
+                  <td className="px-4 py-2.5">{modelCell}</td>
 
                   {/* Actions */}
                   <td className="px-4 py-2.5">
@@ -166,13 +182,7 @@ function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTab
                           disabled={saving}
                           onClick={() => {
                             setOverrideAgent(agent.id)
-                            setSelectedModel(
-                              hasOverride
-                                ? typeof agent.model === 'string'
-                                  ? agent.model
-                                  : (agent.model?.primary ?? '')
-                                : '',
-                            )
+                            setSelectedModel(getOverrideSelection(hasOverride, agent.model))
                           }}
                         >
                           Override
@@ -216,7 +226,7 @@ function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTab
               Reset model override for{' '}
               <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">
                 {pendingReset.name ?? pendingReset.id}
-              </code>
+              </code>{' '}
               ? The agent will use the global default model.
             </span>
           ) : null

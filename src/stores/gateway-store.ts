@@ -1,6 +1,4 @@
 // ---------------------------------------------------------------------------
-//  Gateway Store — Zustand store for the persistent WS connection
-//
 //  Ported from Axolotl/apps/webclaw/src/stores/gateway-store.ts
 //  with adaptations for ClawKernel's domain needs.
 // ---------------------------------------------------------------------------
@@ -28,10 +26,6 @@ import type {
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('gateway:store')
-
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
 
 function resolveModelLabel(provider: unknown, model: unknown): string | null {
   const p = typeof provider === 'string' ? provider.trim() : ''
@@ -410,10 +404,6 @@ const STORE_EVENT_HANDLERS: Record<string, StoreEventHandler> = {
   tick: handleTickEvent,
 }
 
-// ---------------------------------------------------------------------------
-//  Store creation
-// ---------------------------------------------------------------------------
-
 export const useGatewayStore = create<GatewayStore>()(
   subscribeWithSelector((set, get) => ({
     // -- Initial state ------------------------------------------------------
@@ -475,7 +465,6 @@ export const useGatewayStore = create<GatewayStore>()(
             set({ channels: r })
           }),
         ]).catch((err) => {
-          // Check for scope/permission errors
           const msg = err instanceof Error ? err.message : String(err)
           if (
             msg.includes('scope') ||
@@ -596,10 +585,6 @@ export const useGatewayStore = create<GatewayStore>()(
     },
   })),
 )
-
-// ---------------------------------------------------------------------------
-//  Selectors
-// ---------------------------------------------------------------------------
 
 export const selectIsConnected = (s: GatewayStore) => s.state === 'connected'
 export const selectClient = (s: GatewayStore) => s.client

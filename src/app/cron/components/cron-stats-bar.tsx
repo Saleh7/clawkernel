@@ -10,6 +10,11 @@ type Props = {
   readonly total: number
 }
 
+function schedulerLabel(status: CronStatus | null): string {
+  if (!status) return '…'
+  return status.enabled ? 'Active' : 'Paused'
+}
+
 export function CronStatsBar({ status, jobs, total }: Props) {
   const enabledCount = jobs.filter((j) => j.enabled).length
   const failingCount = jobs.filter((j) => j.state?.lastStatus === 'error').length
@@ -26,7 +31,7 @@ export function CronStatsBar({ status, jobs, total }: Props) {
               status?.enabled ? 'bg-green-500 shadow-sm shadow-green-500/50 animate-pulse' : 'bg-muted-foreground/30',
             )}
           />
-          <span className="text-sm font-semibold">{status ? (status.enabled ? 'Active' : 'Paused') : '…'}</span>
+          <span className="text-sm font-semibold">{schedulerLabel(status)}</span>
         </div>
       </div>
 

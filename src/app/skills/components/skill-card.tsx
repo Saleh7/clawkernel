@@ -28,6 +28,12 @@ function statusTone(skill: SkillStatusEntry, enabled: boolean) {
   return 'ready'
 }
 
+function SkillStatusIcon({ tone }: { readonly tone: ReturnType<typeof statusTone> }) {
+  if (tone === 'ready') return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+  if (tone === 'needs-setup') return <AlertCircle className="h-4 w-4 text-amber-500" />
+  return <XCircle className="h-4 w-4 text-muted-foreground/30" />
+}
+
 export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiKey, onExpand }: Props) {
   const tone = statusTone(skill, enabled)
   const hasMissing = skill.missing.bins.length > 0 || skill.missing.env.length > 0 || skill.missing.config.length > 0
@@ -35,7 +41,7 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
   const apiKeyRef = useRef<HTMLInputElement>(null)
   const [showKey, setShowKey] = useState(false)
 
-  const handleKeySubmit = (e: React.FormEvent) => {
+  const handleKeySubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     const val = apiKeyRef.current?.value.trim()
     if (val) {
@@ -66,13 +72,7 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
         </button>
         <div className="flex items-center gap-1 shrink-0">
           {/* Status icon */}
-          {tone === 'ready' ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          ) : tone === 'needs-setup' ? (
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-          ) : (
-            <XCircle className="h-4 w-4 text-muted-foreground/30" />
-          )}
+          <SkillStatusIcon tone={tone} />
           {/* Detail expand */}
           <button
             type="button"

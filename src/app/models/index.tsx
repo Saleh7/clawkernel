@@ -44,7 +44,6 @@ export default function ModelsPage() {
         await fn(...args)
         toast.success(`${label} updated`)
       } catch {
-        // error already logged and surface-level reported in withSave (use-models.ts)
         toast.error(`Failed to update ${label}`)
       }
     }
@@ -107,8 +106,8 @@ export default function ModelsPage() {
         <div className="space-y-3">
           <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Available Models</p>
           <div className="space-y-1">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-10 animate-pulse rounded-lg bg-muted/30" />
+            {Array.from({ length: 8 }, (_unused, n) => `models-list-skeleton-${n + 1}`).map((id) => (
+              <div key={id} className="h-10 animate-pulse rounded-lg bg-muted/30" />
             ))}
           </div>
         </div>
