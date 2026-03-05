@@ -255,7 +255,7 @@ function findCodeRegions(text: string): CodeRegion[] {
   return [...fenced, ...inline].sort((a, b) => a.start - b.start)
 }
 
-function stripThinkingTags(text: string): string {
+export function stripThinkingTags(text: string): string {
   if (!text || !maybeContainsThinkingTag(text)) return text
 
   const codeRegions = findCodeRegions(text)

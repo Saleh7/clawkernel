@@ -332,7 +332,7 @@ export class GatewayClient {
     this.connectTimer = setTimeout(() => {
       this.connectTimer = null
       void this.sendConnect()
-    }, CONNECT_FALLBACK_DELAY_MS)
+    }, this.opts.connectFallbackMs ?? CONNECT_FALLBACK_DELAY_MS)
   }
 
   private readonly onClose = (ev: CloseEvent): void => {

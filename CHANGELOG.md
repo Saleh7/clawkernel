@@ -2,7 +2,32 @@
 
 ---
 
-## [Unreleased]
+## [2026.2.26] — 2026.2.26
+
+### Added
+
+#### Testing Infrastructure (Vitest)
+- **Vitest test runner** — `vitest` + `happy-dom` + `@testing-library/react` + `@vitest/coverage-v8` added.
+- **Test config** — new `vitest.config.ts` with `@` alias resolution and focused coverage include list for core business-logic files.
+- **Comprehensive test suite** — added `tests/` tree:
+  - Unit tests: cron, chat utils, gateway client/store, sessions utils, tool policy, device auth, formatting, text direction, agent status/utils, config utils.
+  - Integration tests: `use-chat` hook behavior.
+- **NPM scripts** — `test`, `test:watch`, `test:coverage` added to `package.json`.
+
+### Changed
+
+#### CI/CD
+- **GitHub Actions** — CI now runs `npm test` after `knip` and before `build`.
+
+#### Build/Repo Hygiene
+- **Coverage artifacts** — added `coverage` to `.gitignore`.
+
+#### Gateway Client Types & Behavior
+- **`GatewayClientOptions`** — added `connectFallbackMs?: number` to support deterministic connect-fallback timing in tests.
+- **`GatewayClient.sendConnectSoon()`** — fallback timer now respects `opts.connectFallbackMs` (defaults to existing constant when not provided).
+
+#### Chat Utilities
+- **`stripThinkingTags` export** — made public for direct unit testing of parser edge cases.
 
 ### Fixed
 
@@ -51,7 +76,7 @@
 
 ---
 
-## [2026.2.25] — 22026.2.25
+## [2026.2.25] — 2026.2.25
 
 ### Added
 

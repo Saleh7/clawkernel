@@ -537,6 +537,8 @@ export type GatewayClientOptions = {
   clientVersion?: string
   /** Unique instance id */
   instanceId?: string
+  /** Fallback delay (ms) before sending connect if no challenge nonce arrives. Default: 750 */
+  connectFallbackMs?: number
 }
 
 // -- Connection state -------------------------------------------------------
