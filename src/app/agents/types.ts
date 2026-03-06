@@ -33,6 +33,7 @@ export type ParsedConfig = {
       model?: unknown
       skills?: string[]
       tools?: { profile?: string; allow?: string[]; alsoAllow?: string[]; deny?: string[] }
+      subagents?: string[] | { allowAgents?: string[] }
       [key: string]: unknown
     }>
   }

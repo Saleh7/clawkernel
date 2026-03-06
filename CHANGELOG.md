@@ -2,6 +2,44 @@
 
 ---
 
+## [Unreleased]
+
+### Added
+
+#### Agents — Hierarchy View
+- **Agent Hierarchy view** — interactive graph visualization of agent fleet using ReactFlow + dagre auto-layout; toggle between Cards and Hierarchy views when 2+ agents exist
+- **5 layout modes** — Compact (adaptive columns), Balanced (split columns), Delegation (parent/child clarity), Channel (binding analysis), Workspace (ownership clusters); persisted in localStorage; popover selector with descriptions
+- **Node types** — Gateway hub (agent count), Agent nodes (status dot, model, session/token stats, default badge), Channel nodes (icon + account IDs), Workspace nodes (path + owning agents)
+- **Edge types** — Gateway→Agent (solid), Agent→Agent delegation (animated dashed green), Channel→Agent bindings (blue), implicit default route (dashed muted), Agent→Workspace (amber)
+- **Agent detail dialog** — click any agent node to open a full detail panel with identity, activity stats, configuration (model, tool profile, workspace), channel bindings, and delegation tree (parent + sub-agents)
+- **Layout persistence** — dragged node positions saved to localStorage; Reset button to recompute layout; positions cleared on layout mode switch
+- **Fit-to-view** — auto-fits on mount; ReactFlow controls (zoom, pan) with themed styling
+
+#### Agents — Shared Utilities
+- **`computeAgentSessionStats`** — extracted session stat computation (count, activeCount, tokens, lastActive) to `utils.ts`; used by both cards view and hierarchy view, replacing the inline duplicate in `index.tsx`
+- **`formatTokens`, `formatAgo`, `shortPath`, `channelIcon`** — shared formatting helpers extracted to `utils.ts`; used by hierarchy view and detail dialog
+
+#### Types
+- **`subagents` field** — added `subagents?: string[] | { allowAgents?: string[] }` to `ParsedConfig` agent list entry type; matches OpenClaw `types.agents.ts` schema for delegation configuration
+
+### Changed
+
+#### Dependencies
+- **`@xyflow/react`** (`^12.10.1`), **`dagre`** (`^0.8.5`), **`@types/dagre`** (`^0.7.54`) — added for hierarchy graph rendering and auto-layout
+
+#### Agents Page
+- **View mode toggle** — header toolbar gains a Cards/Hierarchy toggle button (visible when 2+ agents); hierarchy view replaces the cards+tabs layout with the full-height graph
+- **Session stats refactor** — inline `sessionsByAgentId` computation in `index.tsx` replaced with shared `computeAgentSessionStats` call; field names normalized (`all`→`count`, `active`→`activeCount`)
+
+### Fixed
+
+#### Agents — Hierarchy View
+- **Unclickable layout buttons** — Popover trigger and Reset button were independently `absolute`-positioned inside `<ReactFlow>`, which captures pointer events on its internal pane; wrapped both in a single `div` with `z-50 pointer-events-auto` to lift above the event pane
+- **Double dagre layout computation** — `extractPositions()` redundantly called `dagre.layout()` even though every layout function already called it before passing the graph; removed the duplicate call
+- **Misleading `_handleLayoutModeChange` prefix** — renamed to `handleLayoutModeChange`; underscore prefix conventionally signals unused variables but this callback is actively used
+
+---
+
 ## [2026.2.26] — 2026.2.26
 
 ### Added
