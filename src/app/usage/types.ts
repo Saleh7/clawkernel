@@ -28,7 +28,7 @@ export type CostUsageSummary = {
   totals: CostUsageTotals
 }
 
-export type SessionLatencyStats = {
+type SessionLatencyStats = {
   count: number
   avgMs: number
   p95Ms: number
@@ -36,20 +36,20 @@ export type SessionLatencyStats = {
   maxMs: number
 }
 
-export type SessionModelUsage = {
+type SessionModelUsage = {
   provider?: string
   model?: string
   count: number
   totals: CostUsageTotals
 }
 
-export type SessionDailyUsage = {
+type SessionDailyUsage = {
   date: string
   tokens: number
   cost: number
 }
 
-export type SessionDailyMessageCounts = {
+type SessionDailyMessageCounts = {
   date: string
   total: number
   user: number
@@ -59,7 +59,7 @@ export type SessionDailyMessageCounts = {
   errors: number
 }
 
-export type SessionDailyLatency = {
+type SessionDailyLatency = {
   date: string
   count: number
   avgMs: number
@@ -68,7 +68,7 @@ export type SessionDailyLatency = {
   maxMs: number
 }
 
-export type SessionDailyModelUsage = {
+type SessionDailyModelUsage = {
   date: string
   provider?: string
   model?: string
@@ -77,7 +77,7 @@ export type SessionDailyModelUsage = {
   count: number
 }
 
-export type SessionMessageCounts = {
+type SessionMessageCounts = {
   total: number
   user: number
   assistant: number
@@ -86,7 +86,7 @@ export type SessionMessageCounts = {
   errors: number
 }
 
-export type SessionToolUsage = {
+type SessionToolUsage = {
   totalCalls: number
   uniqueTools: number
   tools: Array<{ name: string; count: number }>
