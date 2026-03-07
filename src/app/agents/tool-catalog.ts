@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Tool Catalog — static fallback data for agent-tools.tsx
-// ---------------------------------------------------------------------------
-
 import {
   Brain,
   Calendar,
@@ -26,16 +22,8 @@ import {
 } from 'lucide-react'
 import type { ToolCatalogGroup } from '@/lib/gateway/types'
 
-// ---------------------------------------------------------------------------
-//  Profile helper
-// ---------------------------------------------------------------------------
-
 type ProfileId = 'minimal' | 'coding' | 'messaging' | 'full'
 const p = (...ids: ProfileId[]) => ids
-
-// ---------------------------------------------------------------------------
-//  Fallback catalog — used when tools.catalog request fails
-// ---------------------------------------------------------------------------
 
 export const FALLBACK_SECTIONS: ToolCatalogGroup[] = [
   {
@@ -298,10 +286,6 @@ export const FALLBACK_PROFILES = [
   { id: 'messaging', label: 'Messaging' },
   { id: 'full', label: 'Full' },
 ]
-
-// ---------------------------------------------------------------------------
-//  Icon map
-// ---------------------------------------------------------------------------
 
 export const TOOL_ICONS: Record<string, typeof FileText> = {
   read: FileText,

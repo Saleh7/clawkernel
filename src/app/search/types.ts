@@ -1,5 +1,3 @@
-// Web Search page — shared types
-
 export type WebSearchProvider = 'brave' | 'perplexity' | 'grok' | 'gemini' | 'kimi'
 
 /** Ordered list of all supported providers — single source of truth. */

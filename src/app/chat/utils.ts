@@ -1,12 +1,6 @@
-// ---------------------------------------------------------------------------
-//  Chat — Pure utility functions (no React)
-// ---------------------------------------------------------------------------
-
 import type { ChatMessage } from '@/lib/gateway/types'
 import type { FileAttachment, RenderItem, Source } from './types'
 import { IMAGE_QUALITY, MAX_IMAGE_DIM, MAX_TEXT_CHARS, TARGET_SIZE } from './types'
-
-// -- Envelope stripping -----------------------------------------------------
 
 const INBOUND_CONTEXT_RE = /^Conversation info \(untrusted metadata\):\s*```json?\s*\{[\s\S]*?\}\s*```\s*/
 const TIMESTAMP_PREFIX = /^\[(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+[A-Z+\d]+\]\s*/
@@ -31,8 +25,6 @@ function stripDisplayEnvelope(text: string): string {
   t = t.replace(new RegExp(FILE_BLOCK_RE.source, 'g'), '')
   return t.trim()
 }
-
-// -- Message content extractors ---------------------------------------------
 
 export function getRawText(msg: ChatMessage | undefined): string | null {
   if (!msg?.content) return null
@@ -378,8 +370,6 @@ export function extractImages(msg: ChatMessage | undefined): ExtractedImage[] {
     .filter(Boolean) as ExtractedImage[]
 }
 
-// -- Sources extraction -----------------------------------------------------
-
 type ToolResultEntry = { content: string; isError: boolean; details?: Record<string, unknown> }
 type ToolResultsMap = Map<string, ToolResultEntry>
 
@@ -572,8 +562,6 @@ export function extractSourcesFromMessages(
   return result
 }
 
-// -- Message grouping -------------------------------------------------------
-
 export function groupMessages(messages: ChatMessage[]): RenderItem[] {
   const items: RenderItem[] = []
   let toolBatch: ChatMessage[] = []
@@ -620,8 +608,6 @@ export function groupMessages(messages: ChatMessage[]): RenderItem[] {
   return items
 }
 
-// -- Formatting helpers -----------------------------------------------------
-
 function fallbackRandomIdPart(): string {
   if (typeof crypto === 'object' && typeof crypto.getRandomValues === 'function') {
     const bytes = new Uint8Array(8)
@@ -666,8 +652,6 @@ export function fmtTimeFull(ts?: number) {
     second: '2-digit',
   })
 }
-
-// -- File processing --------------------------------------------------------
 
 export async function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {

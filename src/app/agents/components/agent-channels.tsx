@@ -4,14 +4,9 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { ChannelAccountSnapshot, ChannelsStatusSnapshot, ConfigSnapshot } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
+import type { AgentBinding, ParsedConfig } from '../types'
 import { AgentStatPill } from './agent-stat-pill'
 import { AgentTabEmptyState } from './agent-tab-empty-state'
-
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
-import type { AgentBinding, ParsedConfig } from '../types'
 
 type Props = {
   readonly agentId: string
@@ -65,10 +60,6 @@ function dotClass(allConnected: boolean, partial: boolean): string {
   if (partial) return 'bg-yellow-500'
   return 'bg-muted-foreground/20'
 }
-
-// ---------------------------------------------------------------------------
-//  ChannelCard
-// ---------------------------------------------------------------------------
 
 function ChannelCard({
   channelId,

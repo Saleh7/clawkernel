@@ -21,10 +21,6 @@ import {
 import { SourcesButton } from './sources-panel'
 import { ToolCallBlock } from './tool-group'
 
-// ---------------------------------------------------------------------------
-//  File Attachment Card (inline in chat bubbles)
-// ---------------------------------------------------------------------------
-
 function imageBaseKey(image: ReturnType<typeof extractImages>[number]): string {
   if (image.kind === 'url') return `url:${image.url}`
   if (image.kind === 'omitted') return `omitted:${image.mediaType}:${image.bytes}`
@@ -55,11 +51,6 @@ function FileAttachmentCard({ file, align }: { readonly file: FileAttachment; re
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  Message Actions Bar — appears on hover at the top-right of the bubble
-// ---------------------------------------------------------------------------
-
 function MessageActionsBar({ text, onRetry }: { readonly text: string; readonly onRetry?: () => void }) {
   const [copied, setCopied] = useState(false)
 
@@ -101,11 +92,6 @@ function MessageActionsBar({ text, onRetry }: { readonly text: string; readonly 
     </TooltipProvider>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
-
 function resolveDisplayContent(
   message: ChatMessage,
   isUser: boolean,
@@ -119,11 +105,6 @@ function resolveDisplayContent(
   }
   return { text, thinking }
 }
-
-// ---------------------------------------------------------------------------
-//  Chat Bubble (memoized)
-// ---------------------------------------------------------------------------
-
 export const ChatBubble = memo(
   function ChatBubble({
     message,

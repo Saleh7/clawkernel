@@ -1,10 +1,4 @@
-// ---------------------------------------------------------------------------
-//  Chat — Shared types & constants
-// ---------------------------------------------------------------------------
-
 import type { GatewaySessionRow } from '@/lib/gateway/types'
-
-// -- Types ------------------------------------------------------------------
 
 export type SessionEntry = GatewaySessionRow & { agentId: string; label: string; preview?: string }
 
@@ -64,8 +58,6 @@ export type RenderItem =
   | { kind: 'message'; msg: import('@/lib/gateway/types').ChatMessage; index: number }
   | { kind: 'toolGroup'; messages: import('@/lib/gateway/types').ChatMessage[]; indices: number[] }
   | { kind: 'divider'; label: string; timestamp?: number }
-
-// -- Constants --------------------------------------------------------------
 
 export const MAX_IMAGE_DIM = 1280
 export const IMAGE_QUALITY = 0.75

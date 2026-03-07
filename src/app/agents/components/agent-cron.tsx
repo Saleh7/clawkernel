@@ -1,6 +1,3 @@
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
 import {
   Calendar,
   CheckCircle2,
@@ -34,10 +31,6 @@ import { DeleteJobDialog } from '../dialogs/delete-job-dialog'
 import { RunHistoryPanel } from '../dialogs/run-history-panel'
 import { AgentTabEmptyState } from './agent-tab-empty-state'
 
-// ---------------------------------------------------------------------------
-//  Props
-// ---------------------------------------------------------------------------
-
 type Props = {
   readonly agentId: string
   readonly cronJobs: CronJob[]
@@ -49,10 +42,6 @@ function schedulerStatusLabel(cronStatus: CronStatus | null): string {
   if (!cronStatus) return 'Loading…'
   return cronStatus.enabled ? 'Scheduler Active' : 'Scheduler Inactive'
 }
-
-// ---------------------------------------------------------------------------
-//  CronJobCard
-// ---------------------------------------------------------------------------
 
 function CronJobCard({
   job,

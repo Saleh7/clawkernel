@@ -1,8 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Ported from Axolotl/apps/webclaw/src/stores/gateway-store.ts
-//  with adaptations for ClawKernel's domain needs.
-// ---------------------------------------------------------------------------
-
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import { GatewayClient } from '@/lib/gateway/client'
@@ -33,10 +28,6 @@ function resolveModelLabel(provider: unknown, model: unknown): string | null {
   if (!m) return null
   return p ? `${p}/${m}` : m
 }
-
-// ---------------------------------------------------------------------------
-//  Store shape
-// ---------------------------------------------------------------------------
 
 type GatewayStore = {
   // -- Connection -----------------------------------------------------------

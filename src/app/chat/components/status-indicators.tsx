@@ -19,9 +19,6 @@ function contextMeterTone(pct: number): string {
   if (pct > 60) return 'text-[var(--warn)]'
   return 'text-primary'
 }
-
-// -- Connection Banner ------------------------------------------------------
-
 export function ConnectionBanner({ state, error }: { readonly state: string; readonly error?: string | null }) {
   if (state === 'connected') return null
   const isRestarting = error?.includes('Gateway restarting')
@@ -44,9 +41,6 @@ export function ConnectionBanner({ state, error }: { readonly state: string; rea
     </div>
   )
 }
-
-// -- Empty State ------------------------------------------------------------
-
 export function EmptyState({ hasSession }: { readonly hasSession: boolean }) {
   return (
     <div className="flex flex-1 items-center justify-center">
@@ -64,9 +58,6 @@ export function EmptyState({ hasSession }: { readonly hasSession: boolean }) {
     </div>
   )
 }
-
-// -- Streaming Bubble -------------------------------------------------------
-
 export function StreamingBubble({ text, agentInfo }: { readonly text: string | null; readonly agentInfo?: AgentInfo }) {
   return (
     <div className="flex gap-3 px-4 py-2">
@@ -87,9 +78,6 @@ export function StreamingBubble({ text, agentInfo }: { readonly text: string | n
     </div>
   )
 }
-
-// -- Processing Indicator ---------------------------------------------------
-
 export function ProcessingIndicator({ agentInfo }: { readonly agentInfo?: AgentInfo }) {
   return (
     <div className="flex gap-3 px-4 py-2">
@@ -102,9 +90,6 @@ export function ProcessingIndicator({ agentInfo }: { readonly agentInfo?: AgentI
     </div>
   )
 }
-
-// -- Compaction Indicator ---------------------------------------------------
-
 export function CompactionIndicator({ active }: { readonly active: boolean }) {
   return (
     <div
@@ -129,9 +114,6 @@ export function CompactionIndicator({ active }: { readonly active: boolean }) {
     </div>
   )
 }
-
-// -- Model Fallback Indicator -----------------------------------------------
-
 export function FallbackIndicator({
   status,
 }: {
@@ -168,9 +150,6 @@ export function FallbackIndicator({
     </div>
   )
 }
-
-// -- Context Meter ----------------------------------------------------------
-
 export function ContextMeter({ used, max }: { readonly used?: number; readonly max?: number }) {
   if (!used || !max || max <= 0) return null
   const pct = Math.min((used / max) * 100, 100)
@@ -222,9 +201,6 @@ export function ContextMeter({ used, max }: { readonly used?: number; readonly m
     </TooltipProvider>
   )
 }
-
-// -- Image Lightbox ---------------------------------------------------------
-
 export function ImageLightbox({ src, onClose }: { readonly src: string; readonly onClose: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

@@ -2,10 +2,6 @@ import { ChevronDown } from 'lucide-react'
 import type { ModelCatalogEntry } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 
-// ---------------------------------------------------------------------------
-//  Shared ModelPicker — native select with optgroup per provider
-// ---------------------------------------------------------------------------
-
 type ModelPickerProps = {
   readonly models: ModelCatalogEntry[]
   readonly value: string

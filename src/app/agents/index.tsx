@@ -115,7 +115,6 @@ export default function AgentsPage() {
     }
   }, [agentsList, firstAgentId, selectedId])
 
-  // Fetch identities for all agents (from IDENTITY.md files)
   useEffect(() => {
     if (!client || agents.length === 0) return
     for (const agent of agents) {

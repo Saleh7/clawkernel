@@ -1,10 +1,8 @@
-// ---------------------------------------------------------------------------
 //  OpenClaw path helpers
 //
 //  VITE_OPENCLAW_HOME lets you override the OpenClaw home directory
 //  (default: ~/.openclaw). This affects workspace path suggestions shown
 //  in the UI — the actual resolved path always comes from the Gateway.
-// ---------------------------------------------------------------------------
 
 type RuntimeConfig = {
   openclawHome?: string

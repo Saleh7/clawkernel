@@ -7,10 +7,6 @@ import type { AgentModelConfig } from '../hooks/use-models'
 import { resolveModelFallbacks, resolveModelPrimary } from '../hooks/use-models'
 import { ModelPicker } from './model-picker'
 
-// ---------------------------------------------------------------------------
-//  Single interactive model card
-// ---------------------------------------------------------------------------
-
 type ModelCardProps = {
   readonly icon: React.ElementType
   readonly label: string
@@ -210,10 +206,6 @@ function ModelCard({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  RoutingSection
-// ---------------------------------------------------------------------------
 
 type Props = {
   readonly defaultModel: AgentModelConfig

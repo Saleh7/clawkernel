@@ -54,10 +54,6 @@ export function useModels() {
     if (connected) void refresh()
   }, [connected, refresh])
 
-  // ---------------------------------------------------------------------------
-  //  Derive routing + aliases from parsed config
-  // ---------------------------------------------------------------------------
-
   const cfg = storeConfig?.config as
     | {
         agents?: {
@@ -110,10 +106,6 @@ export function useModels() {
     name: a.name,
     model: modelByAgent.get(a.id),
   }))
-
-  // ---------------------------------------------------------------------------
-  //  Write helpers
-  // ---------------------------------------------------------------------------
 
   const refreshGatewayConfig = useCallback(async () => {
     if (!client) return

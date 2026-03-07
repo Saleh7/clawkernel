@@ -4,10 +4,6 @@ import { createLogger } from '@/lib/logger'
 
 const log = createLogger('agents:config')
 
-// ---------------------------------------------------------------------------
-// Hash-conflict detection
-// ---------------------------------------------------------------------------
-
 /**
  * Returns true if the error is a config hash conflict from the Gateway.
  *

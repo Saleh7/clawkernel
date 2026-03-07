@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Chat — Custom hook encapsulating all chat state & side effects
-// ---------------------------------------------------------------------------
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { extractAgentId, sessionLabel } from '@/app/sessions/utils'
 import type { GatewayClient } from '@/lib/gateway/client'
@@ -26,10 +22,6 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024
 const HISTORY_PAGE_SIZE = 200
 const STOP_COMMANDS = new Set(['stop', 'esc', 'abort', 'wait', 'exit', '/stop'])
 const DEFAULT_CHAT_SETTINGS: ChatSettings = { showToolCalls: true, showThinking: true }
-
-// ---------------------------------------------------------------------------
-//  Message normalization helpers (matches OpenClaw UI controllers/chat.ts)
-// ---------------------------------------------------------------------------
 
 /** Normalize a final event message — accepts assistant messages with content or text */
 function normalizeFinalMessage(message: unknown): ChatMessage | null {
@@ -221,10 +213,6 @@ async function loadSessionHistory(params: {
     setChat((prev) => ({ ...prev, loading: false, error: String(error_) }))
   }
 }
-
-// ---------------------------------------------------------------------------
-//  Hook
-// ---------------------------------------------------------------------------
 
 export function useChat() {
   const client = useGatewayStore(selectClient)
@@ -910,7 +898,6 @@ export function useChat() {
   }, [client, connected, selectedSession])
 
   return {
-    // State
     connected,
     connectionState,
     selectedSession,
@@ -926,7 +913,6 @@ export function useChat() {
     isStreaming,
     queue,
     fileInputRef,
-    // Derived
     sessionEntries,
     agentInfoMap,
     activeSessions,
@@ -939,7 +925,6 @@ export function useChat() {
     lastAssistantIndex,
     renderItems,
     indicesInToolGroups,
-    // Actions
     setSelectedSession,
     setSidebarSearch,
     setSidebarOpen,

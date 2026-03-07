@@ -31,10 +31,6 @@ type Props = {
   readonly onRemoveImageFallback: (fallback: string) => Promise<void>
 }
 
-// ---------------------------------------------------------------------------
-//  Per-Agent tab
-// ---------------------------------------------------------------------------
-
 type PerAgentTabProps = {
   readonly agentList: AgentListEntry[]
   readonly models: ModelCatalogEntry[]
@@ -241,10 +237,6 @@ function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTab
   )
 }
 
-// ---------------------------------------------------------------------------
-//  Heartbeat tab
-// ---------------------------------------------------------------------------
-
 type HeartbeatTabProps = {
   readonly heartbeatModel: string | null
   readonly models: ModelCatalogEntry[]
@@ -319,10 +311,6 @@ function HeartbeatTab({ heartbeatModel, models, saving, onSetHeartbeatModel }: H
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  AdvancedSettings
-// ---------------------------------------------------------------------------
 
 export function AdvancedSettings({
   agentList,

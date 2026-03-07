@@ -28,10 +28,6 @@ import type { ParsedConfig } from '../types'
 
 const log = createLogger('agents:tools')
 
-// ---------------------------------------------------------------------------
-//  Component
-// ---------------------------------------------------------------------------
-
 type Props = {
   readonly agentId: string
   readonly config: ConfigSnapshot | null

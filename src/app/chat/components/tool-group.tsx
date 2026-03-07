@@ -6,11 +6,6 @@ import type { ChatMessage } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 import type { AgentInfo, ChatSettings } from '../types'
 import { extractToolCalls } from '../utils'
-
-// ---------------------------------------------------------------------------
-//  Single Tool Call Block
-// ---------------------------------------------------------------------------
-
 export function ToolCallBlock({
   name,
   args,
@@ -75,11 +70,6 @@ export function ToolCallBlock({
     </Collapsible>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  Tool Group — multiple tool-only messages collapsed
-// ---------------------------------------------------------------------------
-
 export function ToolGroup({
   messages,
   agentInfo,

@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Chat Page — thin orchestrator, all logic in use-chat hook
-// ---------------------------------------------------------------------------
-
 import { ChevronLeft, OctagonX, Paperclip, Plus, RefreshCw, RotateCcw, Send, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { sessionLabel } from '@/app/sessions/utils'

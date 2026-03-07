@@ -18,10 +18,6 @@ import { AgentTabEmptyState } from './agent-tab-empty-state'
 
 const log = createLogger('agents:bindings')
 
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
 type AgentBinding = {
   agentId: string
   match: {
@@ -110,10 +106,6 @@ function draftToBinding(agentId: string, draft: BindingDraft): AgentBinding {
   return { agentId, match }
 }
 
-// ---------------------------------------------------------------------------
-//  BindingCard
-// ---------------------------------------------------------------------------
-
 function BindingCard({
   binding,
   onEdit,
@@ -197,10 +189,6 @@ function BindingCard({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  BindingFormDialog
-// ---------------------------------------------------------------------------
 
 function BindingFormDialog({
   open,

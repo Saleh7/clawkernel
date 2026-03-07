@@ -13,9 +13,7 @@ import type { AgentInfo, SessionEntry } from '../types'
 
 const log = createLogger('chat:sidebar')
 
-// ---------------------------------------------------------------------------
-//  Session status classification — real-time from activeRuns + updatedAt
-// ---------------------------------------------------------------------------
+// Session status classification — real-time from activeRuns + updatedAt
 
 type SessionStatus = 'running' | 'recent' | 'idle'
 
@@ -27,10 +25,7 @@ function classifySession(key: string, updatedAt: number | null, activeSessions: 
   return 'idle'
 }
 
-// ---------------------------------------------------------------------------
-//  Status indicator dot — zero-delay, pure CSS animations
-// ---------------------------------------------------------------------------
-
+// Status indicator dot — zero-delay, pure CSS animations
 function StatusDot({ status }: { readonly status: SessionStatus }) {
   if (status === 'running') {
     return (
@@ -54,23 +49,11 @@ function StatusDot({ status }: { readonly status: SessionStatus }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-//  Status tooltip label
-// ---------------------------------------------------------------------------
-
 function statusLabel(status: SessionStatus): string {
   if (status === 'running') return 'Running — agent is actively working'
   if (status === 'recent') return 'Recent — active in the last 5 min'
   return 'Idle'
 }
-
-// ---------------------------------------------------------------------------
-//  Session item
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-//  Preview hover card — shows last messages on hover
-// ---------------------------------------------------------------------------
 
 function PreviewHoverCard({ entry }: { readonly entry: SessionsPreviewEntry | null | 'loading' }) {
   if (entry === 'loading') {
@@ -124,10 +107,7 @@ function PreviewHoverCard({ entry }: { readonly entry: SessionsPreviewEntry | nu
   )
 }
 
-// ---------------------------------------------------------------------------
-//  Shared preview cache (module-level, persists across re-renders)
-// ---------------------------------------------------------------------------
-
+// Shared preview cache (module-level, persists across re-renders)
 const PREVIEW_CACHE_TTL_MS = 60_000
 const PREVIEW_CACHE_MAX = 100
 const previewCache = new Map<string, { entry: SessionsPreviewEntry; ts: number }>()
@@ -231,10 +211,6 @@ function SessionItem({
   )
 }
 
-// ---------------------------------------------------------------------------
-//  Agent group header — shows aggregate status
-// ---------------------------------------------------------------------------
-
 function AgentGroupHeader({
   agentId,
   info,
@@ -270,10 +246,6 @@ function AgentGroupHeader({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  Virtualized session list — flat items for efficient rendering
-// ---------------------------------------------------------------------------
 
 type FlatItem =
   | { readonly kind: 'header'; readonly agentId: string; readonly info?: AgentInfo; readonly statuses: SessionStatus[] }
@@ -343,10 +315,6 @@ function VirtualSessionList({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  Sidebar
-// ---------------------------------------------------------------------------
 
 export function SessionSidebar({
   sessions,

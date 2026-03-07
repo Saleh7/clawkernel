@@ -33,14 +33,12 @@ export function TtsSettingsCard({ storeConfig, saving, onUpdate }: Props) {
   const [summarize, setSummarize] = useState(ttsConf.summarize !== false)
   const [maxLength, setMaxLength] = useState(String(ttsConf.maxTextLength ?? DEFAULT_MAX_LENGTH))
 
-  // Sync when storeConfig changes (also handles initial null → loaded transition)
   useEffect(() => {
     const conf = readTtsConfig(storeConfig)
     setSummarize(conf.summarize !== false)
     setMaxLength(String(conf.maxTextLength ?? DEFAULT_MAX_LENGTH))
   }, [storeConfig])
 
-  // All hooks called — safe to conditionally render here
   if (!storeConfig) {
     return <div className="h-28 animate-pulse rounded-xl bg-muted/30" />
   }

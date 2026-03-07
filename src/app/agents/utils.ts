@@ -20,12 +20,10 @@ export function computeAgentSessionStats(
   const map = new Map<string, AgentSessionStats>()
   const now = Date.now()
 
-  // Initialize all agents
   for (const agent of agents) {
     map.set(agent.id, { count: 0, activeCount: 0, tokens: 0, lastActive: null })
   }
 
-  // O(sessions) — extract agentId from session key once per session
   for (const session of sessions) {
     if (!session.key.startsWith('agent:')) continue
     const secondColon = session.key.indexOf(':', 6) // after "agent:"

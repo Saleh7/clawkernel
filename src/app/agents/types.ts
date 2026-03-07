@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Shared types for agent pages
-// ---------------------------------------------------------------------------
-
 /** Binding entry linking an agent to a channel match pattern */
 export type AgentBinding = {
   agentId: string

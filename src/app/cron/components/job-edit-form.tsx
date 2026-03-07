@@ -336,8 +336,6 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
   )
 }
 
-// -- Interval input ---------------------------------------------------------
-
 const INTERVAL_UNITS = [
   { label: 'sec', ms: 1_000 },
   { label: 'min', ms: 60_000 },

@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Sessions page — state, filtering, sorting, refresh, dialogs
-// ---------------------------------------------------------------------------
-
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { GatewaySessionRow } from '@/lib/gateway/types'

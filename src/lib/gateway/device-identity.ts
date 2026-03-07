@@ -1,7 +1,5 @@
-// ---------------------------------------------------------------------------
 //  Device Identity — Ed25519 keypair for Gateway device auth
 //  Adapted from OpenClaw Control UI's device-identity.ts
-// ---------------------------------------------------------------------------
 
 import { getPublicKeyAsync, signAsync, utils } from '@noble/ed25519'
 

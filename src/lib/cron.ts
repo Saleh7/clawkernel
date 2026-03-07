@@ -1,7 +1,5 @@
 import type { CronJob, CronSchedule } from '@/lib/gateway/types'
 
-// -- Time formatting --------------------------------------------------------
-
 export function formatRelative(ms?: number | null): string {
   if (!ms) return '—'
   const diff = Date.now() - ms
@@ -49,8 +47,6 @@ export function formatFullDate(ms: number | undefined, is24h: boolean): string {
     hour12: !is24h,
   })
 }
-
-// -- Schedule formatting ----------------------------------------------------
 
 function formatClock(hour24: number, minute: number, is24h: boolean): string {
   if (is24h) return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
@@ -142,8 +138,6 @@ export function formatSchedule(schedule: CronSchedule, is24h: boolean): { label:
   return { label: '—', kind: 'unknown' }
 }
 
-// -- Delivery helpers -------------------------------------------------------
-
 export function describeDelivery(job: CronJob): { label: string; hasIssue: boolean; issue?: string } {
   const d = job.delivery
   if (!d || d.mode === 'none') return { label: 'No delivery', hasIssue: false }
@@ -157,8 +151,6 @@ export function describeDelivery(job: CronJob): { label: string; hasIssue: boole
     issue: hasIssue ? 'Missing delivery target. The job will run but delivery will fail.' : undefined,
   }
 }
-
-// -- Failure diagnosis ------------------------------------------------------
 
 type FailureGuide = {
   headline: string

@@ -9,10 +9,6 @@ import { ACTIVE_SESSION_MS } from '@/lib/session-constants'
 import { cn } from '@/lib/utils'
 import { resolveModelLabel } from '../utils'
 
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
 type Props = {
   readonly agents: GatewayAgentRow[]
   readonly sessions: GatewaySessionRow[]
@@ -137,10 +133,6 @@ function agentStatusBadge(status: string) {
   )
 }
 
-// ---------------------------------------------------------------------------
-//  AgentSelector
-// ---------------------------------------------------------------------------
-
 function AgentSelector({
   agents,
   identities,
@@ -206,10 +198,6 @@ function AgentSelector({
   )
 }
 
-// ---------------------------------------------------------------------------
-//  ComparisonRow
-// ---------------------------------------------------------------------------
-
 function ComparisonRow({
   label,
   valueA,
@@ -239,10 +227,6 @@ function ComparisonRow({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  AgentColumnHeader
-// ---------------------------------------------------------------------------
 
 function AgentColumnHeader({ d }: { readonly d: AgentDataResult | null }) {
   if (!d) return <span className="text-sm text-muted-foreground/50">Not selected</span>

@@ -8,8 +8,6 @@ import type {
   CronSchedule,
 } from '@/lib/gateway/types'
 
-// -- Filter & sort ----------------------------------------------------------
-
 export const ENABLED_FILTER_OPTIONS: Array<{ value: CronJobsEnabledFilter; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'enabled', label: 'Enabled' },
@@ -21,8 +19,6 @@ export const SORT_BY_OPTIONS: Array<{ value: CronJobsSortBy; label: string }> = 
   { value: 'updatedAtMs', label: 'Last Updated' },
   { value: 'name', label: 'Name' },
 ]
-
-// -- Schedule presets -------------------------------------------------------
 
 type SchedulePreset =
   | { id: string; label: string; kind: 'cron'; expr: string }
@@ -43,8 +39,6 @@ export const SCHEDULE_PRESETS: SchedulePreset[] = [
   { id: 'at', label: 'Run once at a specific time', kind: 'at' },
   { id: 'custom', label: 'Custom schedule (advanced)', kind: 'custom' },
 ]
-
-// -- Wizard form state ------------------------------------------------------
 
 export type CronFormState = {
   name: string
@@ -97,8 +91,6 @@ export const DEFAULT_FORM: CronFormState = {
   enabled: true,
   deleteAfterRun: false,
 }
-
-// -- Form ↔ API converters --------------------------------------------------
 
 export function formToSchedule(f: CronFormState): CronSchedule {
   if (f.scheduleKind === 'at') return { kind: 'at', at: new Date(f.atDatetime).toISOString() }

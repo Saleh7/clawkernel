@@ -1,8 +1,4 @@
-// ---------------------------------------------------------------------------
 //  Tool policy engine — matches OpenClaw's tool-policy-shared.ts behavior
-// ---------------------------------------------------------------------------
-
-// -- Tool name normalization ------------------------------------------------
 
 const TOOL_NAME_ALIASES: Record<string, string> = {
   bash: 'exec',
@@ -13,8 +9,6 @@ export function normalizeToolName(name: string): string {
   const normalized = name.trim().toLowerCase()
   return TOOL_NAME_ALIASES[normalized] ?? normalized
 }
-
-// -- Tool groups (mirrors CORE_TOOL_GROUPS from tool-catalog.ts) ------------
 
 const TOOL_GROUPS: Record<string, string[]> = {
   'group:openclaw': [
@@ -73,8 +67,6 @@ function expandToolGroups(list: string[]): string[] {
   return [...new Set(expanded)]
 }
 
-// -- Pattern matching -------------------------------------------------------
-
 type CompiledPattern = { kind: 'all' } | { kind: 'exact'; value: string } | { kind: 'regex'; value: RegExp }
 
 function compilePattern(pattern: string): CompiledPattern {
@@ -113,8 +105,6 @@ function matchesList(name: string, list?: string[]): boolean {
   if (normalized === 'apply_patch' && matchesAny('exec', patterns)) return true
   return false
 }
-
-// -- Profile policies -------------------------------------------------------
 
 type ToolPolicy = { allow?: string[]; deny?: string[] }
 
@@ -162,8 +152,6 @@ function isAllowedByPolicy(name: string, policy?: ToolPolicy): boolean {
   if (normalized === 'apply_patch' && matchesAny('exec', allow)) return true
   return false
 }
-
-// -- Full resolution (profile + alsoAllow + deny) ---------------------------
 
 type ToolAllowedResult = {
   allowed: boolean

@@ -37,8 +37,6 @@ function parseRequestInputs(method: RequestMethod, query: string, body: string):
 
   return { ok: true, parsedQuery, parsedBody }
 }
-
-// Result returned from sendRequest (shown in response viewer)
 export type SendResult = { ok: true; body: unknown } | { ok: false; errorMessage: string; details?: unknown }
 
 export function useBrowser() {

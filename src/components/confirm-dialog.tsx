@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  ConfirmDialog — reusable destructive-action confirmation dialog
-// ---------------------------------------------------------------------------
-
 import { useState } from 'react'
 import {
   AlertDialog,

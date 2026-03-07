@@ -16,7 +16,6 @@ const log = createLogger('search:playground')
 // F7 — result counts matching ROADMAP 6.3 spec (1 / 3 / 5 / 10)
 const RESULT_COUNTS = [1, 3, 5, 10] as const
 
-// F9 — stable empty array; avoids new reference on every store update when agents is null
 const EMPTY_AGENTS: GatewayAgentRow[] = []
 
 function getSessionLabel(s: GatewaySessionRow): string {
@@ -121,20 +120,17 @@ export function SearchPlayground({
   const [query, setQuery] = useState('')
   const [resultCount, setResultCount] = useState<number>(5)
 
-  // Default agent: first in list
   useEffect(() => {
     if (!selectedAgentId && storeAgents.length > 0) {
       setSelectedAgentId(storeAgents[0].id)
     }
   }, [storeAgents, selectedAgentId])
 
-  // Sessions for selected agent
   const agentSessions = useMemo<GatewaySessionRow[]>(
     () => storeSessions.filter((s) => extractAgentId(s.key) === selectedAgentId),
     [storeSessions, selectedAgentId],
   )
 
-  // Auto-select first session when agent or sessions change
   useEffect(() => {
     if (agentSessions.length > 0) {
       setSelectedSessionKey(agentSessions[0].key)

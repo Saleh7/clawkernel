@@ -36,10 +36,6 @@ import { DangerZone, QuickActions } from './overview-panels'
 
 const log = createLogger('agents:overview')
 
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
 type Props = {
   readonly agent: GatewayAgentRow
   readonly agentsList: AgentsListResult
@@ -122,10 +118,6 @@ function getAgentStatusInfo(
   if (agentSessions.length > 0) return { status: 'Idle', color: 'text-yellow-500' }
   return { status: 'Inactive', color: 'text-muted-foreground/40' }
 }
-
-// ---------------------------------------------------------------------------
-//  Cell
-// ---------------------------------------------------------------------------
 
 function Cell({
   icon: Icon,

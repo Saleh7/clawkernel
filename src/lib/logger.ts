@@ -1,11 +1,9 @@
-// ---------------------------------------------------------------------------
 //  Structured logger — lightweight, production-safe
 //
 //  All chat/gateway errors flow through here so they're:
 //  1. Visible in DevTools (with context)
 //  2. Easy to hook into external error reporting (Sentry, etc.)
 //  3. Never silently swallowed
-// ---------------------------------------------------------------------------
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 

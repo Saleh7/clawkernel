@@ -19,8 +19,6 @@ export async function refreshCron(client: GatewayClient) {
   }
 }
 
-// -- Form state -------------------------------------------------------------
-
 export type JobFormState = {
   name: string
   description: string

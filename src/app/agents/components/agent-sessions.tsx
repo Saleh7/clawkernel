@@ -42,10 +42,6 @@ const log = createLogger('agents:sessions')
 const COLLAPSED_ROW_HEIGHT = 72
 const EXPANDED_ROW_HEIGHT = 340
 
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
 type Props = {
   readonly agentId: string
   readonly sessions: GatewaySessionRow[]
@@ -85,10 +81,6 @@ const kindColors: Record<string, string> = {
   subagent: 'border-violet-500/20 bg-violet-500/10 text-violet-400',
 }
 
-// ---------------------------------------------------------------------------
-//  SessionStatsBar
-// ---------------------------------------------------------------------------
-
 function SessionStatsBar({
   total,
   active,
@@ -115,10 +107,6 @@ function SessionStatsBar({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  SessionCard
-// ---------------------------------------------------------------------------
 
 function SessionCard({
   session,
@@ -298,10 +286,6 @@ function SessionCard({
   )
 }
 
-// ---------------------------------------------------------------------------
-//  TokenStat — small stat cell
-// ---------------------------------------------------------------------------
-
 function TokenStat({
   label,
   value,
@@ -320,10 +304,6 @@ function TokenStat({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  Virtualized session card list
-// ---------------------------------------------------------------------------
 
 function VirtualSessionCards({
   listRef,

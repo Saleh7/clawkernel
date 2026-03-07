@@ -37,8 +37,6 @@ import { cn } from '@/lib/utils'
 
 import '@xyflow/react/dist/style.css'
 
-// -- Types --------------------------------------------------------------------
-
 type AgentNodeData = {
   agent: GatewayAgentRow
   identity?: AgentIdentityResult | null
@@ -76,8 +74,6 @@ type ActiveRunMap = Record<string, { sessionKey: string; startedAt: number }>
 type XYPosition = { x: number; y: number }
 type PositionResolver = (nodeId: string, fallbackX: number, fallbackY: number) => XYPosition
 
-// -- Constants ----------------------------------------------------------------
-
 const NODE_WIDTH = 240
 const NODE_HEIGHT = 110
 const GATEWAY_NODE_WIDTH = 160
@@ -91,15 +87,11 @@ const DELEGATION_COLOR = 'var(--delegation-color, #10b981)'
 const ROUTE_COLOR = 'var(--route-color, #3b82f6)'
 const WORKSPACE_COLOR = 'var(--workspace-color, #f59e0b)'
 
-// Layout fallback positions
 const FALLBACK_AGENT_X = 320
 const FALLBACK_CHANNEL_X = -350
 const FALLBACK_WORKSPACE_X = 650
 
-// Layout persistence key
 const LAYOUT_STORAGE_KEY = 'clawkernel-hierarchy-layout'
-
-// -- Layout Modes -------------------------------------------------------------
 
 /** Layout mode for hierarchy view */
 type LayoutMode = 'compact' | 'balanced' | 'delegation' | 'channel' | 'workspace'
@@ -112,8 +104,6 @@ const LAYOUT_MODE_INFO: Record<LayoutMode, { label: string; icon: typeof LayoutG
   channel: { label: 'Channel', icon: Radio, description: 'Routing/binding analysis' },
   workspace: { label: 'Workspace', icon: Warehouse, description: 'Ownership and workspace clarity' },
 }
-
-// -- Layout Computation Functions ---------------------------------------------
 
 interface LayoutInput {
   agents: GatewayAgentRow[]
@@ -475,8 +465,6 @@ function computeLayout(mode: LayoutMode, input: LayoutInput): NodePositions {
   }
 }
 
-// -- Helpers ------------------------------------------------------------------
-
 function shortModel(m: string): string {
   const parts = m.split('/')
   return parts.at(-1) ?? m
@@ -502,8 +490,6 @@ function deriveAgentStatus(
     ? { status: 'active', statusMeta: LIVE_STATUS_META.active }
     : { status: 'idle', statusMeta: LIVE_STATUS_META.idle }
 }
-
-// -- Node Components ----------------------------------------------------------
 
 function GatewayNode({ data }: NodeProps) {
   const d = data as GatewayNodeData
@@ -641,8 +627,6 @@ const nodeTypes = {
   channel: ChannelNodeComponent,
   workspace: WorkspaceNodeComponent,
 }
-
-// -- Graph Builder ------------------------------------------------------------
 
 interface BuildGraphParams {
   agents: GatewayAgentRow[]
@@ -962,8 +946,6 @@ function buildGraph({
   }
 }
 
-// -- Flow View Inner ----------------------------------------------------------
-
 interface FlowViewInnerProps {
   agents: GatewayAgentRow[]
   identities: Record<string, AgentIdentityResult>
@@ -1029,7 +1011,6 @@ function FlowViewInner({
   const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges)
 
-  // Load saved positions on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LAYOUT_STORAGE_KEY)
@@ -1045,12 +1026,9 @@ function FlowViewInner({
           }),
         )
       }
-    } catch {
-      // Ignore localStorage errors
-    }
+    } catch {}
   }, [setNodes])
 
-  // Save positions when nodes change
   const handleNodesChange = useCallback(
     (changes: Parameters<typeof onNodesChange>[0]) => {
       onNodesChange(changes)
@@ -1068,15 +1046,12 @@ function FlowViewInner({
             }
           }
           localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(currentPositions))
-        } catch {
-          // Ignore localStorage errors
-        }
+        } catch {}
       }
     },
     [nodes, onNodesChange],
   )
 
-  // Reset layout
   const handleResetLayout = useCallback(() => {
     localStorage.removeItem(LAYOUT_STORAGE_KEY)
     setNodes(graph.nodes)
@@ -1084,7 +1059,6 @@ function FlowViewInner({
     fitView({ padding: 0.15 })
   }, [graph, setNodes, setEdges, fitView])
 
-  // Sync state when graph changes
   useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true
@@ -1172,8 +1146,6 @@ function FlowViewInner({
   )
 }
 
-// -- Main Component -----------------------------------------------------------
-
 interface AgentHierarchyProps {
   agents: GatewayAgentRow[]
   identities: Record<string, AgentIdentityResult>
@@ -1208,9 +1180,7 @@ export function AgentHierarchy({
   const getWorkspace = useMemo(() => createWorkspaceResolver(agentConfigMap), [agentConfigMap])
   const getSubagents = useMemo(() => createSubagentResolver(agentConfigMap), [agentConfigMap])
 
-  // Layout mode state - use external if provided, otherwise internal with persistence
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
-    // Try to get from localStorage first
     try {
       const saved = localStorage.getItem(LAYOUT_STORAGE_KEY)
       if (saved) {
@@ -1219,30 +1189,24 @@ export function AgentHierarchy({
           return parsed.layoutMode
         }
       }
-    } catch {
-      // Ignore
-    }
+    } catch {}
     return externalLayoutMode ?? 'compact'
   })
 
-  // Sync with external layoutMode if provided
   useEffect(() => {
     if (externalLayoutMode && externalLayoutMode !== layoutMode) {
       setLayoutMode(externalLayoutMode)
     }
   }, [externalLayoutMode, layoutMode])
 
-  // Callback to open details dialog
   const handleViewDetails = (agentId: string) => {
     setDetailsAgentId(agentId)
   }
 
-  // Callback for workspace click
   const handleWorkspaceClick = (path: string) => {
     if (onWorkspaceClick) {
       onWorkspaceClick(path)
     }
-    // Find and select the agent that owns this workspace
     for (const agent of agents) {
       if (getWorkspace(agent.id) === path) {
         onSelectAgent(agent.id)
@@ -1292,7 +1256,6 @@ export function AgentHierarchy({
     return deriveAgentStatus(detailsAgentId, activeRuns, stats?.lastActive ?? null).status
   }, [detailsAgentId, activeRuns, sessionsByAgentId])
 
-  // Measure container
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -1308,7 +1271,6 @@ export function AgentHierarchy({
     return () => ro.disconnect()
   }, [])
 
-  // Handle layout mode change with persistence
   const handleLayoutModeChange = useCallback(
     (newMode: LayoutMode) => {
       setLayoutMode(newMode)

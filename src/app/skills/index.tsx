@@ -24,10 +24,6 @@ import { SkillsStatsBar } from './components/skills-stats-bar'
 import type { SkillFilter } from './hooks/use-skills'
 import { useSkills } from './hooks/use-skills'
 
-// ---------------------------------------------------------------------------
-//  Grouping helpers
-// ---------------------------------------------------------------------------
-
 type SourceGroup = 'workspace' | 'built-in' | 'installed' | 'other'
 
 const SOURCE_ORDER: SourceGroup[] = ['workspace', 'built-in', 'installed', 'other']
@@ -60,10 +56,6 @@ function groupBySource(skills: SkillStatusEntry[]): Partial<Record<SourceGroup, 
   }
   return out
 }
-
-// ---------------------------------------------------------------------------
-//  Skill list row (list view)
-// ---------------------------------------------------------------------------
 
 type RowProps = {
   readonly skill: SkillStatusEntry
@@ -119,10 +111,6 @@ function SkillRow({ skill, enabled, onToggle, onExpand }: RowProps) {
   )
 }
 
-// ---------------------------------------------------------------------------
-//  Filter helpers
-// ---------------------------------------------------------------------------
-
 function matchesFilter(skill: SkillStatusEntry, filter: SkillFilter, enabled: boolean): boolean {
   if (filter === 'all') return true
   const hasMissing = skill.missing.bins.length > 0 || skill.missing.env.length > 0 || skill.missing.config.length > 0
@@ -138,10 +126,6 @@ const FILTER_OPTIONS: { value: SkillFilter; label: string }[] = [
   { value: 'needs-setup', label: 'Needs Setup' },
   { value: 'blocked', label: 'Blocked' },
 ]
-
-// ---------------------------------------------------------------------------
-//  Page
-// ---------------------------------------------------------------------------
 
 export default function SkillsPage() {
   const {

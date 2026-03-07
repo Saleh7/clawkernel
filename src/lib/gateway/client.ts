@@ -1,4 +1,3 @@
-// ---------------------------------------------------------------------------
 //  GatewayClient — persistent WebSocket connection to OpenClaw Gateway
 //
 //  Matches OpenClaw Control UI's GatewayBrowserClient protocol behavior:
@@ -8,7 +7,6 @@
 //  - Request timeout with automatic cleanup
 //  - Connection state machine
 //  - Sequence gap detection
-// ---------------------------------------------------------------------------
 
 import { createLogger } from '@/lib/logger'
 import type {
@@ -19,10 +17,6 @@ import type {
   GatewayResponseFrame,
   GatewaySnapshot,
 } from './types'
-
-// ---------------------------------------------------------------------------
-//  Constants
-// ---------------------------------------------------------------------------
 
 const MIN_BACKOFF_MS = 500
 const MAX_BACKOFF_MS = 15_000
@@ -38,9 +32,7 @@ const CONNECT_FALLBACK_DELAY_MS = 750
 // Close code used when connect handshake fails (browser rejects 1008)
 const CONNECT_FAILED_CLOSE_CODE = 4008
 
-// ---------------------------------------------------------------------------
-//  Device auth token persistence (matches OpenClaw UI's device-auth.ts)
-// ---------------------------------------------------------------------------
+// Device auth token persistence (matches OpenClaw UI's device-auth.ts)
 
 const DEVICE_AUTH_STORAGE_KEY = 'clawkernel.device.auth.v1'
 
@@ -112,19 +104,11 @@ function resolveLocale(nav: NavigatorWithUAData | null): string | undefined {
   return nav?.language
 }
 
-// ---------------------------------------------------------------------------
-//  Pending request tracking
-// ---------------------------------------------------------------------------
-
 type PendingRequest = {
   resolve: (value: unknown) => void
   reject: (error: Error) => void
   timer: ReturnType<typeof setTimeout>
 }
-
-// ---------------------------------------------------------------------------
-//  Event emitter types
-// ---------------------------------------------------------------------------
 
 type GatewayClientEvents = {
   /** Connection state changed */
@@ -164,36 +148,29 @@ function secureRandomUnit(): number {
 const log = createLogger('gateway:client')
 
 export class GatewayClient {
-  // -- Config ---------------------------------------------------------------
   private readonly opts: GatewayClientOptions & {
     clientName: string
     clientVersion: string
     instanceId: string
   }
 
-  // -- WebSocket ------------------------------------------------------------
   private ws: WebSocket | null = null
   private stopped = true
 
-  // -- Connection state -----------------------------------------------------
   private _state: ConnectionState = 'disconnected'
   private backoffMs = MIN_BACKOFF_MS
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private connectTimer: ReturnType<typeof setTimeout> | null = null
 
-  // -- Request/response -----------------------------------------------------
   private readonly pending = new Map<string, PendingRequest>()
   private connectSent = false
   private connectNonce: string | null = null
 
-  // -- Event sequencing -----------------------------------------------------
   private lastSeq: number | null = null
 
-  // -- Event listeners ------------------------------------------------------
   // biome-ignore lint/complexity/noBannedTypes: generic event emitter requires Function
   private readonly listeners = new Map<EventName, Set<Function>>()
 
-  // -- Public state ---------------------------------------------------------
   public snapshot: GatewaySnapshot | null = null
   public hello: GatewayHelloOk | null = null
 
@@ -205,10 +182,6 @@ export class GatewayClient {
       instanceId: options.instanceId ?? uuid(),
     }
   }
-
-  // =========================================================================
-  //  Public API
-  // =========================================================================
 
   get state(): ConnectionState {
     return this._state
@@ -259,10 +232,6 @@ export class GatewayClient {
     })
   }
 
-  // =========================================================================
-  //  Event emitter
-  // =========================================================================
-
   on<TKey extends EventName>(event: TKey, callback: EventCallback<TKey>): () => void {
     let set = this.listeners.get(event)
     if (!set) {
@@ -290,10 +259,6 @@ export class GatewayClient {
       }
     }
   }
-
-  // =========================================================================
-  //  Connection lifecycle
-  // =========================================================================
 
   private connect(): void {
     if (this.stopped) return
@@ -375,10 +340,6 @@ export class GatewayClient {
       this.handleResponse(parsed as GatewayResponseFrame)
     }
   }
-
-  // =========================================================================
-  //  Connect handshake
-  // =========================================================================
 
   private async sendConnect(): Promise<void> {
     if (this.connectSent || this.ws?.readyState !== WebSocket.OPEN) return
@@ -495,10 +456,6 @@ export class GatewayClient {
       })
   }
 
-  // =========================================================================
-  //  Event handling
-  // =========================================================================
-
   private handleEvent(evt: GatewayEventFrame): void {
     const seq = typeof evt.seq === 'number' ? evt.seq : null
     if (seq !== null) {
@@ -518,10 +475,6 @@ export class GatewayClient {
     }
   }
 
-  // =========================================================================
-  //  Response handling
-  // =========================================================================
-
   private handleResponse(res: GatewayResponseFrame): void {
     const pending = this.pending.get(res.id)
     if (!pending) return
@@ -535,10 +488,6 @@ export class GatewayClient {
       pending.reject(new Error(res.error?.message ?? 'request failed'))
     }
   }
-
-  // =========================================================================
-  //  Reconnection
-  // =========================================================================
 
   private scheduleReconnect(): void {
     if (this.stopped) {
@@ -558,19 +507,11 @@ export class GatewayClient {
     }, delay)
   }
 
-  // =========================================================================
-  //  State management
-  // =========================================================================
-
   private setState(state: ConnectionState): void {
     if (this._state === state) return
     this._state = state
     this.emit('stateChange', state)
   }
-
-  // =========================================================================
-  //  Cleanup
-  // =========================================================================
 
   private flushPending(error: Error): void {
     for (const [, pending] of this.pending) {

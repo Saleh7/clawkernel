@@ -23,10 +23,6 @@ import { useGatewayStore } from '@/stores/gateway-store'
 
 const log = createLogger('agents:activity')
 
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
 type Props = {
   readonly agentId: string
   readonly client: GatewayClient | null
@@ -215,10 +211,6 @@ function PayloadViewer({ payload }: { readonly payload: unknown }) {
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  ActivityItem
-// ---------------------------------------------------------------------------
 
 const ActivityItem = memo(function ActivityItem({ item, now }: { readonly item: FeedItem; readonly now: number }) {
   const Icon = CATEGORY_ICON[item.category]

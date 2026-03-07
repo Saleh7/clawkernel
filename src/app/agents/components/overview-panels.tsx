@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Agent Overview — QuickActions & DangerZone panels
-// ---------------------------------------------------------------------------
-
 import { AlertTriangle, Copy, RefreshCw, Send, Star, Trash2 } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -18,20 +14,12 @@ import { saveRawConfigWithRetry } from '../config-utils'
 
 const log = createLogger('agents:overview')
 
-// ---------------------------------------------------------------------------
-//  Shared helper — clear all sessions for an agent
-// ---------------------------------------------------------------------------
-
 async function clearAgentSessions(client: GatewayClient, agentSessions: { key: string }[]): Promise<void> {
   for (const s of agentSessions) {
     await deleteSession(client, s.key)
   }
   await refreshSessions(client)
 }
-
-// ---------------------------------------------------------------------------
-//  DangerRow — local layout primitive for DangerZone action rows
-// ---------------------------------------------------------------------------
 
 function DangerRow({
   label,
@@ -52,10 +40,6 @@ function DangerRow({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  QuickActions
-// ---------------------------------------------------------------------------
 
 export function QuickActions({
   agentId,
@@ -193,10 +177,6 @@ export function QuickActions({
     </>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  DangerZone
-// ---------------------------------------------------------------------------
 
 export function DangerZone({
   agentId,

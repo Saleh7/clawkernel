@@ -1,8 +1,4 @@
-// ---------------------------------------------------------------------------
 //  Gateway protocol types — adapted from OpenClaw Control UI
-// ---------------------------------------------------------------------------
-
-// -- Frames -----------------------------------------------------------------
 
 export type GatewayResponseFrame = {
   type: 'res'
@@ -34,8 +30,6 @@ export type GatewayHelloOk = {
   policy?: { tickIntervalMs?: number }
 }
 
-// -- Snapshot (received on hello-ok) ----------------------------------------
-
 export type GatewaySnapshot = {
   agents?: AgentsListResult
   sessions?: SessionsListResult
@@ -46,8 +40,6 @@ export type GatewaySnapshot = {
   cron?: { status?: CronStatus; jobs?: Array<CronJob> }
   presence?: Record<string, PresenceEntry>
 }
-
-// -- Agents -----------------------------------------------------------------
 
 export type AgentIdentity = {
   name?: string
@@ -69,8 +61,6 @@ export type AgentsListResult = {
   scope: string
   agents: Array<GatewayAgentRow>
 }
-
-// -- Sessions ---------------------------------------------------------------
 
 export type GatewaySessionRow = {
   key: string
@@ -129,8 +119,6 @@ export type SessionsPatchResult = {
   }
 }
 
-// -- Chat -------------------------------------------------------------------
-
 export type ChatHistoryResult = {
   sessionKey: string
   sessionId?: string
@@ -175,8 +163,6 @@ export type ChatEventPayload = {
   errorMessage?: string
 }
 
-// -- Channels ---------------------------------------------------------------
-
 export type ChannelAccountSnapshot = {
   accountId: string
   name?: string | null
@@ -197,8 +183,6 @@ export type ChannelsStatusSnapshot = {
   channelDefaultAccountId: Record<string, string>
 }
 
-// -- Config -----------------------------------------------------------------
-
 export type ConfigSnapshot = {
   path?: string | null
   exists?: boolean | null
@@ -210,11 +194,7 @@ export type ConfigSnapshot = {
   issues?: Array<{ path: string; message: string }>
 }
 
-// -- Health -----------------------------------------------------------------
-
 export type HealthSnapshot = Record<string, unknown>
-
-// -- Presence ---------------------------------------------------------------
 
 export type PresenceEntry = {
   instanceId?: string | null
@@ -226,8 +206,6 @@ export type PresenceEntry = {
   lastInputSeconds?: number | null
   ts?: number | null
 }
-
-// -- Cron -------------------------------------------------------------------
 
 export type CronSchedule =
   | { kind: 'at'; at: string }
@@ -323,8 +301,6 @@ export type CronRunsResult = {
   nextOffset?: number | null
 }
 
-// -- Skills -----------------------------------------------------------------
-
 export type SkillStatusEntry = {
   name: string
   description: string
@@ -349,8 +325,6 @@ export type SkillStatusReport = {
   managedSkillsDir: string
   skills: Array<SkillStatusEntry>
 }
-
-// -- Tools Catalog ----------------------------------------------------------
 
 export type ToolCatalogEntry = {
   id: string
@@ -381,8 +355,6 @@ export type ToolsCatalogResult = {
   groups: Array<ToolCatalogGroup>
 }
 
-// -- Agent CRUD -------------------------------------------------------------
-
 export type AgentsCreateResult = {
   ok: true
   agentId: string
@@ -396,16 +368,12 @@ export type AgentsDeleteResult = {
   removedBindings: number
 }
 
-// -- Agent Identity ---------------------------------------------------------
-
 export type AgentIdentityResult = {
   agentId: string
   name: string
   avatar: string
   emoji?: string
 }
-
-// -- Agent Files ------------------------------------------------------------
 
 export type AgentFileEntry = {
   name: string
@@ -415,10 +383,6 @@ export type AgentFileEntry = {
   updatedAtMs?: number
   content?: string
 }
-
-// -- Logs -------------------------------------------------------------------
-
-// -- Browser ----------------------------------------------------------------
 
 export type BrowserStatus = {
   enabled: boolean
@@ -437,8 +401,6 @@ export type BrowserStatus = {
   headless: boolean
   attachOnly: boolean
 }
-
-// -- TTS / Audio ------------------------------------------------------------
 
 export type TtsAutoMode = 'off' | 'always' | 'inbound' | 'tagged'
 
@@ -495,8 +457,6 @@ export type VoiceWakeResult = {
   triggers: string[]
 }
 
-// -- Models -----------------------------------------------------------------
-
 export type ModelCatalogEntry = {
   id: string
   name: string
@@ -510,10 +470,6 @@ export type ModelsListResult = {
   models: ModelCatalogEntry[]
 }
 
-// -- Usage ------------------------------------------------------------------
-
-// -- Session Preview --------------------------------------------------------
-
 export type SessionPreviewItem = { role: 'user' | 'assistant' | 'tool' | 'system' | 'other'; text: string }
 export type SessionsPreviewEntry = {
   key: string
@@ -521,8 +477,6 @@ export type SessionsPreviewEntry = {
   items: SessionPreviewItem[]
 }
 export type SessionsPreviewResult = { ts: number; previews: SessionsPreviewEntry[] }
-
-// -- Client options ---------------------------------------------------------
 
 export type GatewayClientOptions = {
   /** WebSocket URL, e.g. ws://127.0.0.1:18789 */
@@ -540,7 +494,5 @@ export type GatewayClientOptions = {
   /** Fallback delay (ms) before sending connect if no challenge nonce arrives. Default: 750 */
   connectFallbackMs?: number
 }
-
-// -- Connection state -------------------------------------------------------
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'authenticating' | 'connected' | 'reconnecting'

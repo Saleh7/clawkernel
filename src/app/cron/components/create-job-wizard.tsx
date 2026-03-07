@@ -529,8 +529,6 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
   )
 }
 
-// -- Internal helpers -------------------------------------------------------
-
 function stepLabel(step: number): string {
   switch (step) {
     case 1:

@@ -32,7 +32,6 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
   const [selectedVoice, setSelectedVoice] = useState('')
   const [result, setResult] = useState<TtsTestResult | null>(null)
 
-  // Sync selected provider when active changes (e.g. after refresh)
   useEffect(() => {
     setSelectedProvider(activeProvider)
   }, [activeProvider])
@@ -40,7 +39,6 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
   const configuredProviders = providers.filter((p) => p.configured)
   const currentProviderMeta = providers.find((p) => p.id === selectedProvider) ?? null
   const availableVoices = currentProviderMeta?.voices ?? []
-  // Derive effective voice — reset to first available when provider changes
   const effectiveVoice = availableVoices.includes(selectedVoice) ? selectedVoice : (availableVoices[0] ?? '')
 
   const isBusy = saving || converting

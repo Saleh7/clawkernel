@@ -1,8 +1,6 @@
-// ---------------------------------------------------------------------------
 //  Device Auth — payload builder for Gateway device authentication
 //  Matches OpenClaw's gateway/device-auth.ts exactly.
 //  The gateway always expects v2 format with a nonce.
-// ---------------------------------------------------------------------------
 
 type DeviceAuthPayloadParams = {
   deviceId: string

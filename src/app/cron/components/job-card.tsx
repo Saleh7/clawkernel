@@ -424,8 +424,6 @@ export function JobCard({
   )
 }
 
-// -- Internal helpers -------------------------------------------------------
-
 function ConfigRow({
   label,
   value,

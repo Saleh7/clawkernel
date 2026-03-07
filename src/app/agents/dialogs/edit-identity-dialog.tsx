@@ -32,10 +32,6 @@ import { cn } from '@/lib/utils'
 
 const log = createLogger('agents:identity')
 
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
 type Props = {
   readonly agentId: string
   readonly identity?: AgentIdentityResult | null
@@ -60,10 +56,6 @@ const EMPTY_FIELDS: IdentityFields = {
   avatar: '',
   theme: '',
 }
-
-// ---------------------------------------------------------------------------
-//  Parse / serialize IDENTITY.md
-// ---------------------------------------------------------------------------
 
 const IDENTITY_FIELD_MAP: Readonly<Record<string, keyof IdentityFields>> = {
   name: 'name',
@@ -127,10 +119,6 @@ function serializeIdentityMd(fields: IdentityFields): string {
   return lines.join('\n')
 }
 
-// ---------------------------------------------------------------------------
-//  Field config
-// ---------------------------------------------------------------------------
-
 const FIELD_CONFIG: {
   key: keyof IdentityFields
   label: string
@@ -182,10 +170,6 @@ const FIELD_CONFIG: {
   },
 ]
 
-// ---------------------------------------------------------------------------
-//  Preview component
-// ---------------------------------------------------------------------------
-
 function IdentityPreview({ fields }: { readonly fields: IdentityFields }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/50 p-3">
@@ -201,10 +185,6 @@ function IdentityPreview({ fields }: { readonly fields: IdentityFields }) {
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-//  EditIdentityDialog
-// ---------------------------------------------------------------------------
 
 export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props) {
   const [open, setOpen] = useState(false)

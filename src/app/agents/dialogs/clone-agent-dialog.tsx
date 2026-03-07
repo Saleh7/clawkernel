@@ -21,10 +21,6 @@ import { saveRawConfigWithRetry } from '../config-utils'
 import type { ParsedConfig } from '../types'
 import { normalizeAgentId } from '../utils'
 
-// ---------------------------------------------------------------------------
-//  Types
-// ---------------------------------------------------------------------------
-
 const log = createLogger('agents:clone')
 
 type Props = {
@@ -52,10 +48,6 @@ function toolsDescription(tools: unknown): string {
   const profile = (tools as { profile?: unknown }).profile
   return typeof profile === 'string' && profile ? profile : 'full'
 }
-
-// ---------------------------------------------------------------------------
-//  CloneAgentDialog
-// ---------------------------------------------------------------------------
 
 export function CloneAgentDialog({
   open,

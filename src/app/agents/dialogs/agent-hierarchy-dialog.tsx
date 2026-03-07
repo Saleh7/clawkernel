@@ -15,8 +15,6 @@ import { LIVE_STATUS_META, type LiveAgentStatus } from '@/lib/agent-status'
 import type { AgentIdentityResult, GatewayAgentRow } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
 
-// -- Types --------------------------------------------------------------------
-
 type AgentSessionStats = {
   count: number
   activeCount: number
@@ -62,8 +60,6 @@ function getBindingKey(binding: AgentBinding): string {
   ].join(':')
 }
 
-// -- Components ---------------------------------------------------------------
-
 function Section({ title, icon: Icon, children, className }: SectionProps) {
   return (
     <div className={cn('space-y-2', className)}>
@@ -75,8 +71,6 @@ function Section({ title, icon: Icon, children, className }: SectionProps) {
     </div>
   )
 }
-
-// -- Main Dialog --------------------------------------------------------------
 
 export function AgentHierarchyDialog({
   open,
