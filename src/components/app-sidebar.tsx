@@ -1,5 +1,6 @@
 import {
   Bot,
+  ChartColumn,
   ChevronUp,
   Clock,
   Globe,
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
   { title: 'Sessions', icon: Layers, to: '/sessions' },
   { title: 'Channels', icon: Radio, to: '/channels' },
   { title: 'Cron', icon: Clock, to: '/cron' },
+  { title: 'Usage', icon: ChartColumn, to: '/usage' },
   { title: 'Skills', icon: Wrench, to: '/skills' },
   { title: 'Models', icon: Sparkles, to: '/models' },
   { title: 'Audio', icon: Volume2, to: '/audio' },

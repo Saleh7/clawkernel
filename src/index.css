@@ -817,6 +817,39 @@
   }
 }
 
+@layer components {
+  .usage-shell {
+    position: relative;
+  }
+
+  .usage-grid-mask {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 56px 56px;
+    opacity: 0.03;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 18%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 18%, transparent 100%);
+  }
+
+  .usage-panel {
+    border-radius: 1.5rem;
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--card) 96%, transparent), color-mix(in oklch, var(--card) 88%, transparent)),
+      color-mix(in oklch, var(--card) 92%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .usage-metric-card {
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--card) 98%, transparent), color-mix(in oklch, var(--card) 92%, transparent)),
+      color-mix(in oklch, var(--card) 90%, transparent);
+  }
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *,

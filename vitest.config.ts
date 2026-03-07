@@ -32,6 +32,8 @@ export default defineConfig({
         'src/app/agents/tool-policy.ts',
         'src/app/agents/config-utils.ts',
         'src/app/agents/cron-utils.ts',
+        'src/app/usage/utils.ts',
+        'src/app/usage/analytics.ts',
       ],
     },
   },

@@ -6,6 +6,48 @@
 
 ### Added
 
+#### Usage & Cost Analytics `/usage`
+- **Usage page** — new route `/usage`; nav item (ChartColumn) in sidebar; lazy-loaded with `PageErrorBoundary`
+- **Manual fetch workflow** — page loads idle; user selects date range (or preset: Today, 7d, 30d) and clicks Refresh; empty state with guidance message; matches OpenClaw's pattern
+- **Date range controls** — start/end date inputs, preset buttons, timezone toggle (local/UTC), chart mode toggle (tokens/cost)
+- **Summary cards** — 9 metric tiles: sessions, messages, tool calls, errors, unique tools, active agents, avg latency, avg duration, cache hit rate
+- **Daily usage chart** — bar chart with tokens/cost toggle; stacked token breakdown (input, output, cache read, cache write)
+- **Activity heatmap** — weekday and hourly heatmap panels showing token distribution and session intensity
+- **Session table** — virtualized list (`@tanstack/react-virtual`) with redesigned card layout: agent name (primary), session label, channel/model tags, icon stat chips (messages, tools, errors, duration), tokens/cost, last active; sort by recent/tokens/cost/errors; copy session key on hover
+- **Session detail panel** — click any session to expand: summary cards (messages, tool calls, errors, duration), top tools list, model mix breakdown, usage over time chart (per-turn/cumulative + total/by-type toggles with stacked color bars), conversation logs (role filter, search, expand/collapse all), system prompt breakdown (stacked bar + expandable skills/tools/files cards with chars-to-tokens estimation)
+- **Time series chart** — CSS bar chart rendering per-turn and cumulative token usage; stacked type breakdown (output rose, input amber, cache-write emerald, cache-read cyan); fetched via `sessions.usage.timeseries` RPC
+- **Conversation logs** — fetched via `sessions.usage.logs` RPC; role-based color coding (user blue, assistant emerald, tool amber, toolResult purple); expandable long messages; filter by role + text search
+- **Context breakdown** — system prompt weight analysis from `contextWeight` data; percentage-of-input calculation; expandable cards for skills, tools, and injected workspace files
+- **Insights panels** — 6 insight categories: models, providers, agents, channels, tools, peak error days; each shows ranked list with tokens/cost/count
+- **Detailed breakdown tables** — model table and agent table with full token/cost totals
+- **Client-side filtering** — faceted filters (agent, channel, provider, model, tool) + free-text search with `useDeferredValue`; filter options ranked by token volume
+- **Export** — JSON snapshot export of current filtered view with proper DOM attachment for Firefox compatibility
+- **Race condition guards** — `requestIdRef` for main fetch, `sessionDetailRequestIdRef` for session detail; prevents stale response rendering
+- **Missing cost warning** — banner shown only after fetch when usage entries lack cost metadata
+- **Gateway compatibility** — automatic fallback for legacy gateways that don't support `dateInterpretation` params; per-gateway key remembered in localStorage
+
+#### Usage — Types
+- **`SessionUsageTimePoint`** — 9-field type matching OpenClaw's `session-usage-timeseries-types.ts` (timestamp, input, output, cacheRead, cacheWrite, totalTokens, cost, cumulativeTokens, cumulativeCost)
+- **`SessionUsageTimeSeries`** — `{ sessionId?, points }` for time series RPC response
+- **`SessionLogEntry`** — `{ timestamp, role, content, tokens?, cost? }` for conversation log entries
+- **`SessionContextWeight`** — full system prompt report type (systemPrompt, skills, tools, injectedWorkspaceFiles)
+- **`UsageSummaryStats`** — 17-field computed overview stats type
+- **`UsageSessionRow`** — display-ready session row with resolved agent name, labels, and computed fields
+
+#### Usage — Analytics & Utils
+- **`analytics.ts`** — session filtering, facet option building, overview stats aggregation, daily points, activity heatmap, 6 insight builders (model, provider, agent, channel, tool, peak error day), session row sorting
+- **`utils.ts`** — token/cost/latency/duration/date formatters, date range presets, model/agent row builders, context percent calculation, gateway compatibility helpers, error message extraction
+
+#### Testing
+- **`tests/unit/usage-utils.test.ts`** — unit tests for `buildModelRows`, `buildAgentRows`, `filterSessionsByPeriod`, formatters, date range utilities
+- **`tests/unit/usage-analytics.test.ts`** — unit tests for `buildUsageOverviewStats`, `buildUsageFacetOptions`, `filterUsageSessions`, `buildUsageDailyPoints`, `buildUsageActivityHeatmap`, insight builders
+- **Coverage whitelist** — `src/app/usage/utils.ts` and `src/app/usage/analytics.ts` added to `vitest.config.ts` include list
+
+### Changed
+
+#### Dependencies
+- **`@xyflow/react`** (`^12.10.1`), **`dagre`** (`^0.8.5`), **`@types/dagre`** (`^0.7.54`) — added for hierarchy graph rendering and auto-layout
+
 #### Agents — Hierarchy View
 - **Agent Hierarchy view** — interactive graph visualization of agent fleet using ReactFlow + dagre auto-layout; toggle between Cards and Hierarchy views when 2+ agents exist
 - **5 layout modes** — Compact (adaptive columns), Balanced (split columns), Delegation (parent/child clarity), Channel (binding analysis), Workspace (ownership clusters); persisted in localStorage; popover selector with descriptions
