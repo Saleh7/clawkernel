@@ -1,10 +1,4 @@
-// ---------------------------------------------------------------------------
-//  ClawKernel — Database
-//
-//  SQLite via better-sqlite3 + Drizzle ORM.
-//  DB file: ~/.clawkernel.db
-//  Tables are created with IF NOT EXISTS — no migrations needed.
-// ---------------------------------------------------------------------------
+// SQLite database at ~/.clawkernel.db. Tables are created with IF NOT EXISTS, so no migrations are required.
 
 import os from 'node:os'
 import path from 'node:path'

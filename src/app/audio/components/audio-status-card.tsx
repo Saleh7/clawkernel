@@ -26,7 +26,6 @@ type Props = {
 export function AudioStatusCard({ status, saving, onToggle }: Props) {
   return (
     <div className="rounded-xl border bg-card p-5 space-y-5">
-      {/* Enable toggle */}
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-0.5">
           <p className="text-sm font-semibold">Text-to-Speech</p>
@@ -36,8 +35,6 @@ export function AudioStatusCard({ status, saving, onToggle }: Props) {
         </div>
         <Switch checked={status.enabled} onCheckedChange={onToggle} disabled={saving} aria-label="Toggle TTS enabled" />
       </div>
-
-      {/* Auto mode display */}
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Auto-TTS Mode</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -62,8 +59,6 @@ export function AudioStatusCard({ status, saving, onToggle }: Props) {
           <code className="rounded bg-muted px-1 py-px">config.messages.tts.auto</code> manually.
         </p>
       </div>
-
-      {/* Fallback chain */}
       {status.fallbackProviders.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -84,8 +79,6 @@ export function AudioStatusCard({ status, saving, onToggle }: Props) {
           </div>
         </div>
       )}
-
-      {/* API key status */}
       <div className="space-y-1.5">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">API Keys</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

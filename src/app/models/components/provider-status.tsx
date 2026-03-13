@@ -103,8 +103,6 @@ export function ProviderStatus({
   return (
     <div className="space-y-3">
       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Providers</p>
-
-      {/* Active providers chips */}
       {activeProviders.size > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Active</p>
@@ -126,8 +124,6 @@ export function ProviderStatus({
           </div>
         </div>
       )}
-
-      {/* Custom providers */}
       <div className="space-y-1.5">
         <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Custom Providers</p>
         {customProviders.length === 0 ? (
@@ -241,8 +237,6 @@ export function ProviderStatus({
           </div>
         )}
       </div>
-
-      {/* Add Custom Provider — collapsible */}
       <div className="rounded-xl border border-border/40 bg-muted/10 overflow-hidden">
         <button
           type="button"
@@ -300,8 +294,6 @@ export function ProviderStatus({
           </div>
         )}
       </div>
-
-      {/* Confirm remove dialog */}
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={(open) => {

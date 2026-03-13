@@ -326,7 +326,6 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* ── Header: Stats + Actions ── */}
       <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -380,8 +379,6 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
           </Button>
         </div>
       </div>
-
-      {/* ── Search + View Toggle ── */}
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
@@ -416,8 +413,6 @@ export function AgentSkills({ agentId, client, storeSkills, config }: Props) {
           </Button>
         </div>
       </div>
-
-      {/* ── Content ── */}
       {content}
     </div>
   )
@@ -484,7 +479,6 @@ function SkillCard({
           </Badge>
         )}
       </div>
-      {/* Install options for missing dependencies */}
       {hasInstallOptions && (
         <div className="mt-2 pt-2 border-t border-border/20 space-y-1">
           {skill.install.map((opt) => (
@@ -503,7 +497,6 @@ function SkillCard({
           ))}
         </div>
       )}
-      {/* Missing env keys → API key prompt */}
       {skill.missing.env.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/20">
           <form
@@ -531,7 +524,6 @@ function SkillCard({
           </form>
         </div>
       )}
-      {/* Missing config keys → show hint */}
       {skill.missing.config.length > 0 && (
         <div className="mt-1">
           <p className="text-[8px] text-orange-500/70">Missing config: {skill.missing.config.join(', ')}</p>

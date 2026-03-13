@@ -238,7 +238,6 @@ export function AgentTools({ agentId, config, client }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* ── Header ── */}
       <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -253,8 +252,6 @@ export function AgentTools({ agentId, config, client }: Props) {
         </div>
 
         <Separator className="opacity-40" />
-
-        {/* Warnings */}
         {catalogError && (
           <div className="flex items-start gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-3 py-2">
             <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
@@ -281,8 +278,6 @@ export function AgentTools({ agentId, config, client }: Props) {
             </p>
           </div>
         )}
-
-        {/* Quick Presets */}
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/60 mb-2">
             Quick Presets
@@ -309,8 +304,6 @@ export function AgentTools({ agentId, config, client }: Props) {
         </div>
 
         <Separator className="opacity-40" />
-
-        {/* Actions */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             size="sm"
@@ -360,8 +353,6 @@ export function AgentTools({ agentId, config, client }: Props) {
           </Button>
         </div>
       </div>
-
-      {/* ── Tool Grid ── */}
       {groups.map((group) => {
         const sectionAllowed = group.tools.filter((t) => isAllowed(t.id)).length
         return (

@@ -77,8 +77,6 @@ export default function DashboardPage() {
         <h1 className="text-lg font-bold tracking-tight sm:text-xl">Dashboard</h1>
         <QuickActions />
       </div>
-
-      {/* Metric Tiles */}
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
         <MetricTile
           icon={Wifi}
@@ -109,8 +107,6 @@ export default function DashboardPage() {
           status={cronMetricStatus(failingJobs, cronStatus?.enabled)}
         />
       </section>
-
-      {/* Today's Cost */}
       {todayCost && todayCost.totalCost > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-card/50 px-4 py-2.5 backdrop-blur-sm">
           <DollarSign className="h-4 w-4 text-primary" />

@@ -130,8 +130,6 @@ export function CreateEditJobDialog({
             </div>
 
             <Separator />
-
-            {/* Schedule */}
             <div className="space-y-3">
               <Label>Schedule</Label>
               <div className="flex gap-2">
@@ -202,8 +200,6 @@ export function CreateEditJobDialog({
             </div>
 
             <Separator />
-
-            {/* Session target */}
             <div className="space-y-2">
               <Label>Session Target</Label>
               <div className="flex gap-4">
@@ -220,8 +216,6 @@ export function CreateEditJobDialog({
                 ))}
               </div>
             </div>
-
-            {/* Wake mode */}
             <div className="space-y-2">
               <Label>Wake Mode</Label>
               <div className="flex gap-4">
@@ -240,8 +234,6 @@ export function CreateEditJobDialog({
             </div>
 
             <Separator />
-
-            {/* Payload */}
             <div className="space-y-3">
               <Label>Payload</Label>
               <div className="flex gap-2">

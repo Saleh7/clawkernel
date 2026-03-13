@@ -181,7 +181,6 @@ export const ChatBubble = memo(
         </div>
 
         <div className={cn('flex flex-col gap-1 max-w-[75%] min-w-0', isUser ? 'items-end' : 'items-start')}>
-          {/* Images */}
           {images.length > 0 && (
             <div className={cn('flex flex-wrap gap-2 mb-1', isUser ? 'justify-end' : 'justify-start')}>
               {keyedImages.map(({ img, key, index }) => {
@@ -219,8 +218,6 @@ export const ChatBubble = memo(
               })}
             </div>
           )}
-
-          {/* File attachments */}
           {fileAttachments.length > 0 && (
             <div className="flex flex-col gap-1.5 mb-1">
               {keyedFiles.map(({ file, key }) => (
@@ -228,8 +225,6 @@ export const ChatBubble = memo(
               ))}
             </div>
           )}
-
-          {/* Thinking */}
           {thinking && settings.showThinking && (
             <Collapsible>
               <CollapsibleTrigger asChild>
@@ -249,8 +244,6 @@ export const ChatBubble = memo(
               </CollapsibleContent>
             </Collapsible>
           )}
-
-          {/* Tool calls */}
           {showTools && (
             <div className="space-y-1 w-full mb-1">
               {toolCalls.map((tc) => (
@@ -281,13 +274,9 @@ export const ChatBubble = memo(
               <MessageActionsBar text={text} onRetry={isUser ? undefined : onRetry} />
             </div>
           )}
-
-          {/* Sources */}
           {sources && sources.length > 0 && onOpenSources && (
             <SourcesButton sources={sources} onClick={() => onOpenSources(sources)} />
           )}
-
-          {/* Timestamp */}
           {timestamp && (
             <TooltipProvider>
               <Tooltip>

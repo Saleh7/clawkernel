@@ -221,7 +221,6 @@ function BindingFormDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Channel */}
           <div className="space-y-1.5">
             <Label className="text-xs">Channel *</Label>
             <div className="relative">
@@ -239,8 +238,6 @@ function BindingFormDialog({
               </select>
             </div>
           </div>
-
-          {/* Account ID */}
           <div className="space-y-1.5">
             <Label className="text-xs">Account ID</Label>
             <Input
@@ -250,8 +247,6 @@ function BindingFormDialog({
               className="text-sm"
             />
           </div>
-
-          {/* Peer */}
           <div className="grid grid-cols-3 gap-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Peer Kind</Label>
@@ -277,8 +272,6 @@ function BindingFormDialog({
               />
             </div>
           </div>
-
-          {/* Guild / Team */}
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Guild ID</Label>
@@ -299,8 +292,6 @@ function BindingFormDialog({
               />
             </div>
           </div>
-
-          {/* Roles */}
           <div className="space-y-1.5">
             <Label className="text-xs">Roles</Label>
             <Input
@@ -421,7 +412,6 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <AgentStatPill
@@ -441,8 +431,6 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
           Add Binding
         </Button>
       </div>
-
-      {/* Bindings list */}
       {agentBindingsWithIndex.length === 0 ? (
         <AgentTabEmptyState
           icon={Unlink}
@@ -470,8 +458,6 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
           ))}
         </div>
       )}
-
-      {/* Other agents' bindings for context */}
       {otherAgentBindings.length > 0 && (
         <div className="space-y-2">
           <Separator className="opacity-30" />
@@ -494,8 +480,6 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
           </div>
         </div>
       )}
-
-      {/* Create Dialog */}
       <BindingFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
@@ -505,8 +489,6 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
         onSave={handleCreate}
         saving={saving}
       />
-
-      {/* Edit Dialog */}
       <BindingFormDialog
         open={editIndex !== null}
         onOpenChange={(o) => {
@@ -518,8 +500,6 @@ export function AgentBindings({ agentId, config, isDefault, client }: Props) {
         onSave={handleEdit}
         saving={saving}
       />
-
-      {/* Delete Confirm */}
       <ConfirmDialog
         open={deleteIndex !== null}
         onOpenChange={(o) => {

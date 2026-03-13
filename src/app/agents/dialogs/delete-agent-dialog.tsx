@@ -92,7 +92,6 @@ export function DeleteAgentDialog({ agentId, agentName, isDefault, client, onDel
         loading={deleting}
         onConfirm={handleDelete}
       >
-        {/* Delete files checkbox */}
         <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
           <input
             id="delete-files-checkbox"
@@ -111,8 +110,6 @@ export function DeleteAgentDialog({ agentId, agentName, isDefault, client, onDel
             </p>
           </div>
         </div>
-
-        {/* Error */}
         {error && (
           <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
             <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />

@@ -299,8 +299,6 @@ export default function AgentsPage() {
             </div>
           </div>
         </section>
-
-        {/* Hierarchy View */}
         {viewMode === 'hierarchy' ? (
           <section className="agents-panel flex-1 min-h-0 animate-in fade-in duration-300 p-2">
             <AgentHierarchy
@@ -484,8 +482,6 @@ export default function AgentsPage() {
                 </TabErrorBoundary>
               </section>
             )}
-
-            {/* Comparison view — replaces tabs when active */}
             {showComparison && agents.length >= 2 && (
               <section className="agents-tab-surface flex-1 min-h-0 animate-in fade-in duration-300">
                 <AgentComparison
@@ -512,8 +508,6 @@ export default function AgentsPage() {
           </>
         )}
       </div>
-
-      {/* Clone Agent Dialog */}
       {selected && (
         <CloneAgentDialog
           open={showClone}

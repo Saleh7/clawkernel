@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  agents/utils — Agent ID normalization, emoji/name resolution, model labels
-// ---------------------------------------------------------------------------
-
 import { describe, expect, it } from 'vitest'
 import { normalizeAgentId, resolveAgentEmoji, resolveAgentName, resolveModelLabel } from '@/app/agents/utils'
 import type { GatewayAgentRow } from '@/lib/gateway/types'
@@ -9,10 +5,6 @@ import type { GatewayAgentRow } from '@/lib/gateway/types'
 function makeAgent(id: string, overrides: Partial<GatewayAgentRow> = {}): GatewayAgentRow {
   return { id, ...overrides }
 }
-
-// ===========================================================================
-//  normalizeAgentId
-// ===========================================================================
 
 describe('normalizeAgentId', () => {
   const cases = [
@@ -29,10 +21,6 @@ describe('normalizeAgentId', () => {
     })
   }
 })
-
-// ===========================================================================
-//  resolveAgentName
-// ===========================================================================
 
 describe('resolveAgentName', () => {
   it('prefers identity name over agent name', () => {
@@ -51,10 +39,6 @@ describe('resolveAgentName', () => {
     expect(resolveAgentName(makeAgent('bot-id'))).toBe('bot-id')
   })
 })
-
-// ===========================================================================
-//  resolveAgentEmoji
-// ===========================================================================
 
 describe('resolveAgentEmoji', () => {
   it('returns identity emoji when valid', () => {
@@ -81,10 +65,6 @@ describe('resolveAgentEmoji', () => {
     expect(resolveAgentEmoji(makeAgent('bot'))).toBe('')
   })
 })
-
-// ===========================================================================
-//  resolveModelLabel
-// ===========================================================================
 
 describe('resolveModelLabel', () => {
   it('returns string model as-is', () => {

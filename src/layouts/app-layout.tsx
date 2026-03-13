@@ -3,6 +3,7 @@ import { Outlet } from 'react-router'
 import { Toaster } from 'sonner'
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { GatewayShutdownBanner } from '@/components/gateway-shutdown-banner'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { RestartBar } from '@/components/restart-bar'
 import { StatusBar } from '@/components/status-bar'
@@ -22,6 +23,7 @@ export default function AppLayout() {
         <AppSidebar />
         <SidebarInset>
           <UpdateBanner />
+          <GatewayShutdownBanner />
           <RestartBar />
           <StatusBar />
           <ErrorBoundary>

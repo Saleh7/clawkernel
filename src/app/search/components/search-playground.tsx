@@ -61,7 +61,6 @@ function ResultPanel({ state, agentId }: { readonly state: PlaygroundState; read
 
   return (
     <div className="space-y-2">
-      {/* Status bar */}
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {state.status === 'streaming' && (
           <span className="inline-flex items-center gap-1 rounded border border-sky-500/25 bg-sky-500/10 px-1.5 py-0.5 text-sky-300">
@@ -81,15 +80,11 @@ function ResultPanel({ state, agentId }: { readonly state: PlaygroundState; read
         <span>agent: {agentId}</span>
         {state.durationMs != null && <span>duration: {(state.durationMs / 1000).toFixed(1)}s</span>}
       </div>
-
-      {/* Error message */}
       {state.status === 'error' && state.errorMessage && (
         <div className="rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs text-red-300">
           {state.errorMessage}
         </div>
       )}
-
-      {/* Result text */}
       {state.text && (
         <div className="max-h-[500px] overflow-auto rounded-lg border border-border/40 bg-background p-4">
           <Markdown>{state.text}</Markdown>
@@ -160,7 +155,6 @@ export function SearchPlayground({
 
   return (
     <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-xs font-semibold text-foreground/90">
           <Search className="h-4 w-4 text-cyan-400" />
@@ -182,10 +176,7 @@ export function SearchPlayground({
           No search provider configured — set an API key to enable web search.
         </div>
       )}
-
-      {/* Controls grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Agent */}
         <div className="space-y-1">
           <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground/75">Agent</Label>
           <Select value={selectedAgentId} onValueChange={handleAgentChange} disabled={playgroundState.running}>
@@ -201,8 +192,6 @@ export function SearchPlayground({
             </SelectContent>
           </Select>
         </div>
-
-        {/* Session */}
         <div className="space-y-1">
           <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground/75">Session</Label>
           {agentSessions.length === 0 ? (
@@ -224,8 +213,6 @@ export function SearchPlayground({
             </Select>
           )}
         </div>
-
-        {/* Query */}
         <div className="space-y-1 sm:col-span-2 lg:col-span-1">
           <Label
             htmlFor="search-query"
@@ -247,8 +234,6 @@ export function SearchPlayground({
             )}
           />
         </div>
-
-        {/* Results count */}
         <div className="space-y-1">
           <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground/75">Results</Label>
           <Select
@@ -269,11 +254,7 @@ export function SearchPlayground({
           </Select>
         </div>
       </div>
-
-      {/* CLI equivalent */}
       <CommandPreview agentId={selectedAgentId || 'main'} query={query} />
-
-      {/* Actions */}
       <div className="flex items-center gap-2">
         <Button
           size="sm"
@@ -304,8 +285,6 @@ export function SearchPlayground({
           </Button>
         )}
       </div>
-
-      {/* Result panel */}
       <ResultPanel state={playgroundState} agentId={selectedAgentId || 'main'} />
     </div>
   )

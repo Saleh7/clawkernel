@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  Test fixtures — typed ChatMessage factory
-// ---------------------------------------------------------------------------
-
 import type { ChatMessage, ChatMessageContent } from '@/lib/gateway/types'
 
 let seq = 0

@@ -44,8 +44,10 @@ export default function SessionsPage() {
         onHistory={page.setHistorySession}
         onSendMessage={page.setSendSession}
         onPatch={page.setPatchSession}
+        onCompact={page.handleCompact}
         onDelete={page.setDeleteSession}
         maxTokens={page.maxTokens}
+        compactingKey={page.compactingKey}
       />
     ),
     [
@@ -59,6 +61,8 @@ export default function SessionsPage() {
       page.setHistorySession,
       page.setSendSession,
       page.setPatchSession,
+      page.handleCompact,
+      page.compactingKey,
       page.setDeleteSession,
     ],
   )

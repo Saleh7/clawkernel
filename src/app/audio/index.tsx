@@ -50,7 +50,6 @@ export default function AudioPage() {
   } else {
     pageContent = (
       <div className="flex flex-col gap-4">
-        {/* Current Configuration summary */}
         <div className="rounded-xl border bg-card p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             Current Configuration
@@ -78,15 +77,11 @@ export default function AudioPage() {
             />
           </div>
         </div>
-
-        {/* TTS Status */}
         <AudioStatusCard
           status={state.status}
           saving={saving}
           onToggle={(enabled) => void handleToggleEnabled(enabled)}
         />
-
-        {/* TTS Providers */}
         <div className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">TTS Providers</h2>
           <div className="flex flex-col gap-2">
@@ -104,8 +99,6 @@ export default function AudioPage() {
             )}
           </div>
         </div>
-
-        {/* TTS Test */}
         <TtsTestPanel
           providers={state.providers}
           activeProvider={state.activeProvider}
@@ -114,21 +107,13 @@ export default function AudioPage() {
           onSetProvider={handleSetProvider}
           onConvert={handleConvert}
         />
-
-        {/* TTS Settings */}
         <TtsSettingsCard storeConfig={storeConfig} saving={saving} onUpdate={handleUpdateTtsConfig} />
-
-        {/* Wake Word */}
         <WakeWordCard
           triggers={state.wakeTriggers}
           saving={saving}
           onSave={(triggers) => void handleSetWakeTriggers(triggers)}
         />
-
-        {/* Talk Config */}
         <TalkConfigCard talk={state.talk} seamColor={state.seamColor} />
-
-        {/* Slash commands reference */}
         <div className="rounded-xl border bg-card overflow-hidden">
           <button
             type="button"
@@ -148,8 +133,6 @@ export default function AudioPage() {
             </div>
           )}
         </div>
-
-        {/* Roadmap hint */}
         <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-3">
           <p className="text-xs text-muted-foreground">
             <Zap className="inline h-3 w-3 mr-1 text-primary" />
@@ -162,7 +145,6 @@ export default function AudioPage() {
 
   return (
     <div className="flex flex-col gap-8 p-6">
-      {/* Header */}
       <PageHeader
         icon={Volume2}
         title="Audio"

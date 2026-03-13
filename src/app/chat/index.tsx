@@ -238,7 +238,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
-      {/* Hidden file input */}
       <input
         ref={c.fileInputRef}
         type="file"
@@ -247,8 +246,6 @@ export default function ChatPage() {
         onChange={c.handleFileSelect}
         className="hidden"
       />
-
-      {/* Sidebar */}
       {c.sidebarOpen && (
         <SessionSidebar
           sessions={c.sessionEntries}
@@ -260,8 +257,6 @@ export default function ChatPage() {
           activeSessions={c.activeSessions}
         />
       )}
-
-      {/* Main area with drag & drop */}
       <section
         aria-label="Chat area"
         className="flex flex-1 flex-col min-w-0 overflow-hidden relative"
@@ -270,7 +265,6 @@ export default function ChatPage() {
         onDragOver={c.handleDragOver}
         onDrop={c.handleDrop}
       >
-        {/* Drag overlay */}
         {c.dragging && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl m-2 pointer-events-none">
             <div className="text-center space-y-2">
@@ -284,8 +278,6 @@ export default function ChatPage() {
         <ConnectionBanner state={c.connectionState} error={c.chat.error} />
         {compactionStatus?.sessionKey === c.selectedSession && <CompactionIndicator active={compactionStatus.active} />}
         {fallbackStatus?.sessionKey === c.selectedSession && <FallbackIndicator status={fallbackStatus} />}
-
-        {/* Header */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-2.5 bg-background/80 backdrop-blur-sm">
           <TooltipProvider>
             <Tooltip>
@@ -422,18 +414,12 @@ export default function ChatPage() {
             </>
           )}
         </div>
-
-        {/* Messages */}
         {messageArea}
-
-        {/* Error */}
         {c.chat.error && (
           <div className="mx-4 mb-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-xs text-destructive">
             {c.chat.error}
           </div>
         )}
-
-        {/* Queue indicator */}
         {c.queue.length > 0 && (
           <div className="mx-4 mb-0 flex items-center gap-2 rounded-t-lg bg-muted/50 border border-b-0 border-border px-3 py-1.5">
             <span className="text-xs text-muted-foreground">Queued ({c.queue.length})</span>
@@ -454,8 +440,6 @@ export default function ChatPage() {
             ))}
           </div>
         )}
-
-        {/* Input */}
         {c.selectedSession && (
           <div className="border-t border-border p-4 bg-background">
             <PromptInput
@@ -514,18 +498,12 @@ export default function ChatPage() {
           </div>
         )}
       </section>
-
-      {/* Sources panel */}
       <SourcesPanel
         sources={c.sourcesPanel || []}
         open={c.sourcesPanel !== null}
         onClose={() => c.setSourcesPanel(null)}
       />
-
-      {/* Lightbox */}
       {c.lightboxSrc && <ImageLightbox src={c.lightboxSrc} onClose={() => c.setLightboxSrc(null)} />}
-
-      {/* Reset confirmation dialog */}
       <ConfirmDialog
         open={showResetConfirm}
         onOpenChange={setShowResetConfirm}

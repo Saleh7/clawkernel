@@ -54,7 +54,6 @@ function ModelCard({
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/80 p-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10">
@@ -76,8 +75,6 @@ function ModelCard({
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Change'}
         </Button>
       </div>
-
-      {/* Primary model */}
       <div className="flex items-center gap-2">
         <code className="rounded-md bg-muted px-2 py-1 text-xs font-mono text-foreground">{primary}</code>
         {primary !== '—' && (
@@ -86,8 +83,6 @@ function ModelCard({
           </Badge>
         )}
       </div>
-
-      {/* Inline change-primary picker */}
       {showChangePrimary && (
         <div className="flex gap-2 items-center">
           <div className="flex-1">
@@ -122,8 +117,6 @@ function ModelCard({
           </Button>
         </div>
       )}
-
-      {/* Fallback chain */}
       {fallbacks.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 pl-1">
           {fallbacks.map((fb, i) => (
@@ -147,8 +140,6 @@ function ModelCard({
           <span className="text-[9px] text-muted-foreground/40 ml-0.5">fallback{fallbacks.length > 1 ? 's' : ''}</span>
         </div>
       )}
-
-      {/* Add fallback row */}
       {showAddFallback ? (
         <div className="flex gap-2 items-center">
           <div className="flex-1">

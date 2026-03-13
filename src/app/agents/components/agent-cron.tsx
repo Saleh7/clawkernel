@@ -98,7 +98,6 @@ function CronJobCard({
         job.enabled ? 'border-border/50 bg-card/80 backdrop-blur-sm' : 'border-border/30 bg-muted/20 opacity-60',
       )}
     >
-      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <div
@@ -135,8 +134,6 @@ function CronJobCard({
           )}
         </Button>
       </div>
-
-      {/* Badges */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         <Badge variant="outline" className="font-mono text-[9px] gap-1">
           <Clock className="h-2.5 w-2.5" />
@@ -159,8 +156,6 @@ function CronJobCard({
           </Badge>
         )}
       </div>
-
-      {/* Next run progress */}
       {nextRun && job.enabled && (
         <div className="mb-3">
           <div className="flex items-center justify-between text-[9px] text-muted-foreground/50 mb-1">
@@ -175,8 +170,6 @@ function CronJobCard({
           </div>
         </div>
       )}
-
-      {/* Last run */}
       {job.state?.lastStatus && (
         <div className="flex items-center gap-2 mb-3 pt-2 border-t border-border/20">
           <span
@@ -195,13 +188,9 @@ function CronJobCard({
           )}
         </div>
       )}
-
-      {/* Run history */}
       <div className="mb-3">
         <RunHistoryPanel jobId={job.id} client={client} />
       </div>
-
-      {/* Actions */}
       <div className="flex items-center gap-1.5 pt-2 border-t border-border/20">
         <Button variant="ghost" size="sm" className="h-7 gap-1 text-[10px]" onClick={handleRunNow} disabled={running}>
           {running ? <RotateCw className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
@@ -235,7 +224,6 @@ export function AgentCron({ agentId, cronJobs, cronStatus, client }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* === SCHEDULER STATUS BAR === */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm px-5 py-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
@@ -263,8 +251,6 @@ export function AgentCron({ agentId, cronJobs, cronStatus, client }: Props) {
           New Job
         </Button>
       </div>
-
-      {/* === JOB CARDS === */}
       {jobs.length === 0 ? (
         <AgentTabEmptyState
           icon={Clock}
@@ -290,8 +276,6 @@ export function AgentCron({ agentId, cronJobs, cronStatus, client }: Props) {
           ))}
         </div>
       )}
-
-      {/* === DIALOGS === */}
       <CreateEditJobDialog
         open={createOpen}
         onOpenChange={setCreateOpen}

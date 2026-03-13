@@ -53,6 +53,10 @@ type GatewayStore = {
   eventLogEnabled: boolean
   setEventLogEnabled: (enabled: boolean) => void
 
+  // -- Gateway lifecycle events (shutdown / update.available) ----------------
+  gatewayShutdown: { reason?: string; restartExpectedMs?: number } | null
+  gatewayUpdateAvailable: { currentVersion: string; latestVersion: string; channel: string } | null
+
   // -- Active agent runs (from chat events) ---------------------------------
   activeRuns: Record<string, { sessionKey: string; startedAt: number }>
   /** Incremented when a chat run completes — signals sessions page to refresh. */
@@ -119,46 +123,69 @@ function appendEventLogIfEnabled(event: string, payload: unknown, set: StoreSett
   }))
 }
 
-function handleSessionsEvent(payload: unknown, set: StoreSetter): void {
-  if (!payload) return
-  const sessionData = payload as SessionsListResult
-  set({ sessions: sessionData.sessions, sessionsDefaults: sessionData.defaults })
-}
-
 function handleHealthEvent(payload: unknown, set: StoreSetter): void {
   if (!payload) return
   set({ health: payload as HealthSnapshot })
 }
 
+function presenceArrayToRecord(arr: Array<PresenceEntry>): Record<string, PresenceEntry> {
+  const record: Record<string, PresenceEntry> = {}
+  for (let i = 0; i < arr.length; i++) {
+    const entry = arr[i]
+    // instanceId is the canonical key; host is fallback; index is defensive last resort
+    const key = entry.instanceId ?? entry.host ?? String(i)
+    record[key] = entry
+  }
+  return record
+}
+
 function handlePresenceEvent(payload: unknown, set: StoreSetter, get: StoreGetter): void {
   if (!payload) return
-  set({ presence: { ...get().presence, ...(payload as Record<string, PresenceEntry>) } })
+  const raw = payload as { presence?: Array<PresenceEntry> }
+  const entries = Array.isArray(raw.presence) ? raw.presence : []
+  set({ presence: { ...get().presence, ...presenceArrayToRecord(entries) } })
 }
 
-function handleConfigEvent(payload: unknown, set: StoreSetter): void {
-  if (!payload) return
-  set({ config: payload as ConfigSnapshot })
+/**
+ * Handle the `shutdown` broadcast event.
+ * Source: OpenClaw src/gateway/server-close.ts:84
+ */
+function handleShutdownEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload || typeof payload !== 'object') return
+  const p = payload as { reason?: string; restartExpectedMs?: number }
+  set({ gatewayShutdown: { reason: p.reason, restartExpectedMs: p.restartExpectedMs } })
 }
 
-function handleChannelsEvent(payload: unknown, set: StoreSetter): void {
-  if (!payload) return
-  set({ channels: payload as ChannelsStatusSnapshot })
+/**
+ * Handle the `update.available` broadcast event.
+ * Source: OpenClaw src/gateway/server.impl.ts:911
+ */
+function handleUpdateAvailableEvent(payload: unknown, set: StoreSetter): void {
+  if (!payload || typeof payload !== 'object') return
+  const p = payload as { updateAvailable?: { currentVersion: string; latestVersion: string; channel: string } | null }
+  set({ gatewayUpdateAvailable: p.updateAvailable ?? null })
 }
 
-function handleSkillsEvent(payload: unknown, set: StoreSetter): void {
-  if (!payload) return
-  set({ skills: payload as SkillStatusReport })
-}
-
-function handleCronStatusEvent(payload: unknown, set: StoreSetter): void {
-  if (!payload) return
-  set({ cronStatus: payload as CronStatus })
-}
-
-function handleCronJobsEvent(payload: unknown, set: StoreSetter): void {
-  if (!payload) return
-  const cronData = payload as { jobs: Array<CronJob> }
-  set({ cronJobs: cronData.jobs })
+/**
+ * Handle the `cron` broadcast event.
+ * Upstream broadcasts a single `cron` event (not `cron.status`/`cron.jobs`)
+ * with a CronEvent payload containing an `action` field.
+ * We re-fetch cron data via RPC — same pattern as upstream UI (app-settings.ts:loadCron).
+ * Source: OpenClaw src/gateway/server-cron.ts:359
+ */
+function handleCronEvent(_payload: unknown, set: StoreSetter, get: StoreGetter): void {
+  const client = get().client
+  if (!client?.connected) return
+  void Promise.all([
+    client.request<CronStatus>('cron.status', {}).then((status) => {
+      set({ cronStatus: status })
+    }),
+    client.request<{ jobs: Array<CronJob> }>('cron.list', { includeDisabled: true }).then((result) => {
+      set({ cronJobs: result.jobs ?? [] })
+    }),
+  ]).catch((err) => {
+    log.warn('Cron refresh on event failed', err)
+  })
 }
 
 function parseAgentEventPayload(payload: unknown): AgentEventPayload | null {
@@ -382,14 +409,14 @@ function handleTickEvent(_payload: unknown, set: StoreSetter, get: StoreGetter):
 }
 
 const STORE_EVENT_HANDLERS: Record<string, StoreEventHandler> = {
-  sessions: handleSessionsEvent,
   health: handleHealthEvent,
   presence: handlePresenceEvent,
-  config: handleConfigEvent,
-  channels: handleChannelsEvent,
-  skills: handleSkillsEvent,
-  'cron.status': handleCronStatusEvent,
-  'cron.jobs': handleCronJobsEvent,
+  // Source: OpenClaw src/gateway/server-cron.ts:359 — broadcasts "cron" (singular)
+  cron: handleCronEvent,
+  // Source: OpenClaw src/gateway/server-close.ts:84
+  shutdown: handleShutdownEvent,
+  // Source: OpenClaw src/gateway/server.impl.ts:911
+  'update.available': handleUpdateAvailableEvent,
   agent: handleAgentEvent,
   chat: handleChatEvent,
   tick: handleTickEvent,
@@ -413,6 +440,8 @@ export const useGatewayStore = create<GatewayStore>()(
     cronStatus: null,
     cronJobs: [],
     presence: {},
+    gatewayShutdown: null,
+    gatewayUpdateAvailable: null,
     eventLog: [],
     eventLogEnabled: false,
     setEventLogEnabled: (enabled: boolean) => set({ eventLogEnabled: enabled }),
@@ -435,10 +464,10 @@ export const useGatewayStore = create<GatewayStore>()(
       })
 
       client.on('ready', (hello: GatewayHelloOk) => {
-        set({ error: null, scopeError: null })
-        if (hello.snapshot) {
-          get()._applySnapshot(hello.snapshot)
-        }
+        // Clear shutdown state on successful reconnect
+        // Source: server-close.ts broadcasts shutdown → ws close 1012 → reconnect → hello-ok
+        set({ error: null, scopeError: null, gatewayShutdown: null })
+        get()._applySnapshot(hello.snapshot)
         // Fetch eagerly — snapshot may not include everything
         void Promise.all([
           client.request<AgentsListResult>('agents.list', {}).then((r) => {
@@ -525,6 +554,8 @@ export const useGatewayStore = create<GatewayStore>()(
         cronStatus: null,
         cronJobs: [],
         presence: {},
+        gatewayShutdown: null,
+        gatewayUpdateAvailable: null,
         eventLog: [],
         activeRuns: {},
         sessionRefreshHint: 0,
@@ -542,19 +573,14 @@ export const useGatewayStore = create<GatewayStore>()(
     clearEventLog: () => set({ eventLog: [] }),
 
     // -- Apply snapshot from hello-ok ---------------------------------------
+    // Source: OpenClaw src/gateway/protocol/schema/snapshot.ts (SnapshotSchema)
+    // Only presence, health, and updateAvailable are in the snapshot.
+    // agents, sessions, channels, config, skills, cron are fetched via RPC after connect.
     _applySnapshot(snapshot: GatewaySnapshot) {
       set({
-        ...(snapshot.agents ? { agents: snapshot.agents } : {}),
-        ...(snapshot.sessions
-          ? { sessions: snapshot.sessions.sessions, sessionsDefaults: snapshot.sessions.defaults }
-          : {}),
-        ...(snapshot.channels ? { channels: snapshot.channels } : {}),
-        ...(snapshot.health ? { health: snapshot.health } : {}),
-        ...(snapshot.config ? { config: snapshot.config } : {}),
-        ...(snapshot.skills ? { skills: snapshot.skills } : {}),
-        ...(snapshot.cron?.status ? { cronStatus: snapshot.cron.status } : {}),
-        ...(snapshot.cron?.jobs ? { cronJobs: snapshot.cron.jobs } : {}),
-        ...(snapshot.presence ? { presence: snapshot.presence } : {}),
+        health: snapshot.health,
+        presence: presenceArrayToRecord(snapshot.presence),
+        ...(snapshot.updateAvailable ? { gatewayUpdateAvailable: snapshot.updateAvailable } : {}),
       })
     },
 

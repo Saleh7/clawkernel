@@ -65,11 +65,8 @@ export function BrowserRequestPanel({ sending, lastResult, history, onSend }: Pr
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Request Panel */}
       <div className="rounded-xl border bg-card p-5 space-y-4">
         <p className="text-sm font-semibold">Request Panel</p>
-
-        {/* Presets */}
         <div className="flex flex-wrap gap-1.5">
           {PATH_PRESETS.map((p) => (
             <button
@@ -86,8 +83,6 @@ export function BrowserRequestPanel({ sending, lastResult, history, onSend }: Pr
             </button>
           ))}
         </div>
-
-        {/* Method + Path */}
         <div className="flex items-center gap-2">
           <select
             value={method}
@@ -116,8 +111,6 @@ export function BrowserRequestPanel({ sending, lastResult, history, onSend }: Pr
             {sending ? 'Sending…' : 'Send'}
           </Button>
         </div>
-
-        {/* Query */}
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Query Params <span className="font-normal normal-case">(JSON, optional)</span>
@@ -131,8 +124,6 @@ export function BrowserRequestPanel({ sending, lastResult, history, onSend }: Pr
             aria-label="Query params JSON"
           />
         </div>
-
-        {/* Body (POST only) */}
         {method !== 'GET' && (
           <div className="space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -149,8 +140,6 @@ export function BrowserRequestPanel({ sending, lastResult, history, onSend }: Pr
           </div>
         )}
       </div>
-
-      {/* Response Viewer */}
       {lastResult !== null && (
         <div
           className={cn(
@@ -173,8 +162,6 @@ export function BrowserRequestPanel({ sending, lastResult, history, onSend }: Pr
           </pre>
         </div>
       )}
-
-      {/* History */}
       {history.length > 0 && (
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <div className="flex items-center gap-2">

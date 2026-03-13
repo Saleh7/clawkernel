@@ -114,6 +114,36 @@ export function useSessionsPage() {
   const [patchSession, setPatchSession] = useState<GatewaySessionRow | null>(null)
   const [deleteSession, setDeleteSession] = useState<GatewaySessionRow | null>(null)
   const [showBulkDelete, setShowBulkDelete] = useState(false)
+  const [compactingKey, setCompactingKey] = useState<string | null>(null)
+  const compactingRef = useRef(false)
+
+  // -- Compact session (sessions.compact RPC) ---------------------------------
+  // Source: OpenClaw src/gateway/server-methods/sessions.ts:370
+  const handleCompact = useCallback(
+    async (session: GatewaySessionRow) => {
+      if (!client?.connected || compactingRef.current) return
+      compactingRef.current = true
+      setCompactingKey(session.key)
+      try {
+        const result = await client.request<{ ok: boolean; compacted: boolean; reason?: string }>('sessions.compact', {
+          key: session.key,
+        })
+        if (result.compacted) {
+          toast.success('Session compacted')
+          await refresh({ userInitiated: false })
+        } else {
+          toast.info(result.reason ?? 'Nothing to compact')
+        }
+      } catch (err) {
+        log.warn('sessions.compact failed', err)
+        toast.error('Compact failed')
+      } finally {
+        compactingRef.current = false
+        setCompactingKey(null)
+      }
+    },
+    [client, refresh],
+  )
 
   // -- Derived data ---------------------------------------------------------
   const runningSessionKeys = useMemo(
@@ -188,8 +218,6 @@ export function useSessionsPage() {
 
     return list.map((x) => x.session)
   }, [indexedSessions, quickFilter, kindFilter, agentFilter, deferredSearch, sortField, sortDir])
-
-  // Reset pagination when any filter / sort / view option changes.
   // Deps are intentional triggers — not read in the callback body.
   // biome-ignore lint/correctness/useExhaustiveDependencies: trigger-only deps
   useEffect(() => {
@@ -297,5 +325,7 @@ export function useSessionsPage() {
     setDeleteSession,
     showBulkDelete,
     setShowBulkDelete,
+    handleCompact,
+    compactingKey,
   }
 }

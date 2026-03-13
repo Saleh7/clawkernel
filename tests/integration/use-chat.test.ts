@@ -1,16 +1,8 @@
-// ---------------------------------------------------------------------------
-//  use-chat — Hook integration tests (Phase 4)
-//  Uses @testing-library/react renderHook + vi.mock (no msw)
-// ---------------------------------------------------------------------------
 // @vitest-environment happy-dom
 
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ChatEventPayload, ChatMessage } from '@/lib/gateway/types'
-
-// ---------------------------------------------------------------------------
-//  Mock setup — must be before imports that reference them
-// ---------------------------------------------------------------------------
 
 // Accumulate event listeners registered via client.on(event, handler)
 type EventHandler = (payload: unknown) => void
@@ -65,10 +57,6 @@ vi.mock('@/stores/gateway-store', () => ({
 // Must import after mocks
 const { useChat } = await import('@/app/chat/hooks/use-chat')
 
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
-
 function renderChatHook() {
   return renderHook(() => useChat())
 }
@@ -95,10 +83,6 @@ function makeAssistantMessage(text: string, extra: Partial<ChatMessage> = {}): C
   }
 }
 
-// ---------------------------------------------------------------------------
-//  Tests
-// ---------------------------------------------------------------------------
-
 describe('useChat', () => {
   beforeEach(() => {
     clientListeners.clear()
@@ -113,16 +97,12 @@ describe('useChat', () => {
     ]
     storeState.agents = { defaultId: 'bot', mainKey: 'agent:bot:main', scope: 'all', agents: [{ id: 'bot' }] }
     storeState.activeRuns = {}
-
-    // Mock localStorage
     vi.stubGlobal('localStorage', {
       _store: {} as Record<string, string>,
       getItem(key: string) { return this._store[key] ?? null },
       setItem(key: string, val: string) { this._store[key] = val },
       removeItem(key: string) { delete this._store[key] },
     })
-
-    // Mock requestAnimationFrame
     vi.stubGlobal('requestAnimationFrame', (cb: () => void) => {
       const id = setTimeout(cb, 0)
       return id as unknown as number
@@ -134,10 +114,6 @@ describe('useChat', () => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
-
-  // =========================================================================
-  //  Initial state
-  // =========================================================================
 
   it('returns initial chat state', () => {
     const { result } = renderChatHook()
@@ -153,10 +129,6 @@ describe('useChat', () => {
     expect(result.current.sessionEntries).toHaveLength(1)
     expect(result.current.sessionEntries[0].agentId).toBe('bot')
   })
-
-  // =========================================================================
-  //  Settings persistence (F8)
-  // =========================================================================
 
   describe('settings persistence', () => {
     it('loads default settings when localStorage is empty', () => {
@@ -193,10 +165,6 @@ describe('useChat', () => {
     })
   })
 
-  // =========================================================================
-  //  Session selection + history loading
-  // =========================================================================
-
   describe('session selection', () => {
     it('loads history when session is selected', async () => {
       const historyMessages: ChatMessage[] = [
@@ -210,8 +178,6 @@ describe('useChat', () => {
       await act(async () => {
         result.current.setSelectedSession('agent:bot:main')
       })
-
-      // Wait for async history load
       await act(async () => {
         await vi.dynamicImportSettled()
       })
@@ -236,10 +202,6 @@ describe('useChat', () => {
     })
   })
 
-  // =========================================================================
-  //  Streaming lifecycle
-  // =========================================================================
-
   describe('streaming lifecycle', () => {
     it('applies delta events to streaming state', async () => {
       mockClient.request.mockResolvedValueOnce({ messages: [] })
@@ -249,13 +211,10 @@ describe('useChat', () => {
       await act(async () => {
         result.current.setSelectedSession('agent:bot:main')
       })
-
-      // Emit a delta event
       await act(async () => {
         emitClientEvent('chat', makeChatEvent('agent:bot:main', 'delta', {
           message: makeAssistantMessage('streaming...'),
         }))
-        // Flush rAF
         await new Promise((r) => setTimeout(r, 10))
       })
 
@@ -271,16 +230,12 @@ describe('useChat', () => {
       await act(async () => {
         result.current.setSelectedSession('agent:bot:main')
       })
-
-      // Delta first to set runId
       await act(async () => {
         emitClientEvent('chat', makeChatEvent('agent:bot:main', 'delta', {
           message: makeAssistantMessage('partial'),
         }))
         await new Promise((r) => setTimeout(r, 10))
       })
-
-      // Final
       await act(async () => {
         emitClientEvent('chat', makeChatEvent('agent:bot:main', 'final', {
           message: makeAssistantMessage('complete response'),
@@ -289,7 +244,6 @@ describe('useChat', () => {
 
       expect(result.current.chat.streaming).toBeNull()
       expect(result.current.chat.runId).toBeNull()
-      // Final message should be in messages
       const texts = result.current.chat.messages
         .filter((m: ChatMessage) => m.role === 'assistant')
         .map((m: ChatMessage) => m.content?.[0])
@@ -324,8 +278,6 @@ describe('useChat', () => {
       await act(async () => {
         result.current.setSelectedSession('agent:bot:main')
       })
-
-      // Delta to set streaming text
       await act(async () => {
         emitClientEvent('chat', makeChatEvent('agent:bot:main', 'delta', {
           message: makeAssistantMessage('partial text'),
@@ -342,10 +294,6 @@ describe('useChat', () => {
       expect(result.current.chat.runId).toBeNull()
     })
   })
-
-  // =========================================================================
-  //  handleSend + optimistic messages
-  // =========================================================================
 
   describe('handleSend', () => {
     it('sends message via chat.send and adds optimistic user message', async () => {
@@ -457,8 +405,6 @@ describe('useChat', () => {
       await act(async () => {
         result.current.setSelectedSession('agent:bot:main')
       })
-
-      // Make it busy
       await act(async () => {
         emitClientEvent('chat', makeChatEvent('agent:bot:main', 'delta', {
           message: makeAssistantMessage('busy'),
@@ -480,10 +426,6 @@ describe('useChat', () => {
       )
     })
   })
-
-  // =========================================================================
-  //  handleRetry — busy guard (F4) + executeSend delegation (F6)
-  // =========================================================================
 
   describe('handleRetry', () => {
     it('re-sends a previous user message', async () => {
@@ -524,8 +466,6 @@ describe('useChat', () => {
       await act(async () => {
         result.current.setSelectedSession('agent:bot:main')
       })
-
-      // Make busy
       await act(async () => {
         emitClientEvent('chat', makeChatEvent('agent:bot:main', 'delta', {
           message: makeAssistantMessage('busy'),
@@ -542,15 +482,9 @@ describe('useChat', () => {
           timestamp: 1,
         })
       })
-
-      // No new request should have been made
       expect(mockClient.request.mock.calls.length).toBe(callCount)
     })
   })
-
-  // =========================================================================
-  //  handleAbort — uses runIdRef (F5)
-  // =========================================================================
 
   describe('handleAbort', () => {
     it('sends chat.abort with current runId', async () => {
@@ -582,10 +516,6 @@ describe('useChat', () => {
     })
   })
 
-  // =========================================================================
-  //  handleLoadMore — streaming guard (F2)
-  // =========================================================================
-
   describe('handleLoadMore', () => {
     it('blocks load more during active streaming (F2)', async () => {
       mockClient.request.mockResolvedValue({ messages: [] })
@@ -615,10 +545,6 @@ describe('useChat', () => {
     })
   })
 
-  // =========================================================================
-  //  handleRefresh
-  // =========================================================================
-
   describe('handleRefresh', () => {
     it('reloads history and resets streaming state', async () => {
       mockClient.request
@@ -640,10 +566,6 @@ describe('useChat', () => {
     })
   })
 
-  // =========================================================================
-  //  Event subscription cleanup
-  // =========================================================================
-
   describe('event subscription', () => {
     it('subscribes to chat events on client', () => {
       mockClient.request.mockResolvedValue({ messages: [] })
@@ -664,16 +586,12 @@ describe('useChat', () => {
       await act(async () => {
         result.current.setSelectedSession('agent:bot:main')
       })
-
-      // Emit event for different session
       await act(async () => {
         emitClientEvent('chat', makeChatEvent('agent:other:main', 'delta', {
           message: makeAssistantMessage('not for me'),
         }))
         await new Promise((r) => setTimeout(r, 10))
       })
-
-      // Should not have affected state
       expect(result.current.chat.runId).toBeNull()
     })
   })

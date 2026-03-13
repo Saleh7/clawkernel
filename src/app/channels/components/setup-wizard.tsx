@@ -163,8 +163,6 @@ export function SetupWizard({
         </div>
 
         <Separator />
-
-        {/* Step 1: Choose */}
         {step === 'choose' && (
           <div className="space-y-2">
             {channels.map((ch) => (
@@ -202,8 +200,6 @@ export function SetupWizard({
             </div>
           </div>
         )}
-
-        {/* Step 2: Configure */}
         {step === 'configure' && current && (
           <div className="space-y-4">
             {current.meta.docsUrl && (
@@ -277,8 +273,6 @@ export function SetupWizard({
             )}
           </div>
         )}
-
-        {/* Step 3: Done */}
         {step === 'done' && current && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-success">

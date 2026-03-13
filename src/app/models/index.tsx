@@ -50,7 +50,6 @@ export default function ModelsPage() {
 
   return (
     <div className="flex flex-col gap-8 p-6">
-      {/* Header */}
       <PageHeader
         icon={Sparkles}
         title="Models"
@@ -62,8 +61,6 @@ export default function ModelsPage() {
           Refresh
         </Button>
       </PageHeader>
-
-      {/* Model Catalog (was Aliases) — most important, at top */}
       <AliasesSection
         aliases={aliases}
         models={models}
@@ -71,8 +68,6 @@ export default function ModelsPage() {
         onAddAlias={withToast('catalog', addAlias)}
         onRemoveAlias={withToast('catalog', removeAlias)}
       />
-
-      {/* Providers */}
       <ProviderStatus
         models={models}
         customProviders={customProviders}
@@ -81,8 +76,6 @@ export default function ModelsPage() {
         onRemoveCustomProvider={withToast('provider', removeCustomProvider)}
         onEditCustomProvider={withToast('provider', editCustomProvider)}
       />
-
-      {/* Advanced Settings — collapsible, contains Per-Agent · Heartbeat · Routing tabs */}
       <AdvancedSettings
         agentList={agentList}
         heartbeatModel={heartbeatModel}
@@ -100,8 +93,6 @@ export default function ModelsPage() {
         onAddImageFallback={withToast('image fallback', addImageFallback)}
         onRemoveImageFallback={withToast('image fallback', removeImageFallback)}
       />
-
-      {/* Available Models */}
       {loading ? (
         <div className="space-y-3">
           <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Available Models</p>

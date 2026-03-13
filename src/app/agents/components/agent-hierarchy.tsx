@@ -546,8 +546,6 @@ function AgentNodeComponent({ data }: NodeProps) {
     >
       <Handle type="target" position={Position.Left} className="!bg-primary !border-primary !w-2 !h-2" />
       <Handle type="source" position={Position.Right} className="!bg-blue-500 !border-blue-400 !w-2 !h-2" />
-
-      {/* Header */}
       <div className="flex items-center gap-2">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20 text-sm font-bold">
           {emoji || '🤖'}
@@ -560,13 +558,9 @@ function AgentNodeComponent({ data }: NodeProps) {
           <p className="truncate text-xs text-muted-foreground">{shortModel(modelLabel)}</p>
         </div>
       </div>
-
-      {/* Badges */}
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
         {isDefault && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary font-medium">◇ Default</span>}
       </div>
-
-      {/* Stats row */}
       <div className="mt-2 flex items-center gap-3 border-t border-foreground/5 pt-2 text-xs">
         <span className="text-muted-foreground">
           Sessions <strong className="text-foreground/70">{sessionCount}</strong>

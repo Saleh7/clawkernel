@@ -39,10 +39,7 @@ export default function SearchPage() {
   } else if (webSearch) {
     content = (
       <>
-        {/* 6.1 — Provider Status Bar */}
         <SearchStatusBar cfg={webSearch} />
-
-        {/* No provider warning */}
         {!anyKey && (
           <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
@@ -64,14 +61,8 @@ export default function SearchPage() {
             </div>
           </div>
         )}
-
-        {/* 6.2 — Provider Cards */}
         <ProviderCards cfg={webSearch} />
-
-        {/* 6.4 — Model Selector (shown when active provider supports model config) */}
         <ModelSelector cfg={webSearch} saving={saving} onSave={handleSaveModel} />
-
-        {/* 6.3 — Search Playground */}
         <SearchPlayground
           playgroundState={playgroundState}
           onRun={runSearch}
@@ -79,8 +70,6 @@ export default function SearchPage() {
           disabled={!anyKey}
           activeProvider={activeProvider}
         />
-
-        {/* Docs link */}
         <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
           <h3 className="text-xs font-semibold text-foreground/80">Documentation</h3>
           <p className="mt-1 text-xs text-muted-foreground">

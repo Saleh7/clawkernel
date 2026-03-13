@@ -81,7 +81,6 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
 
   return (
     <div className="border-t border-border/20 bg-card/70 px-4 py-4 space-y-4">
-      {/* Name + Description */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Name</Label>
@@ -97,8 +96,6 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
           />
         </div>
       </div>
-
-      {/* Schedule */}
       <div className="space-y-2">
         <Label className="text-xs">Schedule</Label>
         <div className="flex gap-2">
@@ -151,8 +148,6 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
           />
         )}
       </div>
-
-      {/* Payload */}
       <div className="space-y-2">
         <Label className="text-xs">Payload</Label>
         <div className="flex gap-2">
@@ -212,8 +207,6 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
           </div>
         )}
       </div>
-
-      {/* Delivery */}
       <div className="space-y-2">
         <Label className="text-xs">Delivery</Label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -261,8 +254,6 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
           </label>
         )}
       </div>
-
-      {/* Flags */}
       <div className="flex flex-wrap gap-6">
         <label className="flex items-center gap-2 text-xs cursor-pointer">
           <input
@@ -319,8 +310,6 @@ export function JobEditForm({ job, client, is24h, onClose, onSaved }: Props) {
       </div>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
-
-      {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
         <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={onClose} className="gap-1 text-xs">

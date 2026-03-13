@@ -150,7 +150,6 @@ export function CloneAgentDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* New name */}
           <div className="space-y-1.5">
             <Label className="text-xs">New Agent Name</Label>
             <Input
@@ -166,8 +165,6 @@ export function CloneAgentDialog({
               </p>
             )}
           </div>
-
-          {/* Emoji */}
           <div className="space-y-1.5">
             <Label className="text-xs">Emoji (optional)</Label>
             <Input
@@ -180,8 +177,6 @@ export function CloneAgentDialog({
           </div>
 
           <Separator className="opacity-30" />
-
-          {/* Clone options */}
           <div className="space-y-1.5">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Clone Settings</p>
             <div className="space-y-2">

@@ -1,15 +1,8 @@
-// ---------------------------------------------------------------------------
-//  chat/utils — DOM-dependent function tests (Phase 2, happy-dom)
-// ---------------------------------------------------------------------------
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { compressImage, compressImageBitmap, fileToBase64, readFileAsText } from '@/app/chat/utils'
 import { MAX_TEXT_CHARS } from '@/app/chat/types'
-
-// ===========================================================================
-//  readFileAsText
-// ===========================================================================
 
 describe('readFileAsText', () => {
   it('reads full file content', async () => {
@@ -41,10 +34,6 @@ describe('readFileAsText', () => {
   })
 })
 
-// ===========================================================================
-//  fileToBase64
-// ===========================================================================
-
 describe('fileToBase64', () => {
   it('converts a file to base64 string', async () => {
     const file = new File(['hello'], 'test.txt', { type: 'text/plain' })
@@ -61,10 +50,6 @@ describe('fileToBase64', () => {
     expect(b64.length).toBeGreaterThan(0)
   })
 })
-
-// ===========================================================================
-//  compressImage — mocked Canvas/Image
-// ===========================================================================
 
 describe('compressImage', () => {
   const FAKE_BLOB_URL = 'blob:fake-url'
@@ -235,10 +220,6 @@ describe('compressImage', () => {
     expect(canvasMock.toDataURL).toHaveBeenCalledTimes(1)
   })
 })
-
-// ===========================================================================
-//  compressImageBitmap — mocked OffscreenCanvas/createImageBitmap
-// ===========================================================================
 
 describe('compressImageBitmap', () => {
   afterEach(() => {

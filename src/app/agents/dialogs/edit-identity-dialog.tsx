@@ -301,15 +301,12 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Live preview */}
             <div>
               <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Preview</p>
               <IdentityPreview fields={fields} />
             </div>
 
             <Separator className="opacity-40" />
-
-            {/* Fields */}
             <div className="space-y-3">
               {FIELD_CONFIG.map(({ key, label, icon: Icon, placeholder, description }) => (
                 <div key={key} className="space-y-1">
@@ -327,8 +324,6 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
                 </div>
               ))}
             </div>
-
-            {/* Status */}
             {error && (
               <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
@@ -341,8 +336,6 @@ export function EditIdentityDialog({ agentId, identity, client, onSaved }: Props
                 Identity saved successfully
               </div>
             )}
-
-            {/* Actions */}
             <div className="flex items-center justify-between pt-1">
               <div className="flex items-center gap-2">
                 {isDirty && (

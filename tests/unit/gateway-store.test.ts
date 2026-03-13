@@ -1,10 +1,4 @@
-// ---------------------------------------------------------------------------
-//  gateway-store — Event handlers, snapshot, timers (Phase 3)
-// ---------------------------------------------------------------------------
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-// Mock GatewayClient before importing the store
 vi.mock('@/lib/gateway/client', () => ({
   GatewayClient: vi.fn().mockImplementation(() => ({
     on: vi.fn(),
@@ -13,31 +7,22 @@ vi.mock('@/lib/gateway/client', () => ({
     request: vi.fn().mockResolvedValue({}),
   })),
 }))
-
-// Mock logger to silence output
 vi.mock('@/lib/logger', () => ({
   createLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }))
 
 import type {
-  ChannelsStatusSnapshot,
   ConfigSnapshot,
   CronJob,
   CronStatus,
   GatewayEventFrame,
-  GatewaySessionRow,
   GatewaySnapshot,
   HealthSnapshot,
   PresenceEntry,
-  SkillStatusReport,
 } from '@/lib/gateway/types'
 
 // Import store — must be after mocks
 const { useGatewayStore } = await import('@/stores/gateway-store')
-
-// ---------------------------------------------------------------------------
-//  Helpers
-// ---------------------------------------------------------------------------
 
 function fireEvent(event: string, payload?: unknown) {
   const frame: GatewayEventFrame = { type: 'event', event, payload }
@@ -48,13 +33,8 @@ function getStore() {
   return useGatewayStore.getState()
 }
 
-// ---------------------------------------------------------------------------
-//  Tests
-// ---------------------------------------------------------------------------
-
 describe('gateway-store', () => {
   beforeEach(() => {
-    // Reset store to initial state
     useGatewayStore.setState({
       client: null,
       state: 'disconnected',
@@ -70,6 +50,8 @@ describe('gateway-store', () => {
       cronStatus: null,
       cronJobs: [],
       presence: {},
+      gatewayShutdown: null,
+      gatewayUpdateAvailable: null,
       eventLog: [],
       eventLogEnabled: false,
       activeRuns: {},
@@ -84,26 +66,22 @@ describe('gateway-store', () => {
     vi.useRealTimers()
   })
 
-  // =========================================================================
-  //  Event handlers — all 11 types
-  // =========================================================================
+  // NOTE: sessions, config, channels, skills events are NOT broadcast by upstream.
+  // CK fetches these via RPC (agents.list, sessions.list, channels.status) on connect.
+  // Verified: grep "broadcast.*sessions\|broadcast.*config\|broadcast.*channels\|broadcast.*skills"
+  // across OpenClaw src/gateway/ returns zero results.
 
-  describe('sessions event', () => {
-    it('updates sessions and defaults', () => {
-      const sessions: GatewaySessionRow[] = [
-        { key: 'agent:bot:main', kind: 'direct', updatedAt: Date.now() },
-      ]
-      const defaults = { model: 'anthropic/claude-sonnet-4-6', contextTokens: 200_000 }
-
-      fireEvent('sessions', { sessions, defaults, ts: Date.now(), path: '', count: 1 })
-
-      expect(getStore().sessions).toEqual(sessions)
-      expect(getStore().sessionsDefaults).toEqual(defaults)
-    })
-
-    it('ignores null payload', () => {
-      fireEvent('sessions', null)
+  describe('unhandled upstream events', () => {
+    it('does not crash on unknown events', () => {
+      fireEvent('sessions', { sessions: [], defaults: null })
+      fireEvent('config', { raw: '{}' })
+      fireEvent('channels', {})
+      fireEvent('skills', {})
+      // None of these should update store — they go to the DEV debug log
       expect(getStore().sessions).toEqual([])
+      expect(getStore().config).toBeNull()
+      expect(getStore().channels).toBeNull()
+      expect(getStore().skills).toBeNull()
     })
   })
 
@@ -117,53 +95,86 @@ describe('gateway-store', () => {
 
   describe('presence event', () => {
     it('merges presence entries', () => {
-      useGatewayStore.setState({ presence: { alice: { status: 'online' } as PresenceEntry } })
+      useGatewayStore.setState({
+        presence: { alice: { instanceId: 'alice', host: 'host-a', ts: 1 } as PresenceEntry },
+      })
 
-      fireEvent('presence', { bob: { status: 'idle' } })
+      // Upstream broadcasts { presence: Array<PresenceEntry> }
+      // Source: OpenClaw src/gateway/server/presence-events.ts:11
+      fireEvent('presence', {
+        presence: [{ instanceId: 'bob', host: 'host-b', ts: 2 }],
+      })
 
       const presence = getStore().presence
       expect(presence.alice).toBeDefined()
       expect(presence.bob).toBeDefined()
+      expect(presence.bob.host).toBe('host-b')
     })
   })
 
-  describe('config event', () => {
-    it('updates config', () => {
-      const config: ConfigSnapshot = { raw: '{}' } as ConfigSnapshot
-      fireEvent('config', config)
-      expect(getStore().config).toBe(config)
-    })
-  })
-
-  describe('channels event', () => {
-    it('updates channels', () => {
-      const channels: ChannelsStatusSnapshot = {} as ChannelsStatusSnapshot
-      fireEvent('channels', channels)
-      expect(getStore().channels).toBe(channels)
-    })
-  })
-
-  describe('skills event', () => {
-    it('updates skills', () => {
-      const skills: SkillStatusReport = {} as SkillStatusReport
-      fireEvent('skills', skills)
-      expect(getStore().skills).toBe(skills)
-    })
-  })
-
-  describe('cron.status event', () => {
-    it('updates cron status', () => {
+  describe('cron event', () => {
+    it('re-fetches cron data via RPC on cron broadcast', async () => {
+      // Upstream broadcasts a single "cron" event (not cron.status / cron.jobs)
+      // Source: OpenClaw src/gateway/server-cron.ts:359
       const status: CronStatus = { enabled: true } as CronStatus
-      fireEvent('cron.status', status)
+      const jobs: CronJob[] = [{ id: 'j1' } as CronJob]
+      const mockRequest = vi.fn()
+        .mockResolvedValueOnce(status) // cron.status
+        .mockResolvedValueOnce({ jobs }) // cron.list
+      const mockClient = { connected: true, request: mockRequest }
+      useGatewayStore.setState({ client: mockClient as never })
+
+      fireEvent('cron', { jobId: 'j1', action: 'finished' })
+      await vi.waitFor(() => {
+        expect(mockRequest).toHaveBeenCalledWith('cron.status', {})
+        expect(mockRequest).toHaveBeenCalledWith('cron.list', { includeDisabled: true })
+      })
       expect(getStore().cronStatus).toBe(status)
+      expect(getStore().cronJobs).toEqual(jobs)
+    })
+
+    it('does nothing when client is not connected', () => {
+      useGatewayStore.setState({ client: null })
+      fireEvent('cron', { jobId: 'j1', action: 'started' })
+      expect(getStore().cronStatus).toBeNull()
+      expect(getStore().cronJobs).toEqual([])
     })
   })
 
-  describe('cron.jobs event', () => {
-    it('updates cron jobs', () => {
-      const jobs: CronJob[] = [{ id: 'j1' } as CronJob]
-      fireEvent('cron.jobs', { jobs })
-      expect(getStore().cronJobs).toEqual(jobs)
+  describe('shutdown event', () => {
+    it('stores shutdown info', () => {
+      // Source: OpenClaw src/gateway/server-close.ts:84
+      fireEvent('shutdown', { reason: 'update', restartExpectedMs: 5000 })
+      const sd = getStore().gatewayShutdown
+      expect(sd).not.toBeNull()
+      expect(sd?.reason).toBe('update')
+      expect(sd?.restartExpectedMs).toBe(5000)
+    })
+
+    it('ignores null payload', () => {
+      fireEvent('shutdown', null)
+      expect(getStore().gatewayShutdown).toBeNull()
+    })
+  })
+
+  describe('update.available event', () => {
+    it('stores update info', () => {
+      // Source: OpenClaw src/gateway/server.impl.ts:911
+      fireEvent('update.available', {
+        updateAvailable: { currentVersion: '2026.3.0', latestVersion: '2026.3.11', channel: 'stable' },
+      })
+      const ua = getStore().gatewayUpdateAvailable
+      expect(ua).not.toBeNull()
+      expect(ua?.currentVersion).toBe('2026.3.0')
+      expect(ua?.latestVersion).toBe('2026.3.11')
+    })
+
+    it('clears update info when null', () => {
+      useGatewayStore.setState({
+        gatewayUpdateAvailable: { currentVersion: '1.0', latestVersion: '2.0', channel: 'stable' },
+      })
+      fireEvent('update.available', { updateAvailable: null })
+      expect(getStore().gatewayUpdateAvailable).toBeNull()
     })
   })
 
@@ -359,10 +370,6 @@ describe('gateway-store', () => {
     })
   })
 
-  // =========================================================================
-  //  Event log
-  // =========================================================================
-
   describe('event log', () => {
     it('records events when enabled', () => {
       useGatewayStore.setState({ eventLogEnabled: true })
@@ -386,67 +393,54 @@ describe('gateway-store', () => {
     })
   })
 
-  // =========================================================================
-  //  _applySnapshot
-  // =========================================================================
-
   describe('_applySnapshot', () => {
-    it('applies full snapshot', () => {
+    // Snapshot type now matches upstream SnapshotSchema:
+    // Source: OpenClaw src/gateway/protocol/schema/snapshot.ts
+    // Contains: presence (required Array), health (required), stateVersion, uptimeMs,
+    // Does NOT contain: agents, sessions, channels, config, skills, cron
+    // Those are fetched via RPC after connect.
+
+    it('applies full snapshot with presence and health', () => {
       const snapshot: GatewaySnapshot = {
-        agents: { defaultId: 'bot', mainKey: 'agent:bot:main', scope: 'all', agents: [] },
-        sessions: {
-          ts: Date.now(),
-          path: '',
-          count: 0,
-          defaults: { model: null, contextTokens: null },
-          sessions: [{ key: 'agent:bot:main', kind: 'direct', updatedAt: Date.now() }],
-        },
-        channels: {} as ChannelsStatusSnapshot,
+        presence: [{ instanceId: 'alice', host: 'host-a', ts: 1 }],
         health: { uptime: 500 } as HealthSnapshot,
-        config: { raw: '{}' } as ConfigSnapshot,
-        skills: {} as SkillStatusReport,
-        cron: {
-          status: { enabled: true } as CronStatus,
-          jobs: [{ id: 'j1' } as CronJob],
-        },
-        presence: { alice: { status: 'online' } as PresenceEntry },
+        stateVersion: { presence: 1, health: 1 },
+        uptimeMs: 60_000,
+        updateAvailable: { currentVersion: '2026.3.0', latestVersion: '2026.3.11', channel: 'stable' },
       }
 
       getStore()._applySnapshot(snapshot)
 
-      expect(getStore().agents).toBe(snapshot.agents)
-      expect(getStore().sessions).toHaveLength(1)
       expect(getStore().health).toBe(snapshot.health)
-      expect(getStore().config).toBe(snapshot.config)
-      expect(getStore().skills).toBe(snapshot.skills)
-      expect(getStore().cronStatus).toEqual({ enabled: true })
-      expect(getStore().cronJobs).toHaveLength(1)
       expect(getStore().presence.alice).toBeDefined()
+      expect(getStore().presence.alice.host).toBe('host-a')
+      expect(getStore().gatewayUpdateAvailable).toEqual(snapshot.updateAvailable)
     })
 
-    it('applies partial snapshot without overwriting unset fields', () => {
+    it('does not overwrite config/sessions/agents (fetched via RPC)', () => {
+      const existingConfig = { raw: '{"a":1}' } as ConfigSnapshot
       useGatewayStore.setState({
-        health: { uptime: 100 } as HealthSnapshot,
-        config: { raw: '{"a":1}' } as ConfigSnapshot,
+        config: existingConfig,
+        sessions: [{ key: 'a', kind: 'direct' as const, updatedAt: Date.now() }],
       })
 
-      getStore()._applySnapshot({ health: { uptime: 200 } as HealthSnapshot })
+      getStore()._applySnapshot({
+        presence: [],
+        health: { uptime: 200 } as HealthSnapshot,
+        stateVersion: { presence: 1, health: 1 },
+        uptimeMs: 30_000,
+      })
 
       expect(getStore().health?.uptime).toBe(200)
-      // Config should remain unchanged
+      // Config and sessions should remain unchanged — not in snapshot
       expect((getStore().config as ConfigSnapshot)?.raw).toBe('{"a":1}')
+      expect(getStore().sessions).toHaveLength(1)
     })
   })
-
-  // =========================================================================
-  //  Timer cleanup on disconnect
-  // =========================================================================
 
   describe('disconnect', () => {
     it('clears status timers on disconnect', () => {
       vi.useFakeTimers()
-
-      // Trigger a compaction with pending clear timer
       fireEvent('agent', {
         sessionKey: 'agent:bot:main',
         stream: 'compaction',
@@ -457,8 +451,6 @@ describe('gateway-store', () => {
         stream: 'compaction',
         data: { phase: 'end' },
       })
-
-      // Disconnect before timer fires
       getStore().disconnect()
 
       // Advance past clear delay — should not throw or set state
@@ -473,6 +465,8 @@ describe('gateway-store', () => {
         sessions: [{ key: 'a', kind: 'direct', updatedAt: Date.now() }],
         activeRuns: { r1: { sessionKey: 'a', startedAt: Date.now() } },
         sessionRefreshHint: 5,
+        gatewayShutdown: { reason: 'test' },
+        gatewayUpdateAvailable: { currentVersion: '1.0', latestVersion: '2.0', channel: 'stable' },
       })
 
       getStore().disconnect()
@@ -481,12 +475,10 @@ describe('gateway-store', () => {
       expect(getStore().activeRuns).toEqual({})
       expect(getStore().sessionRefreshHint).toBe(0)
       expect(getStore().state).toBe('disconnected')
+      expect(getStore().gatewayShutdown).toBeNull()
+      expect(getStore().gatewayUpdateAvailable).toBeNull()
     })
   })
-
-  // =========================================================================
-  //  Data refresh actions
-  // =========================================================================
 
   describe('data refresh actions', () => {
     it('setConfig updates config', () => {

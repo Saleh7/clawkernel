@@ -113,7 +113,6 @@ export default function CronPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {/* Page header */}
       <PageHeader
         icon={Clock}
         title="Cron Jobs"
@@ -124,11 +123,7 @@ export default function CronPage() {
           + New Job
         </Button>
       </PageHeader>
-
-      {/* Stats bar */}
       <CronStatsBar status={status} jobs={jobs} total={total} />
-
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
@@ -176,15 +171,11 @@ export default function CronPage() {
           {sortDir === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
         </Button>
       </div>
-
-      {/* Loading */}
       {loading && jobs.length === 0 && (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/40" />
         </div>
       )}
-
-      {/* Empty state */}
       {!loading && jobs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="rounded-2xl bg-muted/50 p-6 mb-4">
@@ -199,8 +190,6 @@ export default function CronPage() {
           </Button>
         </div>
       )}
-
-      {/* Job list */}
       {jobs.length > 0 && (
         <div className="space-y-4">
           {jobs.map((job) => (
@@ -243,8 +232,6 @@ export default function CronPage() {
           )}
         </div>
       )}
-
-      {/* Wizard */}
       <CreateJobWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
@@ -252,8 +239,6 @@ export default function CronPage() {
         is24h={is24h}
         onCreated={refresh}
       />
-
-      {/* Delete confirmation */}
       <ConfirmDialog
         open={deleteJob !== null}
         onOpenChange={(v) => {

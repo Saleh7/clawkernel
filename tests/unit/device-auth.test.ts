@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  gateway/device-auth — Payload builder for device authentication
-// ---------------------------------------------------------------------------
-
 import { describe, expect, it } from 'vitest'
 import { buildDeviceAuthPayload } from '@/lib/gateway/device-auth'
 

@@ -61,7 +61,6 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
         tone === 'disabled' && 'border-border/40 bg-muted/10 opacity-50',
       )}
     >
-      {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <button type="button" onClick={onToggle} disabled={busy} className="flex items-start gap-2 flex-1 text-left">
           <span className="text-2xl leading-none mt-0.5">{skill.emoji || '🔧'}</span>
@@ -71,9 +70,7 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
           </div>
         </button>
         <div className="flex items-center gap-1 shrink-0">
-          {/* Status icon */}
           <SkillStatusIcon tone={tone} />
-          {/* Detail expand */}
           <button
             type="button"
             onClick={onExpand}
@@ -83,8 +80,6 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
           </button>
         </div>
       </div>
-
-      {/* Badges */}
       <div className="flex flex-wrap gap-1 mt-2.5">
         {tone === 'blocked' && (
           <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-500">
@@ -127,8 +122,6 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
           </a>
         )}
       </div>
-
-      {/* Install options */}
       {hasInstall && (
         <div className="mt-2.5 pt-2.5 border-t border-border/30 space-y-1">
           {skill.install.map((opt) => (
@@ -148,8 +141,6 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
           ))}
         </div>
       )}
-
-      {/* API key input */}
       {skill.missing.env.length > 0 && (
         <div className="mt-2.5 pt-2.5 border-t border-border/30">
           {showKey ? (
@@ -186,8 +177,6 @@ export function SkillCard({ skill, enabled, busy, onToggle, onInstall, onSetApiK
           )}
         </div>
       )}
-
-      {/* Missing config hint */}
       {skill.missing.config.length > 0 && (
         <p className="mt-1.5 text-[9px] text-orange-500/70 truncate">
           Missing config: {skill.missing.config.join(', ')}

@@ -131,7 +131,6 @@ export function UsageSessionTable({
                       className={`group w-full cursor-pointer rounded-xl border px-3.5 py-3 text-left transition-colors ${isSelected ? 'border-primary/40 bg-primary/5' : 'border-border/50 bg-background/85 hover:border-border hover:bg-muted/15'}`}
                       onClick={() => onSelectSession(row.key)}
                     >
-                      {/* Row 1: agent name + tokens/cost */}
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate text-sm font-medium text-foreground">{row.agentName}</span>
@@ -153,8 +152,6 @@ export function UsageSessionTable({
                           <span className="text-[11px] tabular-nums text-muted-foreground">{formatCost(row.cost)}</span>
                         </div>
                       </div>
-
-                      {/* Row 2: label + tags */}
                       <div className="mt-1.5 flex items-center justify-between gap-3">
                         <span className="min-w-0 truncate text-xs text-muted-foreground">{row.label}</span>
                         <div className="flex shrink-0 items-center gap-1">
@@ -162,8 +159,6 @@ export function UsageSessionTable({
                           <Tag>{row.modelLabel}</Tag>
                         </div>
                       </div>
-
-                      {/* Row 3: stats + last active */}
                       <div className="mt-2 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <StatChip icon={<MessageSquare className="h-3 w-3" />} value={row.messageCount} />

@@ -73,17 +73,13 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
 
   return (
     <>
-      {/* Backdrop */}
       <button
         type="button"
         aria-label="Close panel"
         className="fixed inset-0 z-40 w-full cursor-default bg-black/30 backdrop-blur-sm"
         onClick={onClose}
       />
-
-      {/* Panel */}
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl border-l border-border">
-        {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-3xl shrink-0">{skill.emoji || '🔧'}</span>
@@ -100,13 +96,8 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          {/* Description */}
           <p className="text-sm text-muted-foreground leading-relaxed">{skill.description}</p>
-
-          {/* Status + toggle */}
           <div className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-3">
             <div className="flex items-center gap-2">
               {enabled && !hasMissing ? (
@@ -131,8 +122,6 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
               {enabled ? 'Disable' : 'Enable'}
             </Button>
           </div>
-
-          {/* Badges */}
           <div className="flex flex-wrap gap-1.5">
             {skill.bundled && (
               <Badge variant="secondary" className="text-[10px]">
@@ -153,8 +142,6 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
               {skill.source}
             </Badge>
           </div>
-
-          {/* Requirements */}
           <div className="space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Requirements</p>
             <RequiredRow label="Binaries" items={skill.requirements.bins} />
@@ -168,8 +155,6 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
                 <p className="text-xs text-muted-foreground/50">No special requirements</p>
               )}
           </div>
-
-          {/* Missing items */}
           {hasMissing && (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 space-y-3">
               <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">Missing</p>
@@ -179,8 +164,6 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
               <MissingRow label="OS requirements" items={skill.missing.os} />
             </div>
           )}
-
-          {/* Install options */}
           {skill.install.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -203,8 +186,6 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
               ))}
             </div>
           )}
-
-          {/* API key form */}
           {skill.missing.env.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">API Key</p>
@@ -224,8 +205,6 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
               </form>
             </div>
           )}
-
-          {/* Homepage */}
           {skill.homepage && (
             <a
               href={skill.homepage}
@@ -237,8 +216,6 @@ export function SkillDetailPanel({ skill, enabled, busy, onClose, onToggle, onIn
               View documentation
             </a>
           )}
-
-          {/* Source path */}
           <div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-2">
             <p className="text-[9px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-0.5">
               Source path

@@ -12,11 +12,88 @@ import { createLogger } from '@/lib/logger'
 import type {
   ConnectionState,
   GatewayClientOptions,
+  GatewayErrorInfo,
   GatewayEventFrame,
   GatewayHelloOk,
   GatewayResponseFrame,
   GatewaySnapshot,
 } from './types'
+
+// ── Structured gateway errors (aligned with OpenClaw UI gateway.ts) ──────────
+
+/**
+ * Structured error for failed Gateway RPC responses.
+ * Preserves the gateway error code and details for programmatic handling.
+ * Matches OpenClaw UI's GatewayRequestError (ui/src/ui/gateway.ts:38-48).
+ */
+export class GatewayRequestError extends Error {
+  readonly gatewayCode: string
+  readonly details?: unknown
+
+  constructor(error: GatewayErrorInfo) {
+    super(error.message)
+    this.name = 'GatewayRequestError'
+    this.gatewayCode = error.code
+    this.details = error.details
+  }
+}
+
+/**
+ * Connect error detail codes emitted by the Gateway during auth.
+ * Subset of codes relevant to client reconnect decisions.
+ * Source: OpenClaw src/gateway/protocol/connect-error-details.ts
+ */
+const ConnectErrorDetailCodes = {
+  AUTH_TOKEN_MISSING: 'AUTH_TOKEN_MISSING',
+  AUTH_PASSWORD_MISSING: 'AUTH_PASSWORD_MISSING',
+  AUTH_PASSWORD_MISMATCH: 'AUTH_PASSWORD_MISMATCH',
+  AUTH_RATE_LIMITED: 'AUTH_RATE_LIMITED',
+  PAIRING_REQUIRED: 'PAIRING_REQUIRED',
+  CONTROL_UI_DEVICE_IDENTITY_REQUIRED: 'CONTROL_UI_DEVICE_IDENTITY_REQUIRED',
+  DEVICE_IDENTITY_REQUIRED: 'DEVICE_IDENTITY_REQUIRED',
+} as const
+
+/**
+ * Extract the error detail code from a gateway error's details object.
+ * Source: OpenClaw src/gateway/protocol/connect-error-details.ts:readConnectErrorDetailCode
+ */
+function readConnectErrorDetailCode(details: unknown): string | null {
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return null
+  const code = (details as { code?: unknown }).code
+  return typeof code === 'string' && code.trim().length > 0 ? code : null
+}
+
+function resolveGatewayErrorDetailCode(error: { details?: unknown } | null | undefined): string | null {
+  return readConnectErrorDetailCode(error?.details)
+}
+
+/**
+ * Auth errors that won't resolve without user action — don't auto-reconnect.
+ *
+ * NOTE: AUTH_TOKEN_MISMATCH is intentionally NOT included here because the
+ * browser client has a device-token fallback flow: a stale cached device token
+ * triggers a mismatch, sendConnect() clears it, and the next reconnect retries
+ * with opts.token (the shared gateway token). Blocking reconnect on mismatch
+ * would break that fallback. The rate limiter still catches persistent wrong
+ * tokens after N failures → AUTH_RATE_LIMITED stops the loop.
+ *
+ * Source: OpenClaw ui/src/ui/gateway.ts:62-82
+ */
+function isNonRecoverableAuthError(error: GatewayErrorInfo | undefined): boolean {
+  if (!error) return false
+  const code = resolveGatewayErrorDetailCode(error)
+  return (
+    code === ConnectErrorDetailCodes.AUTH_TOKEN_MISSING ||
+    code === ConnectErrorDetailCodes.AUTH_PASSWORD_MISSING ||
+    code === ConnectErrorDetailCodes.AUTH_PASSWORD_MISMATCH ||
+    code === ConnectErrorDetailCodes.AUTH_RATE_LIMITED ||
+    code === ConnectErrorDetailCodes.PAIRING_REQUIRED ||
+    code === ConnectErrorDetailCodes.CONTROL_UI_DEVICE_IDENTITY_REQUIRED ||
+    code === ConnectErrorDetailCodes.DEVICE_IDENTITY_REQUIRED
+  )
+}
+
+// ── Constants ────────────────────────────────────────────────────────────────
 
 const MIN_BACKOFF_MS = 500
 const MAX_BACKOFF_MS = 15_000
@@ -165,6 +242,7 @@ export class GatewayClient {
   private readonly pending = new Map<string, PendingRequest>()
   private connectSent = false
   private connectNonce: string | null = null
+  private pendingConnectError: GatewayErrorInfo | undefined = undefined
 
   private lastSeq: number | null = null
 
@@ -177,7 +255,7 @@ export class GatewayClient {
   constructor(options: GatewayClientOptions) {
     this.opts = {
       ...options,
-      clientName: options.clientName ?? 'webchat-ui',
+      clientName: options.clientName ?? 'ClawKernel',
       clientVersion: options.clientVersion ?? 'dev',
       instanceId: options.instanceId ?? uuid(),
     }
@@ -204,6 +282,7 @@ export class GatewayClient {
       this.ws.close(1000, 'client stopped')
       this.ws = null
     }
+    this.pendingConnectError = undefined
     this.flushPending(new Error('client stopped'))
     this.setState('disconnected')
   }
@@ -301,10 +380,14 @@ export class GatewayClient {
   }
 
   private readonly onClose = (ev: CloseEvent): void => {
+    const connectError = this.pendingConnectError
+    this.pendingConnectError = undefined
     this.ws = null
     this.flushPending(new Error(`gateway closed (${ev.code}): ${ev.reason}`))
     this.emit('close', { code: ev.code, reason: ev.reason })
-    this.scheduleReconnect()
+    if (!isNonRecoverableAuthError(connectError)) {
+      this.scheduleReconnect()
+    }
   }
 
   private readonly onMessage = (ev: MessageEvent): void => {
@@ -354,9 +437,13 @@ export class GatewayClient {
     const scopes = ['operator.admin', 'operator.approvals', 'operator.pairing']
     const isSecure = typeof crypto !== 'undefined' && !!crypto.subtle
 
-    // Resolve auth token: prefer stored device token, fall back to shared token
+    // Resolve auth token — aligned with OpenClaw UI gateway.ts:209-226
+    // Device token is only used when no explicit gateway token or password is present.
+    // This prevents a stale device token from shadowing a valid explicit token.
     let deviceIdentity: { deviceId: string; publicKey: string; privateKey: string } | null = null
-    let authToken = this.opts.token || undefined
+    const explicitGatewayToken = this.opts.token?.trim() || undefined
+    const hasExplicitAuth = Boolean(explicitGatewayToken || this.opts.password?.trim())
+    let deviceToken: string | undefined
     let canFallbackToShared = false
 
     if (isSecure) {
@@ -364,14 +451,19 @@ export class GatewayClient {
         const { loadOrCreateDeviceIdentity } = await import('./device-identity')
         deviceIdentity = await loadOrCreateDeviceIdentity()
         const storedToken = loadDeviceAuthToken(deviceIdentity.deviceId, role)
-        if (storedToken) {
-          canFallbackToShared = Boolean(this.opts.token)
-          authToken = storedToken
-        }
+        deviceToken = hasExplicitAuth ? undefined : (storedToken ?? undefined)
+        canFallbackToShared = Boolean(deviceToken && explicitGatewayToken)
       } catch (err) {
         log.warn('Device identity failed, falling back to token-only', err)
       }
     }
+    const authToken = explicitGatewayToken ?? deviceToken
+
+    // Single navigator reference — used for both device auth and connect params.
+    // Server verifies v3 signature against connectParams.client.platform,
+    // so the platform in the auth payload MUST match.
+    // Source: OpenClaw src/gateway/server/ws-connection/message-handler.ts:186
+    const nav = getBrowserNavigator()
 
     // Build device auth (only if we have identity AND a nonce)
     let device: { id: string; publicKey: string; signature: string; signedAt: number; nonce: string } | undefined
@@ -379,9 +471,9 @@ export class GatewayClient {
     if (isSecure && deviceIdentity && this.connectNonce) {
       try {
         const { signDevicePayload } = await import('./device-identity')
-        const { buildDeviceAuthPayload } = await import('./device-auth')
+        const { buildDeviceAuthPayloadV3 } = await import('./device-auth')
         const signedAtMs = Date.now()
-        const payload = buildDeviceAuthPayload({
+        const payload = buildDeviceAuthPayloadV3({
           deviceId: deviceIdentity.deviceId,
           clientId: 'openclaw-control-ui',
           clientMode: 'webchat',
@@ -390,6 +482,8 @@ export class GatewayClient {
           signedAtMs,
           token: authToken ?? null,
           nonce: this.connectNonce,
+          platform: resolveClientPlatform(nav),
+          deviceFamily: null, // browser — no device family
         })
         const signature = await signDevicePayload(deviceIdentity.privateKey, payload)
         device = {
@@ -404,14 +498,12 @@ export class GatewayClient {
       }
     }
 
-    const nav = getBrowserNavigator()
-
     const params = {
       minProtocol: 3,
       maxProtocol: 3,
       client: {
         id: 'openclaw-control-ui',
-        displayName: 'WebClaw',
+        displayName: this.opts.clientName,
         version: this.opts.clientVersion,
         platform: resolveClientPlatform(nav),
         mode: 'webchat',
@@ -420,7 +512,7 @@ export class GatewayClient {
       role,
       scopes,
       device,
-      caps: [],
+      caps: ['tool-events'],
       auth: {
         token: authToken,
         password: this.opts.password || undefined,
@@ -442,11 +534,21 @@ export class GatewayClient {
         }
         this.backoffMs = MIN_BACKOFF_MS
         this.hello = hello
-        this.snapshot = hello.snapshot ?? null
+        this.snapshot = hello.snapshot
         this.setState('connected')
         this.emit('ready', hello)
       })
       .catch((err) => {
+        // Store connect error for onClose to check — enables non-recoverable auth detection
+        if (err instanceof GatewayRequestError) {
+          this.pendingConnectError = {
+            code: err.gatewayCode,
+            message: err.message,
+            details: err.details,
+          }
+        } else {
+          this.pendingConnectError = undefined
+        }
         // If device token failed, clear it and retry with shared token
         if (canFallbackToShared && deviceIdentity) {
           clearDeviceAuthToken(deviceIdentity.deviceId, role)
@@ -485,7 +587,13 @@ export class GatewayClient {
     if (res.ok) {
       pending.resolve(res.payload)
     } else {
-      pending.reject(new Error(res.error?.message ?? 'request failed'))
+      pending.reject(
+        new GatewayRequestError({
+          code: res.error?.code ?? 'UNAVAILABLE',
+          message: res.error?.message ?? 'request failed',
+          details: res.error?.details,
+        }),
+      )
     }
   }
 

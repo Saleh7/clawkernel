@@ -279,7 +279,6 @@ export function AgentComparison({ agents, sessions, config, identities, activeRu
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 sm:p-6 space-y-4">
-      {/* Top bar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 mr-auto">
           <ArrowLeftRight className="h-5 w-5 text-primary" />
@@ -293,8 +292,6 @@ export function AgentComparison({ agents, sessions, config, identities, activeRu
       </div>
 
       <Separator className="opacity-40" />
-
-      {/* Column headers */}
       <div className="grid grid-cols-[140px_1fr_1fr] gap-4 px-4 max-sm:hidden">
         <div />
         <AgentColumnHeader d={dataA} />
@@ -302,8 +299,6 @@ export function AgentComparison({ agents, sessions, config, identities, activeRu
       </div>
 
       <Separator className="opacity-30" />
-
-      {/* Comparison rows */}
       <div className="space-y-0.5">
         <ComparisonRow label="Identity" valueA={agentIdentityLabel(dataA)} valueB={agentIdentityLabel(dataB)} />
         <ComparisonRow

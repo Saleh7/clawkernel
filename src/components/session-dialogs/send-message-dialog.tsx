@@ -24,13 +24,11 @@ export function SendMessageDialog({ open, onOpenChange, session, client: clientP
   const client = useSessionDialogClient(clientProp)
 
   const [message, setMessage] = useState('')
-  const [role, setRole] = useState<'user' | 'assistant'>('user')
   const [sending, setSending] = useState(false)
 
   const handleClose = (o: boolean) => {
     if (!o) {
       setMessage('')
-      setRole('user')
     }
     onOpenChange(o)
   }
@@ -41,13 +39,12 @@ export function SendMessageDialog({ open, onOpenChange, session, client: clientP
     try {
       await client.request('chat.inject', {
         sessionKey: session.key,
-        role,
-        content: message.trim(),
+        message: message.trim(),
       })
       setMessage('')
       onOpenChange(false)
     } catch (err) {
-      log.warn('chat.inject failed', err, { sessionKey: session.key, role })
+      log.warn('chat.inject failed', err, { sessionKey: session.key })
       toast.error('Failed to inject message')
     }
     setSending(false)
@@ -64,28 +61,12 @@ export function SendMessageDialog({ open, onOpenChange, session, client: clientP
           <DialogDescription className="font-mono text-xs text-muted-foreground">{session?.key}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Role</Label>
-            <div className="flex gap-1">
-              {(['user', 'assistant'] as const).map((r) => (
-                <Button
-                  key={r}
-                  size="sm"
-                  variant={role === r ? 'default' : 'outline'}
-                  className="text-xs flex-1 capitalize"
-                  onClick={() => setRole(r)}
-                >
-                  {r}
-                </Button>
-              ))}
-            </div>
-          </div>
           <div>
             <Label className="text-xs">Message</Label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Type a message to inject as ${role}...`}
+              placeholder="Type a message to inject into transcript..."
               className="mt-1.5 min-h-[100px] resize-y"
               autoFocus
             />
@@ -101,7 +82,7 @@ export function SendMessageDialog({ open, onOpenChange, session, client: clientP
               className="gap-1.5"
             >
               {sending ? <Timer className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-              {sending ? 'Injecting...' : `Inject as ${role}`}
+              {sending ? 'Injecting...' : 'Inject'}
             </Button>
           </div>
         </div>

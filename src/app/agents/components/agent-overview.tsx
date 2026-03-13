@@ -30,7 +30,9 @@ import type {
 import { createLogger } from '@/lib/logger'
 import { ACTIVE_SESSION_MS } from '@/lib/session-constants'
 import { cn } from '@/lib/utils'
+import { useGatewayStore } from '@/stores/gateway-store'
 import { EditIdentityDialog } from '../dialogs/edit-identity-dialog'
+import { UpdateAgentDialog } from '../dialogs/update-agent-dialog'
 import { useAgentConfigSave } from '../hooks/use-agent-config-save'
 import { DangerZone, QuickActions } from './overview-panels'
 
@@ -271,7 +273,6 @@ export function AgentOverview({
 
   return (
     <div className="space-y-3">
-      {/* ── Identity Row ── */}
       <div className="rounded-xl border border-border/40 bg-background/50 p-5">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border/40 bg-muted/30 text-2xl">
@@ -289,13 +290,30 @@ export function AgentOverview({
             <p className="font-mono text-[11px] text-muted-foreground/50">{agent.id}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <UpdateAgentDialog
+              agentId={agent.id}
+              currentName={agent.name ?? undefined}
+              currentModel={agentModel.primary || undefined}
+              client={client}
+              onUpdated={() => {
+                // Re-fetch agents list to reflect config changes
+                if (client?.connected) {
+                  void client
+                    .request('agents.list', {})
+                    .then((r) => {
+                      useGatewayStore.getState().setAgents(r as AgentsListResult)
+                    })
+                    .catch((err) => {
+                      log.warn('agents.list refresh after update failed', err)
+                    })
+                }
+              }}
+            />
             <EditIdentityDialog agentId={agent.id} identity={identity} client={client} />
             {deleteSlot}
           </div>
         </div>
       </div>
-
-      {/* ── Quick Actions ── */}
       <QuickActions
         agentId={agent.id}
         isDefault={isDefault}
@@ -303,8 +321,6 @@ export function AgentOverview({
         config={config}
         agentSessions={agentSessions}
       />
-
-      {/* ── Stats Grid ── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Cell
           icon={Activity}
@@ -332,8 +348,6 @@ export function AgentOverview({
           </p>
         </div>
       </div>
-
-      {/* ── Model Configuration ── */}
       <div className="rounded-xl border border-border/40 bg-background/50 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -423,16 +437,12 @@ export function AgentOverview({
           </span>
         </div>
       </div>
-
-      {/* ── Quick Info ── */}
       <div className="grid gap-3 sm:grid-cols-2">
         <Cell icon={Zap} label="Skill Policy" value={skillPolicy} />
         <Cell icon={Shield} label="Default Agent" value={isDefault ? 'Yes — primary fleet agent' : 'No'} />
         <Cell icon={Wrench} label="Tool Profile" value={toolProfile} />
         <Cell icon={Layers} label="Session Types" value={buildSessionTypeLabel(agentSessions)} />
       </div>
-
-      {/* ── Danger Zone ── */}
       <DangerZone
         agentId={agent.id}
         isDefault={isDefault}

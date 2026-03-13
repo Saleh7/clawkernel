@@ -1,6 +1,3 @@
-// ---------------------------------------------------------------------------
-//  gateway/client — WebSocket state machine, backoff, request/response
-// ---------------------------------------------------------------------------
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -19,10 +16,6 @@ vi.mock('@/lib/gateway/device-auth', () => ({
 }))
 
 import { GatewayClient } from '@/lib/gateway/client'
-
-// ---------------------------------------------------------------------------
-//  Mock WebSocket
-// ---------------------------------------------------------------------------
 
 type WSListener = (ev: unknown) => void
 
@@ -70,10 +63,6 @@ class MockWebSocket {
     return null
   }
 }
-
-// ---------------------------------------------------------------------------
-//  Setup
-// ---------------------------------------------------------------------------
 
 beforeEach(() => {
   MockWebSocket.instances = []
@@ -123,10 +112,6 @@ async function fullConnect(client: GatewayClient) {
   await tick()
   return { ws, req }
 }
-
-// ---------------------------------------------------------------------------
-//  Tests
-// ---------------------------------------------------------------------------
 
 describe('GatewayClient', () => {
   describe('initial state', () => {

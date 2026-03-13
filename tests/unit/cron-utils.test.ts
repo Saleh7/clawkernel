@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  agents/cron-utils — Form state conversion, schedule/payload building
-// ---------------------------------------------------------------------------
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CronJob, CronPayload, CronSchedule } from '@/lib/gateway/types'
 
@@ -19,10 +15,6 @@ const { defaultFormState, formStateToPayload, formStateToSchedule, jobToFormStat
 import type { JobFormState } from '@/app/agents/cron-utils'
 
 afterEach(() => vi.restoreAllMocks())
-
-// ===========================================================================
-//  jobToFormState
-// ===========================================================================
 
 describe('jobToFormState', () => {
   it('converts cron schedule', () => {
@@ -99,10 +91,6 @@ describe('jobToFormState', () => {
   })
 })
 
-// ===========================================================================
-//  formStateToSchedule
-// ===========================================================================
-
 describe('formStateToSchedule', () => {
   it('builds cron schedule', () => {
     const s = formStateToSchedule({ ...defaultFormState, scheduleKind: 'cron', cronExpr: '0 9 * * *', cronTz: 'Asia/Riyadh' })
@@ -158,10 +146,6 @@ describe('formStateToSchedule', () => {
   })
 })
 
-// ===========================================================================
-//  formStateToPayload
-// ===========================================================================
-
 describe('formStateToPayload', () => {
   it('builds systemEvent payload', () => {
     const p = formStateToPayload({ ...defaultFormState, payloadKind: 'systemEvent', systemEventText: 'ping' })
@@ -190,10 +174,6 @@ describe('formStateToPayload', () => {
     expect(p).toEqual({ kind: 'agentTurn', message: 'msg' })
   })
 })
-
-// ===========================================================================
-//  refreshCron
-// ===========================================================================
 
 describe('refreshCron', () => {
   it('calls cron.list and updates store', async () => {

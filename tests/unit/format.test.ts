@@ -1,13 +1,5 @@
-// ---------------------------------------------------------------------------
-//  lib/format — Token and relative time formatting
-// ---------------------------------------------------------------------------
-
 import { describe, expect, it } from 'vitest'
 import { formatRelativeTime, formatTokens } from '@/lib/format'
-
-// ===========================================================================
-//  formatTokens
-// ===========================================================================
 
 describe('formatTokens', () => {
   const cases = [
@@ -25,10 +17,6 @@ describe('formatTokens', () => {
     })
   }
 })
-
-// ===========================================================================
-//  formatRelativeTime
-// ===========================================================================
 
 describe('formatRelativeTime', () => {
   it('returns "just now" for recent timestamps', () => {

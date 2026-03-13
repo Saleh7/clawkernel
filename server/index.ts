@@ -1,12 +1,4 @@
-// ---------------------------------------------------------------------------
-//  ClawKernel — Hono server
-//
-//  Entry points:
-//    Production:  spawned by bin/clawkernel.mjs (config via CK_* env vars)
-//    Development: `npm run dev:server` via tsx (reads ~/.clawkernel.json)
-//
-//  Serves the Vite dist/ build + all /api/* routes.
-// ---------------------------------------------------------------------------
+// Hono server for the SPA and local API routes.
 
 import { existsSync, readFileSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
@@ -60,12 +52,7 @@ const clr = COLOR
   ? { m: '\x1b[95m', g: '\x1b[92m', dim: '\x1b[2m', b: '\x1b[1m', r: '\x1b[0m' }
   : { m: '', g: '', dim: '', b: '', r: '' }
 
-// ---------------------------------------------------------------------------
-//  Config injection into index.html
-//
-//  Built once and cached for the server's lifetime. In dev mode (no dist/),
-//  the server still starts — SPA fallback returns a minimal dev-mode page.
-// ---------------------------------------------------------------------------
+// Build this once per process. In dev mode without dist/, the server returns a minimal fallback page.
 
 const DEV_FALLBACK_HTML = `<!DOCTYPE html><html><head><title>ClawKernel</title></head><body>
 <pre>dist/index.html not found.\n\nRun: npm run build\nThen restart the server.</pre></body></html>`
@@ -111,14 +98,7 @@ const MIME_TYPES = new Map([
   ['.map', 'application/json'],
 ])
 
-// ---------------------------------------------------------------------------
-//  Auth middleware for mutating API endpoints
-//
-//  When CK_API_TOKEN is set, POST/PATCH/DELETE requests to /api/* require
-//  a matching Authorization: Bearer <token> header. GET requests are always
-//  public (health, version, prefs read). When CK_API_TOKEN is empty (default),
-//  all endpoints are open — appropriate for localhost-only access.
-// ---------------------------------------------------------------------------
+// When CK_API_TOKEN is set, mutating /api requests require Authorization: Bearer <token>.
 
 function requireAuth(c: { req: { header: (name: string) => string | undefined } }): Response | null {
   if (!API_TOKEN) return null

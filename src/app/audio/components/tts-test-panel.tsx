@@ -58,8 +58,6 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
         <Headphones className="h-4 w-4 text-primary" />
         <p className="text-sm font-semibold">Voice Sample Lab</p>
       </div>
-
-      {/* Presets */}
       <div className="flex flex-wrap gap-1.5">
         {SAMPLE_PRESETS.map((preset) => (
           <button
@@ -77,8 +75,6 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
           </button>
         ))}
       </div>
-
-      {/* Text input */}
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -86,10 +82,7 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
         placeholder="Enter text to convert to speech…"
         className="resize-none"
       />
-
-      {/* Provider + Voice selectors */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Provider */}
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Provider</p>
           {configuredProviders.length > 0 ? (
@@ -113,8 +106,6 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
             <p className="text-xs text-amber-500">Selecting this will switch the active provider permanently.</p>
           )}
         </div>
-
-        {/* Voice */}
         <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Voice <span className="text-muted-foreground/50 normal-case font-normal">(reference only)</span>
@@ -143,14 +134,10 @@ export function TtsTestPanel({ providers, activeProvider, saving, converting, on
           )}
         </div>
       </div>
-
-      {/* Generate button */}
       <Button onClick={() => void handleGenerate()} disabled={isBusy || !text.trim()} className="gap-2">
         <Volume2 className="h-3.5 w-3.5" />
         {generateButtonLabel(converting, saving)}
       </Button>
-
-      {/* Result */}
       {result && (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">

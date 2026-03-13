@@ -60,14 +60,29 @@ export function PairingBell() {
     }
   }, [client])
 
+  // Subscribe to live device.pair events for instant updates,
+  // keep polling as fallback with a relaxed interval.
+  // Source: OpenClaw src/gateway/server-methods/devices.ts:104,136 (device.pair.resolved)
+  // Source: OpenClaw src/gateway/server/ws-connection/message-handler.ts:870 (device.pair.requested)
   useEffect(() => {
     if (!connected) return
     refresh()
     const id = setInterval(() => {
       if (!document.hidden) refresh()
     }, POLL_MS)
-    return () => clearInterval(id)
-  }, [connected, refresh])
+
+    const unsub =
+      client?.on('event', (frame) => {
+        if (frame.event === 'device.pair.requested' || frame.event === 'device.pair.resolved') {
+          void refresh()
+        }
+      }) ?? null
+
+    return () => {
+      clearInterval(id)
+      unsub?.()
+    }
+  }, [connected, client, refresh])
 
   const count = data.pending.length
   const isNew = count > prevCountRef.current

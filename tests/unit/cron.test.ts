@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  lib/cron — Schedule formatting, delivery, failure diagnosis
-// ---------------------------------------------------------------------------
-
 import { describe, expect, it } from 'vitest'
 import {
   buildFailureGuide,
@@ -14,10 +10,6 @@ import {
   formatSchedule,
 } from '@/lib/cron'
 import type { CronJob, CronSchedule } from '@/lib/gateway/types'
-
-// ===========================================================================
-//  formatRelative
-// ===========================================================================
 
 describe('formatRelative', () => {
   it('returns "—" for falsy input', () => {
@@ -43,10 +35,6 @@ describe('formatRelative', () => {
   })
 })
 
-// ===========================================================================
-//  formatDuration
-// ===========================================================================
-
 describe('formatDuration', () => {
   const cases = [
     { input: undefined, expected: '—' },
@@ -62,10 +50,6 @@ describe('formatDuration', () => {
     })
   }
 })
-
-// ===========================================================================
-//  formatDate / formatFullDate
-// ===========================================================================
 
 describe('formatDate', () => {
   it('returns "—" for falsy input', () => {
@@ -89,10 +73,6 @@ describe('formatFullDate', () => {
     expect(result).toMatch(/Mon|Tue|Wed|Thu|Fri|Sat|Sun/)
   })
 })
-
-// ===========================================================================
-//  cronToHuman
-// ===========================================================================
 
 describe('cronToHuman', () => {
   const cases = [
@@ -128,10 +108,6 @@ describe('cronToHuman', () => {
   })
 })
 
-// ===========================================================================
-//  formatSchedule
-// ===========================================================================
-
 describe('formatSchedule', () => {
   it('formats cron schedule with timezone', () => {
     const s: CronSchedule = { kind: 'cron', expr: '0 9 * * *', tz: 'Asia/Riyadh' } as CronSchedule
@@ -165,10 +141,6 @@ describe('formatSchedule', () => {
   })
 })
 
-// ===========================================================================
-//  describeDelivery
-// ===========================================================================
-
 describe('describeDelivery', () => {
   it('returns "No delivery" for mode=none', () => {
     const job = { delivery: { mode: 'none' } } as CronJob
@@ -194,10 +166,6 @@ describe('describeDelivery', () => {
     expect(result.issue).toBeDefined()
   })
 })
-
-// ===========================================================================
-//  buildFailureGuide
-// ===========================================================================
 
 describe('buildFailureGuide', () => {
   const cases = [

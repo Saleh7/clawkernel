@@ -43,7 +43,6 @@ export function ProviderCard({ provider, isActive, saving, onSetActive }: Props)
         isActive ? activeColor : 'border-border bg-card hover:bg-accent/30',
       )}
     >
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3.5">
         <span className="text-base shrink-0">{icon}</span>
 
@@ -97,8 +96,6 @@ export function ProviderCard({ provider, isActive, saving, onSetActive }: Props)
           </button>
         </div>
       </div>
-
-      {/* Expanded details */}
       {expanded && (
         <div className="border-t border-border/50 px-4 py-3 space-y-3">
           {provider.models.length > 0 && (

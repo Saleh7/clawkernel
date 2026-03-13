@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  agents/config-utils — Config save/patch with hash-conflict retry
-// ---------------------------------------------------------------------------
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ConfigSnapshot } from '@/lib/gateway/types'
 
@@ -28,10 +24,6 @@ function mockClient(overrides: Record<string, unknown> = {}) {
 }
 
 afterEach(() => vi.restoreAllMocks())
-
-// ===========================================================================
-//  saveConfigWithRetry
-// ===========================================================================
 
 describe('saveConfigWithRetry', () => {
   it('patches agent and saves config', async () => {
@@ -83,10 +75,6 @@ describe('saveConfigWithRetry', () => {
   })
 })
 
-// ===========================================================================
-//  saveRawConfigWithRetry
-// ===========================================================================
-
 describe('saveRawConfigWithRetry', () => {
   it('saves raw config', async () => {
     const config = makeConfig([], 'h1')
@@ -117,10 +105,6 @@ describe('saveRawConfigWithRetry', () => {
     expect(client.request).toHaveBeenCalledTimes(4)
   })
 })
-
-// ===========================================================================
-//  patchConfigWithRetry
-// ===========================================================================
 
 describe('patchConfigWithRetry', () => {
   it('sends config.patch with hash and restartDelayMs', async () => {

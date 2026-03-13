@@ -135,7 +135,6 @@ function SessionItem({
       setPreview(cached.entry)
       return
     }
-    // Debounce 300ms
     hoverTimerRef.current = setTimeout(async () => {
       if (!client?.connected) return
       setPreview('loading')
@@ -381,8 +380,6 @@ export function SessionSidebar({
     }
     return map
   }, [sessions, search, activeSessions])
-
-  // Global counts for header badge
   const globalCounts = useMemo(() => {
     let running = 0,
       recent = 0
@@ -397,7 +394,6 @@ export function SessionSidebar({
 
   return (
     <div className="flex h-full w-72 flex-col border-r border-border bg-sidebar">
-      {/* Header */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-semibold text-foreground">Sessions</span>
@@ -430,8 +426,6 @@ export function SessionSidebar({
           </TooltipProvider>
         </div>
       </div>
-
-      {/* Search */}
       <div className="px-3 py-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -443,8 +437,6 @@ export function SessionSidebar({
           />
         </div>
       </div>
-
-      {/* Session list (virtualized) */}
       <VirtualSessionList grouped={grouped} agents={agents} selected={selected} onSelect={onSelect} />
     </div>
   )

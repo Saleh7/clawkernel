@@ -1,5 +1,11 @@
 //  Gateway protocol types — adapted from OpenClaw Control UI
 
+export type GatewayErrorInfo = {
+  code: string
+  message: string
+  details?: unknown
+}
+
 export type GatewayResponseFrame = {
   type: 'res'
   id: string
@@ -16,29 +22,53 @@ export type GatewayEventFrame = {
   stateVersion?: { presence: number; health: number }
 }
 
+/**
+ * Source: OpenClaw src/gateway/protocol/schema/frames.ts (HelloOkSchema)
+ * server, features, snapshot, policy are REQUIRED in upstream schema.
+ */
 export type GatewayHelloOk = {
   type: 'hello-ok'
   protocol: number
-  features?: { methods?: Array<string>; events?: Array<string> }
-  snapshot?: GatewaySnapshot
+  server: { version: string; connId: string }
+  features: { methods: Array<string>; events: Array<string> }
+  snapshot: GatewaySnapshot
+  canvasHostUrl?: string
   auth?: {
-    deviceToken?: string
-    role?: string
-    scopes?: Array<string>
+    deviceToken: string
+    role: string
+    scopes: Array<string>
     issuedAtMs?: number
   }
-  policy?: { tickIntervalMs?: number }
+  policy: { tickIntervalMs: number; maxPayload: number; maxBufferedBytes: number }
 }
 
+/**
+ * Snapshot sent inside hello-ok.
+ * Source: OpenClaw src/gateway/protocol/schema/snapshot.ts (SnapshotSchema)
+ *
+ * NOTE: upstream snapshot does NOT include agents, sessions, channels, config,
+ * skills, or cron. CK fetches those via RPC after hello-ok (see gateway-store connect).
+ */
 export type GatewaySnapshot = {
-  agents?: AgentsListResult
-  sessions?: SessionsListResult
-  channels?: ChannelsStatusSnapshot
-  health?: HealthSnapshot
-  config?: ConfigSnapshot
-  skills?: SkillStatusReport
-  cron?: { status?: CronStatus; jobs?: Array<CronJob> }
-  presence?: Record<string, PresenceEntry>
+  presence: Array<PresenceEntry>
+  health: HealthSnapshot
+  stateVersion: { presence: number; health: number }
+  uptimeMs: number
+  configPath?: string
+  stateDir?: string
+  sessionDefaults?: {
+    defaultAgentId: string
+    mainKey: string
+    mainSessionKey: string
+    scope?: string
+  }
+  authMode?: 'none' | 'token' | 'password' | 'trusted-proxy'
+  // Source: OpenClaw snapshot.ts — Type.Optional(Type.Object(...)), never null
+  updateAvailable?: {
+    currentVersion: string
+    latestVersion: string
+    channel: string
+  }
 }
 
 export type AgentIdentity = {
@@ -163,14 +193,48 @@ export type ChatEventPayload = {
   errorMessage?: string
 }
 
+// Source: OpenClaw src/gateway/protocol/schema/channels.ts (ChannelAccountSnapshotSchema)
+// Note: upstream uses additionalProperties: true, so unknown fields pass through.
 export type ChannelAccountSnapshot = {
   accountId: string
   name?: string | null
   enabled?: boolean | null
   configured?: boolean | null
+  linked?: boolean | null
   running?: boolean | null
   connected?: boolean | null
+  reconnectAttempts?: number | null
+  lastConnectedAt?: number | null
   lastError?: string | null
+  lastStartAt?: number | null
+  lastStopAt?: number | null
+  lastInboundAt?: number | null
+  lastOutboundAt?: number | null
+  busy?: boolean | null
+  activeRuns?: number | null
+  lastRunActivityAt?: number | null
+  lastProbeAt?: number | null
+  mode?: string | null
+  dmPolicy?: string | null
+  allowFrom?: string[] | null
+  tokenSource?: string | null
+  botTokenSource?: string | null
+  appTokenSource?: string | null
+  baseUrl?: string | null
+  allowUnmentionedGroups?: boolean | null
+  cliPath?: string | null
+  dbPath?: string | null
+  port?: number | null
+  probe?: unknown
+  audit?: unknown
+  application?: unknown
+}
+
+export type ChannelUiMetaEntry = {
+  id: string
+  label: string
+  detailLabel: string
+  systemImage?: string
 }
 
 export type ChannelsStatusSnapshot = {
@@ -178,6 +242,8 @@ export type ChannelsStatusSnapshot = {
   channelOrder: Array<string>
   channelLabels: Record<string, string>
   channelDetailLabels?: Record<string, string>
+  channelSystemImages?: Record<string, string>
+  channelMeta?: ChannelUiMetaEntry[]
   channels: Record<string, unknown>
   channelAccounts: Record<string, Array<ChannelAccountSnapshot>>
   channelDefaultAccountId: Record<string, string>
@@ -196,15 +262,27 @@ export type ConfigSnapshot = {
 
 export type HealthSnapshot = Record<string, unknown>
 
+/**
+ * Source: OpenClaw src/gateway/protocol/schema/snapshot.ts (PresenceEntrySchema)
+ * Note: `ts` is required upstream (Type.Integer, not Type.Optional).
+ */
 export type PresenceEntry = {
-  instanceId?: string | null
-  host?: string | null
-  ip?: string | null
-  version?: string | null
-  platform?: string | null
-  mode?: string | null
-  lastInputSeconds?: number | null
-  ts?: number | null
+  host?: string
+  ip?: string
+  version?: string
+  platform?: string
+  deviceFamily?: string
+  modelIdentifier?: string
+  mode?: string
+  lastInputSeconds?: number
+  reason?: string
+  tags?: string[]
+  text?: string
+  ts: number
+  deviceId?: string
+  roles?: string[]
+  scopes?: string[]
+  instanceId?: string
 }
 
 export type CronSchedule =
@@ -214,15 +292,40 @@ export type CronSchedule =
 
 export type CronPayload =
   | { kind: 'systemEvent'; text: string }
-  | { kind: 'agentTurn'; message: string; model?: string; thinking?: string; timeoutSeconds?: number }
+  | {
+      kind: 'agentTurn'
+      message: string
+      model?: string
+      thinking?: string
+      timeoutSeconds?: number
+      lightContext?: boolean
+    }
 
 export type CronDeliveryMode = 'none' | 'announce' | 'webhook'
+
+export type CronFailureDestination = {
+  channel?: string
+  to?: string
+  mode?: 'announce' | 'webhook'
+  accountId?: string
+}
 
 export type CronDelivery = {
   mode: CronDeliveryMode
   channel?: string
   to?: string
+  accountId?: string
   bestEffort?: boolean
+  failureDestination?: CronFailureDestination
+}
+
+export type CronFailureAlert = {
+  after?: number
+  channel?: string
+  to?: string
+  cooldownMs?: number
+  mode?: 'announce' | 'webhook'
+  accountId?: string
 }
 
 export type CronJobState = {
@@ -230,15 +333,21 @@ export type CronJobState = {
   runningAtMs?: number
   lastRunAtMs?: number
   lastStatus?: 'ok' | 'error' | 'skipped'
+  lastRunStatus?: 'ok' | 'error' | 'skipped'
   lastError?: string
+  lastErrorReason?: string
   lastDurationMs?: number
   consecutiveErrors?: number
+  lastDelivered?: boolean
   lastDeliveryStatus?: CronDeliveryStatus
+  lastDeliveryError?: string
+  lastFailureAlertAtMs?: number
 }
 
 export type CronJob = {
   id: string
   agentId?: string
+  sessionKey?: string
   name: string
   description?: string
   enabled: boolean
@@ -250,6 +359,7 @@ export type CronJob = {
   wakeMode: 'next-heartbeat' | 'now'
   payload: CronPayload
   delivery?: CronDelivery
+  failureAlert?: CronFailureAlert | false
   state?: CronJobState
 }
 
@@ -384,21 +494,25 @@ export type AgentFileEntry = {
   content?: string
 }
 
+// Source: OpenClaw src/browser/client.ts (BrowserStatus)
 export type BrowserStatus = {
   enabled: boolean
-  profile: string
+  profile?: string
   running: boolean
-  cdpReady: boolean
-  cdpHttp: boolean
-  cdpPort: number | null
-  cdpUrl: string | null
+  cdpReady?: boolean
+  cdpHttp?: boolean
+  pid: number | null
+  cdpPort: number
+  cdpUrl?: string
   chosenBrowser: string | null
-  detectedBrowser: string | null
-  detectedExecutablePath: string | null
-  detectError: string | null
+  detectedBrowser?: string | null
+  detectedExecutablePath?: string | null
+  detectError?: string | null
   userDataDir: string | null
-  color: string | null
+  color: string
   headless: boolean
+  noSandbox?: boolean
+  executablePath?: string | null
   attachOnly: boolean
 }
 

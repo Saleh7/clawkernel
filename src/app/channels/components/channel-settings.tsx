@@ -10,8 +10,10 @@ import { useGatewayStore } from '@/stores/gateway-store'
 
 const log = createLogger('channel-settings')
 
-const DM_POLICIES = ['pairing', 'allow', 'deny'] as const
-const GROUP_POLICIES = ['allow', 'mention', 'deny'] as const
+// Source: OpenClaw src/config/zod-schema.core.ts:315
+const DM_POLICIES = ['pairing', 'allowlist', 'open', 'disabled'] as const
+// Source: OpenClaw src/config/zod-schema.core.ts:313
+const GROUP_POLICIES = ['open', 'disabled', 'allowlist'] as const
 
 type Props = {
   readonly channelId: string
@@ -28,7 +30,7 @@ export function ChannelSettings({ channelId, client, onRefresh }: Props) {
   ] as Record<string, unknown> | undefined
 
   const currentDm = (channelConfig?.dmPolicy as string) ?? 'pairing'
-  const currentGroup = (channelConfig?.groupPolicy as string) ?? 'allow'
+  const currentGroup = (channelConfig?.groupPolicy as string) ?? 'allowlist'
 
   const setPolicy = async (field: 'dmPolicy' | 'groupPolicy', value: string) => {
     if (!client?.connected || !config) return

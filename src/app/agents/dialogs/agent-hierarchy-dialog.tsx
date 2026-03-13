@@ -152,7 +152,6 @@ export function AgentHierarchyDialog({
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="space-y-4">
-            {/* Identity Section */}
             <Section title="Identity" icon={Bot}>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
@@ -170,8 +169,6 @@ export function AgentHierarchyDialog({
                 </div>
               </div>
             </Section>
-
-            {/* Activity Section */}
             <Section title="Activity" icon={Sparkles}>
               <div className="grid grid-cols-3 gap-3 text-sm">
                 <div>
@@ -188,8 +185,6 @@ export function AgentHierarchyDialog({
                 </div>
               </div>
             </Section>
-
-            {/* Config Section */}
             <Section title="Configuration" icon={Wallet}>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -206,8 +201,6 @@ export function AgentHierarchyDialog({
                 </div>
               </div>
             </Section>
-
-            {/* Channel Bindings Section */}
             <Section title="Channel Bindings" icon={Cable}>
               {agentBindings.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No bindings configured</p>
@@ -228,8 +221,6 @@ export function AgentHierarchyDialog({
                 </div>
               )}
             </Section>
-
-            {/* Delegation Section */}
             <Section title="Delegation" icon={Network}>
               <div className="space-y-2 text-sm">
                 {parentAgent ? (
@@ -265,8 +256,6 @@ export function AgentHierarchyDialog({
             </Section>
           </div>
         </div>
-
-        {/* Footer */}
         <div className="flex items-center justify-end gap-2 border-t border-border/60 px-5 py-3">
           <DialogClose asChild>
             <button type="button" className="rounded-lg px-4 py-2 text-sm font-medium hover:bg-muted">

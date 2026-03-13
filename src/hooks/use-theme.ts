@@ -22,8 +22,6 @@ export function useTheme() {
     localStorage.setItem('clawkernel-theme', nextTheme)
     applyTheme(nextTheme)
   }, [])
-
-  // Apply on mount + listen for system changes
   useEffect(() => {
     applyTheme(theme)
     const mq = globalThis.matchMedia('(prefers-color-scheme: dark)')

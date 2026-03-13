@@ -142,10 +142,8 @@ export function JobCard({
         !job.enabled && 'opacity-55',
       )}
     >
-      {/* Clickable header */}
       <button type="button" className="w-full text-left p-5" onClick={onToggleExpand}>
         <div className="flex items-start gap-4">
-          {/* Status column */}
           <div className="mt-1.5 flex flex-col items-center gap-2">
             <div
               className={cn('h-4 w-4 rounded-full', statusDotClass(job.enabled, isRunning, hasError, st?.lastStatus))}
@@ -156,10 +154,7 @@ export function JobCard({
               <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
             )}
           </div>
-
-          {/* Main content */}
           <div className="min-w-0 flex-1 space-y-2">
-            {/* Row 1: Name + badges */}
             <div className="flex items-center gap-3 flex-wrap">
               <h3 className="text-lg font-bold leading-tight">{job.name}</h3>
               {job.description && (
@@ -184,8 +179,6 @@ export function JobCard({
               )}
               {job.deleteAfterRun && <Badge variant="secondary">One-shot</Badge>}
             </div>
-
-            {/* Row 2: Metadata */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 shrink-0" />
@@ -218,8 +211,6 @@ export function JobCard({
               )}
             </div>
           </div>
-
-          {/* Quick actions */}
           <div
             role="none"
             className="flex items-center gap-1 shrink-0"
@@ -269,8 +260,6 @@ export function JobCard({
           </div>
         </div>
       </button>
-
-      {/* Compact failure guide (collapsed) */}
       {hasError && st?.lastError && !expanded && (
         <div className="mx-5 mb-4">
           <FailureGuideCard
@@ -282,11 +271,8 @@ export function JobCard({
           />
         </div>
       )}
-
-      {/* Expanded detail view */}
       {expanded && (
         <div className="border-t border-border/30 p-5 space-y-6">
-          {/* Full failure guide */}
           {hasError && st?.lastError && (
             <FailureGuideCard
               error={st.lastError}
@@ -295,8 +281,6 @@ export function JobCard({
               onFix={onEdit}
             />
           )}
-
-          {/* Execution Tiles */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <ExecTile
               label="Last Run"
@@ -319,8 +303,6 @@ export function JobCard({
           </div>
 
           <Separator className="opacity-30" />
-
-          {/* Configuration */}
           <div>
             <h4 className="mb-3 text-sm font-semibold flex items-center gap-2 text-muted-foreground">
               <Hash className="h-4 w-4" />
@@ -338,8 +320,6 @@ export function JobCard({
               <ConfigRow label="Updated" value={formatDate(job.updatedAtMs, is24h)} />
             </div>
           </div>
-
-          {/* Delivery */}
           <div>
             <h4 className="mb-3 text-sm font-semibold flex items-center gap-2 text-muted-foreground">
               <Send className="h-4 w-4" />
@@ -380,8 +360,6 @@ export function JobCard({
               )}
             </div>
           </div>
-
-          {/* Prompt Preview */}
           {job.payload.kind === 'agentTurn' && job.payload.message && (
             <div>
               <h4 className="mb-3 text-sm font-semibold flex items-center gap-2 text-muted-foreground">
@@ -406,8 +384,6 @@ export function JobCard({
           )}
 
           <Separator className="opacity-30" />
-
-          {/* Run History */}
           <RunHistory
             runs={runs}
             total={runsTotal}

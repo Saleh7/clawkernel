@@ -156,18 +156,13 @@ function PerAgentTab({ agentList, models, saving, onSetAgentModel }: PerAgentTab
 
               return (
                 <tr key={agent.id} className="hover:bg-muted/10 transition-colors">
-                  {/* Agent name/id */}
                   <td className="px-4 py-2.5">
                     <div>
                       <p className="font-semibold text-foreground">{agent.name ?? agent.id}</p>
                       {agent.name && <p className="text-[10px] text-muted-foreground/50 font-mono">{agent.id}</p>}
                     </div>
                   </td>
-
-                  {/* Current model / inline picker */}
                   <td className="px-4 py-2.5">{modelCell}</td>
-
-                  {/* Actions */}
                   <td className="px-4 py-2.5">
                     <div className="flex gap-1.5 justify-end">
                       {!isEditing && (
@@ -259,7 +254,6 @@ function HeartbeatTab({ heartbeatModel, models, saving, onSetHeartbeatModel }: H
 
   return (
     <div className="space-y-4">
-      {/* Current heartbeat model */}
       <div className="rounded-xl border border-border/40 bg-card/80 px-4 py-3 space-y-1">
         <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
           Current Heartbeat Model
@@ -281,8 +275,6 @@ function HeartbeatTab({ heartbeatModel, models, saving, onSetHeartbeatModel }: H
           <p className="text-xs text-muted-foreground/50 italic">Not set — uses global default</p>
         )}
       </div>
-
-      {/* Set heartbeat model picker */}
       <div className="space-y-2">
         <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
           Set Heartbeat Model
@@ -342,7 +334,6 @@ export function AdvancedSettings({
 
   return (
     <div className="space-y-3">
-      {/* Collapsible header */}
       <button
         type="button"
         className="w-full flex items-center gap-2 text-left"
@@ -362,7 +353,6 @@ export function AdvancedSettings({
 
       {open && (
         <div className="rounded-xl border border-border/40 bg-card/40 p-4 space-y-4">
-          {/* Tab bar */}
           <div className="flex gap-1 border-b border-border/40 pb-3">
             {tabs.map((t) => (
               <button
@@ -380,8 +370,6 @@ export function AdvancedSettings({
               </button>
             ))}
           </div>
-
-          {/* Tab content */}
           {tab === 'per-agent' && (
             <PerAgentTab agentList={agentList} models={models} saving={saving} onSetAgentModel={onSetAgentModel} />
           )}

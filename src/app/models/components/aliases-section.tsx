@@ -62,7 +62,6 @@ export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAl
 
   return (
     <div className="space-y-3">
-      {/* Header */}
       <div className="flex items-center gap-2 flex-wrap">
         <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Model Catalog</p>
         {isAllowlistActive ? (
@@ -78,8 +77,6 @@ export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAl
       <p className="text-xs text-muted-foreground/60">
         When entries exist, only listed models are allowed — empty = all models allowed
       </p>
-
-      {/* Catalog table or empty state */}
       {aliases.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-border/40 py-8 gap-2">
           <Tag className="h-5 w-5 text-muted-foreground/20" />
@@ -134,12 +131,9 @@ export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAl
           </table>
         </div>
       )}
-
-      {/* Add to Catalog form */}
       <div className="rounded-xl border border-border/40 bg-muted/10 p-4 space-y-3">
         <p className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Add to Catalog</p>
         <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_auto]">
-          {/* Model ID select */}
           <div className="relative">
             <select
               value={addModelId}
@@ -167,8 +161,6 @@ export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAl
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50" />
           </div>
-
-          {/* Alias input (optional) */}
           <Input
             placeholder="alias (optional)"
             value={addAliasName}
@@ -176,8 +168,6 @@ export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAl
             disabled={saving}
             className="h-8 text-xs font-mono"
           />
-
-          {/* Add button */}
           <Button
             size="sm"
             variant="default"
@@ -193,8 +183,6 @@ export function AliasesSection({ aliases, models, saving, onAddAlias, onRemoveAl
           Adding a model restricts access to only catalogued models
         </p>
       </div>
-
-      {/* Confirm remove dialog */}
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={(open) => {

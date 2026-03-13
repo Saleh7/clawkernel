@@ -101,7 +101,6 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="agent-name">Name</Label>
             <Input
@@ -120,8 +119,6 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
               </p>
             )}
           </div>
-
-          {/* Workspace */}
           <div className="space-y-2">
             <Label htmlFor="agent-workspace" className="flex items-center gap-1.5">
               <FolderOpen className="h-3.5 w-3.5" />
@@ -143,8 +140,6 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
                 : 'Auto-generated from name. Edit to customize.'}
             </p>
           </div>
-
-          {/* Emoji */}
           <div className="space-y-2">
             <Label htmlFor="agent-emoji">Emoji (optional)</Label>
             <Input
@@ -156,8 +151,6 @@ export function CreateAgentDialog({ client, onCreated }: Props) {
               maxLength={8}
             />
           </div>
-
-          {/* Error */}
           {error && (
             <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
               <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />

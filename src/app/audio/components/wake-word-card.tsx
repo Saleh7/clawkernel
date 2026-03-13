@@ -65,8 +65,6 @@ export function WakeWordCard({ triggers, saving, onSave }: Props) {
         <Radio className="h-4 w-4 text-sky-400" />
         <p className="text-sm font-semibold">Wake Word</p>
       </div>
-
-      {/* Current triggers */}
       <div>
         {draft.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
@@ -92,8 +90,6 @@ export function WakeWordCard({ triggers, saving, onSave }: Props) {
           <p className="text-sm text-muted-foreground">No wake word triggers configured.</p>
         )}
       </div>
-
-      {/* Add new trigger */}
       <div className="flex items-center gap-2">
         <Input
           value={inputValue}
@@ -114,8 +110,6 @@ export function WakeWordCard({ triggers, saving, onSave }: Props) {
           <Plus className="h-4 w-4" />
         </Button>
       </div>
-
-      {/* Save / Discard */}
       {isDirty && (
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={handleSave} disabled={saving}>

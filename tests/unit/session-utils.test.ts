@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  sessions/utils — Pure function tests (Phase 1)
-// ---------------------------------------------------------------------------
-
 import { describe, expect, it } from 'vitest'
 import { buildSessionTree, extractAgentId, getDisplayName, isActive, sessionLabel } from '@/app/sessions/utils'
 import type { GatewaySessionRow } from '@/lib/gateway/types'
@@ -14,10 +10,6 @@ function makeSession(key: string, overrides: Partial<GatewaySessionRow> = {}): G
     ...overrides,
   }
 }
-
-// ===========================================================================
-//  extractAgentId
-// ===========================================================================
 
 describe('extractAgentId', () => {
   it('extracts agent id from standard key', () => {
@@ -37,10 +29,6 @@ describe('extractAgentId', () => {
   })
 })
 
-// ===========================================================================
-//  sessionLabel
-// ===========================================================================
-
 describe('sessionLabel', () => {
   it('returns part after second colon for standard key', () => {
     expect(sessionLabel('agent:mybot:main')).toBe('main')
@@ -58,10 +46,6 @@ describe('sessionLabel', () => {
     expect(sessionLabel('standalone')).toBe('standalone')
   })
 })
-
-// ===========================================================================
-//  getDisplayName
-// ===========================================================================
 
 describe('getDisplayName', () => {
   it('returns displayName when set', () => {
@@ -81,10 +65,6 @@ describe('getDisplayName', () => {
   })
 })
 
-// ===========================================================================
-//  isActive
-// ===========================================================================
-
 describe('isActive', () => {
   it('returns true for recently updated session', () => {
     expect(isActive(makeSession('k', { updatedAt: Date.now() }))).toBe(true)
@@ -98,10 +78,6 @@ describe('isActive', () => {
     expect(isActive(makeSession('k', { updatedAt: null }))).toBe(false)
   })
 })
-
-// ===========================================================================
-//  buildSessionTree
-// ===========================================================================
 
 describe('buildSessionTree', () => {
   it('returns empty array for empty input', () => {

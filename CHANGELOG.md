@@ -6,6 +6,70 @@
 
 ### Added
 
+#### Exec Approval UI
+- **Exec Approval Bell** — new `ExecApprovalBell` component in the global status bar; real-time exec approval queue powered by `exec.approval.requested` / `exec.approval.resolved` gateway events
+- **Approve / Deny actions** — per-request allow-once, allow-always, and deny buttons via `exec.approval.resolve` RPC; auto-expire entries based on server-provided TTL
+- **Timer dedup guard** — duplicate `entry.id` events are rejected before timer creation to prevent leaked timers
+
+#### Agent Update Dialog
+- **`UpdateAgentDialog`** — edit agent name and model via `agents.update` RPC; accessible from agent overview; validates non-empty changes; shows "No changes to save" toast on no-op
+
+#### Session Compact
+- **Compact button** — per-session compact action in session cards via `sessions.compact` RPC; disabled state with "Compacting…" label during operation; success/info toast feedback
+
+#### Dashboard Quick Actions
+- **Wake Agent** — "Wake Agent" button triggers `wake` RPC (`{ mode: 'now', text: 'Manual wake from ClawKernel dashboard' }`)
+- **Update Gateway** — "Update Gateway" button triggers `update.run` RPC with confirm dialog; shows restart countdown toast
+
+#### Gateway Shutdown Banner
+- **`GatewayShutdownBanner`** — layout-level banner displayed when the gateway broadcasts a `shutdown` event; shows reason text + countdown timer until expected restart; auto-clears on successful reconnect (`hello-ok`); uses `useRef` for timestamp tracking to handle repeated shutdown cycles correctly
+
+### Changed
+
+#### OpenClaw v2026.3.11 Compatibility
+- **Device auth v3** — `buildDeviceAuthPayloadV3` and `normalizeDeviceMetadataForAuth` added to `device-auth.ts`; client now signs with v3 payload format (includes `platform` and `deviceFamily`); server falls back to v2 if v3 verification fails
+- **Display name** — connect params now send `displayName` from `opts.clientName` (defaults to `ClawKernel`); previously hardcoded `WebClaw`
+- **Snapshot type realigned** — removed 7 phantom fields (`agents`, `sessions`, `channels`, `config`, `skills`, `cron`, `models`); added 6 upstream fields (`stateVersion`, `uptimeMs`, `configPath`, `stateDir`, `sessionDefaults`, `authMode`); `presence` and `health` now required (matching `SnapshotSchema`)
+- **`GatewayHelloOk` type corrected** — `server`, `features`, `snapshot`, `policy` marked required; `auth` sub-fields (`deviceToken`, `role`, `scopes`) required when `auth` is present; `policy` includes `maxPayload` and `maxBufferedBytes`
+- **Presence type expanded** — added 8 upstream fields (`deviceFamily`, `modelIdentifier`, `reason`, `tags`, `text`, `deviceId`, `roles`, `scopes`); `ts` now required
+- **`ChannelAccountSnapshot` parity** — removed 5 speculative fields (`credentialSource`, `audienceType`, `audience`, `webhookPath`, `webhookUrl`); added 3 upstream fields (`busy`, `activeRuns`, `lastRunActivityAt`); matches `ChannelAccountSnapshotSchema` exactly
+- **`updateAvailable` type** — removed erroneous `| null` union; upstream uses `Type.Optional(Type.Object(...))` only
+
+#### Event Handling
+- **Cron event** — replaced dead `cron.status` / `cron.jobs` handlers with single `cron` handler; re-fetches via RPC on event (matching upstream broadcast pattern at `server-cron.ts:359`)
+- **Device pairing events** — `pairing-bell.tsx` now subscribes to live `device.pair.requested` / `device.pair.resolved` events in addition to polling
+- **Shutdown + update.available events** — new store fields `gatewayShutdown` and `gatewayUpdateAvailable`; `gatewayShutdown` cleared on reconnect
+- **Dead handler cleanup** — removed 4 event handlers for events upstream never broadcasts (`sessions`, `config`, `channels`, `skills`)
+- **Presence event** — correctly unwraps `{ presence: Array<...> }` envelope (matching `presence-events.ts:11`)
+
+#### Gateway Client
+- **`isNonRecoverableAuthError`** — added 3 missing upstream error codes: `PAIRING_REQUIRED`, `CONTROL_UI_DEVICE_IDENTITY_REQUIRED`, `DEVICE_IDENTITY_REQUIRED`; prevents infinite reconnect loops on these errors
+- **`ConnectErrorDetailCodes`** — expanded from 4 to 7 codes to match upstream `connect-error-details.ts`
+- **`GatewayRequestError` class** — matches upstream `ui/src/ui/gateway.ts` (`gatewayCode` + `details`)
+- **Connect params** — sends `caps: ['tool-events']` capability; `instanceId` included in client info
+
+#### Store & UI
+- **`chat.inject` params** — corrected from `{ sessionKey, role, content }` to `{ sessionKey, message }` (matching `ChatInjectParamsSchema`)
+- **Event handlers use injected `set`** — `handleCronEvent` no longer calls `useGatewayStore.setState()` directly
+- **`presenceArrayToRecord`** — replaced `arr.indexOf(entry)` fallback (O(n²)) with loop counter (O(n))
+- **Navigator reference** — `getBrowserNavigator()` called once and shared between auth payload and connect params; prevents platform divergence in v3 signature verification
+- **Pairing bell cleanup** — simplified `unsubs` array to single `unsub` variable with `?.()` cleanup
+- **Agent overview** — added `.catch()` to fire-and-forget `agents.list` refresh in `onUpdated`
+- **`compactingKey` ref guard** — `useCallback` dependency uses `compactingRef` instead of stale closure over `compactingKey` state
+
+### Fixed
+
+#### Channels
+- **DM policy enum** — `allow/deny` → `pairing/allowlist/open/disabled` (matching `DmPolicySchema` at `zod-schema.core.ts:313`)
+- **Group policy enum** — `allow/mention/deny` → `open/disabled/allowlist` (matching `GroupPolicySchema` at `zod-schema.core.ts:315`)
+
+#### Dependencies
+- **`@noble/ed25519`** — updated to `^2.3.0`
+
+---
+
+### Added
+
 #### Usage & Cost Analytics `/usage`
 - **Usage page** — new route `/usage`; nav item (ChartColumn) in sidebar; lazy-loaded with `PageErrorBoundary`
 - **Manual fetch workflow** — page loads idle; user selects date range (or preset: Today, 7d, 30d) and clicks Refresh; empty state with guidance message; matches OpenClaw's pattern

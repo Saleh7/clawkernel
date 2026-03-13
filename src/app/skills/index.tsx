@@ -265,14 +265,12 @@ export default function SkillsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
       <PageHeader
         icon={Package}
         title="Skills"
         description="Manage and configure skills available to your agents"
         badge={allSkills.length > 0 ? String(allSkills.length) : undefined}
       >
-        {/* Agent selector */}
         {agentList.length > 1 && (
           <Select value={agentId || '__default__'} onValueChange={(v) => setAgentId(v === '__default__' ? '' : v)}>
             <SelectTrigger className="h-8 w-40 text-xs">
@@ -293,13 +291,8 @@ export default function SkillsPage() {
           Refresh
         </Button>
       </PageHeader>
-
-      {/* Stats */}
       {!loading && allSkills.length > 0 && <SkillsStatsBar skills={allSkills} enabledSet={enabledSet} />}
-
-      {/* Toolbar */}
       <div className="flex gap-3">
-        {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
           <Input
@@ -314,8 +307,6 @@ export default function SkillsPage() {
             </span>
           )}
         </div>
-
-        {/* Filter */}
         <Select value={filter} onValueChange={(v) => setFilter(v as SkillFilter)}>
           <SelectTrigger className="h-10 w-36 text-sm">
             <SelectValue />
@@ -328,8 +319,6 @@ export default function SkillsPage() {
             ))}
           </SelectContent>
         </Select>
-
-        {/* View toggle */}
         <div className="flex gap-1 rounded-lg border border-border/50 bg-card/80 p-0.5">
           <Button
             size="sm"
@@ -349,11 +338,7 @@ export default function SkillsPage() {
           </Button>
         </div>
       </div>
-
-      {/* Content */}
       {content}
-
-      {/* Detail panel */}
       {detailSkill && (
         <SkillDetailPanel
           skill={detailSkill}

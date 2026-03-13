@@ -221,8 +221,6 @@ export function useChat() {
   const storeSessions = useGatewayStore((s) => s.sessions)
   const storeAgents = useGatewayStore((s) => s.agents)
   const storeActiveRuns = useGatewayStore((s) => s.activeRuns)
-
-  // -- UI state -------------------------------------------------------------
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
   const [sidebarSearch, setSidebarSearch] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -273,21 +271,15 @@ export function useChat() {
       }
     }
   }, [])
-
-  // -- Persist settings -----------------------------------------------------
   useEffect(() => {
     localStorage.setItem('clawkernel-chat-settings', JSON.stringify(settings))
   }, [settings])
-
-  // -- Agent info map -------------------------------------------------------
   const agentInfoMap = useMemo(() => {
     const map = new Map<string, AgentInfo>()
     if (storeAgents?.agents)
       for (const a of storeAgents.agents) map.set(a.id, { name: a.name || a.id, emoji: a.identity?.emoji })
     return map
   }, [storeAgents])
-
-  // -- Session entries ------------------------------------------------------
   const sessionEntries = useMemo<SessionEntry[]>(() => {
     return storeSessions
       .filter((s) => s.key.startsWith('agent:'))
@@ -314,8 +306,6 @@ export function useChat() {
   const currentAgentId = selectedSession ? extractAgentId(selectedSession) : null
   const currentAgentInfo = currentAgentId ? agentInfoMap.get(currentAgentId) : undefined
   const currentSession = selectedSession ? storeSessions.find((s) => s.key === selectedSession) : undefined
-
-  // -- Tool results map -----------------------------------------------------
   const toolResultsMap = useMemo(() => {
     const map: ToolResultMap = new Map()
     for (const msg of chat.messages) {
@@ -360,8 +350,6 @@ export function useChat() {
   }, [renderItems])
 
   const isStreaming = (chat.runId !== null && chat.streaming !== null) || sessionHasActiveRun
-
-  // -- Streaming events (throttled to ~30fps for smooth rendering) ----------
   const streamBufferRef = useRef<StreamBuffer>({ text: null, msg: null, runId: null })
   const streamRafRef = useRef<number | null>(null)
   const historySessionRef = useRef<string | null>(null)
@@ -391,8 +379,6 @@ export function useChat() {
       setChat,
     })
   }, [client, selectedSession])
-
-  // -- Load history ---------------------------------------------------------
   useEffect(() => {
     if (!client || !connected || !selectedSession) return
 
@@ -477,8 +463,6 @@ export function useChat() {
       streamRafRef.current = null
     }
   }, [client, handleChatEvent])
-
-  // -- Reconnect / gap recovery ---------------------------------------------
   useEffect(() => {
     if (!client || !selectedSession) return
 
@@ -489,8 +473,6 @@ export function useChat() {
       unsubscribeReady()
     }
   }, [client, reloadHistory, selectedSession])
-
-  // -- File processing ------------------------------------------------------
   const processFile = useCallback(async (file: File) => {
     const id = generateId()
     const isImage = IMAGE_TYPES.includes(file.type)
@@ -603,8 +585,6 @@ export function useChat() {
       return p.filter((a) => a.id !== id)
     })
   }, [])
-
-  // -- Clipboard paste (images) ----------------------------------------------
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       const items = e.clipboardData?.items
@@ -621,8 +601,6 @@ export function useChat() {
     },
     [processFile],
   )
-
-  // -- Drag & drop ----------------------------------------------------------
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -651,8 +629,6 @@ export function useChat() {
     },
     [processFile],
   )
-
-  // -- Message queue (send while agent is busy) ------------------------------
   const [queue, setQueue] = useState<ChatQueueItem[]>([])
   const queueRef = useRef<ChatQueueItem[]>([])
   useEffect(() => {
@@ -782,8 +758,6 @@ export function useChat() {
   flushQueueRef.current = () => {
     void flushQueue()
   }
-
-  // -- Send -----------------------------------------------------------------
   const handleSend = useCallback(async () => {
     if (!client || !connected || !selectedSession) return
 
@@ -822,8 +796,6 @@ export function useChat() {
 
     await executeSend(payload)
   }, [client, connected, selectedSession, prepareSendPayload, executeSend])
-
-  // -- Retry (re-send a previous user message) ------------------------------
   const handleRetry = useCallback(
     async (userMessage: ChatMessage) => {
       if (!client || !connected || !selectedSession) return
@@ -837,8 +809,6 @@ export function useChat() {
     },
     [client, connected, selectedSession, executeSend],
   )
-
-  // -- Abort ----------------------------------------------------------------
   const handleAbort = useCallback(async () => {
     if (!client || !selectedSession) return
     try {
@@ -848,8 +818,6 @@ export function useChat() {
       log.warn('Chat abort failed', err)
     }
   }, [client, selectedSession])
-
-  // -- Load more (pagination) ------------------------------------------------
   const handleLoadMore = useCallback(async () => {
     if (!client || !connected || !selectedSession || chat.loadingMore || !chat.hasMore) return
     if (chat.runId !== null) return
@@ -872,8 +840,6 @@ export function useChat() {
       setChat((p) => ({ ...p, loadingMore: false }))
     }
   }, [client, connected, selectedSession, chat.loadingMore, chat.hasMore, chat.runId, chat.messages.length])
-
-  // -- Refresh --------------------------------------------------------------
   const handleRefresh = useCallback(async () => {
     if (!client || !connected || !selectedSession) return
     setChat((p) => ({ ...p, loading: true, error: null }))

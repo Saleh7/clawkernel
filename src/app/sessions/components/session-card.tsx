@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronRight,
   MessageSquare,
+  Minimize2,
   ScrollText,
   Settings,
   Square,
@@ -50,8 +51,10 @@ type SessionCardProps = {
   onHistory: (s: GatewaySessionRow) => void
   onSendMessage: (s: GatewaySessionRow) => void
   onPatch: (s: GatewaySessionRow) => void
+  onCompact: (s: GatewaySessionRow) => void
   onDelete: (s: GatewaySessionRow) => void
   maxTokens: number
+  compactingKey?: string | null
 }
 
 export const SessionCard = memo(function SessionCard({
@@ -65,8 +68,10 @@ export const SessionCard = memo(function SessionCard({
   onHistory,
   onSendMessage,
   onPatch,
+  onCompact,
   onDelete,
   maxTokens,
+  compactingKey,
 }: SessionCardProps) {
   const cardRef = useRef<HTMLDivElement | null>(null)
   const agent = extractAgentId(session.key)
@@ -221,6 +226,16 @@ export const SessionCard = memo(function SessionCard({
             <Button size="sm" variant="outline" onClick={() => onPatch(session)} aria-label="Patch session settings">
               <Settings className="h-3.5 w-3.5 mr-1.5" />
               Patch
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={compactingKey === session.key}
+              onClick={() => onCompact(session)}
+              aria-label="Compact session context"
+            >
+              <Minimize2 className="h-3.5 w-3.5 mr-1.5" />
+              {compactingKey === session.key ? 'Compacting…' : 'Compact'}
             </Button>
             <Button size="sm" variant="destructive" onClick={() => onDelete(session)} aria-label="Delete session">
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />

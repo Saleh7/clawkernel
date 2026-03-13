@@ -1,4 +1,4 @@
-import type { GatewayClient } from '@/lib/gateway/client'
+import { type GatewayClient, GatewayRequestError } from '@/lib/gateway/client'
 import type { ConfigSnapshot } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
 
@@ -18,7 +18,12 @@ const log = createLogger('agents:config')
  * The third does NOT — which is why the original check was incomplete.
  * All three contain "re-run config.get", used here as the canonical signal.
  */
-function isHashConflict(msg: string): boolean {
+function isHashConflict(err: unknown): boolean {
+  let msg = ''
+  if (err instanceof GatewayRequestError || err instanceof Error) {
+    msg = err.message
+  }
+
   return (
     msg.includes('hash') || msg.includes('conflict') || msg.includes('BASE_HASH') || msg.includes('re-run config.get')
   )
@@ -70,8 +75,7 @@ export async function saveConfigWithRetry(
   try {
     await client.request(method, result)
   } catch (err) {
-    const msg = err instanceof Error ? err.message : ''
-    if (isHashConflict(msg)) {
+    if (isHashConflict(err)) {
       log.warn('Config hash conflict, retrying with fresh config')
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})
       const retryResult = patchAgentConfig(freshConfig, agentId, patcher)
@@ -101,8 +105,7 @@ export async function saveRawConfigWithRetry(
   try {
     await client.request(method, { raw: JSON.stringify(patched, null, 2), baseHash: config.hash })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : ''
-    if (isHashConflict(msg)) {
+    if (isHashConflict(err)) {
       log.warn('Config hash conflict, retrying with fresh config')
       const freshConfig = await client.request<ConfigSnapshot>('config.get', {})
       const freshCurrent = freshConfig.config ?? {}
@@ -150,8 +153,7 @@ export async function patchConfigWithRetry(
   try {
     await client.request('config.patch', buildParams(config.hash))
   } catch (err) {
-    const msg = err instanceof Error ? err.message : ''
-    if (isHashConflict(msg)) {
+    if (isHashConflict(err)) {
       log.warn('config.patch hash conflict, retrying with fresh config')
       const fresh = await client.request<ConfigSnapshot>('config.get', {})
       await client.request('config.patch', buildParams(fresh.hash))

@@ -98,7 +98,6 @@ function ChannelCard({
         channelBorderClass(allConnected, partial),
       )}
     >
-      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div
           className={cn('flex h-12 w-12 items-center justify-center rounded-xl', iconBoxClass(allConnected, partial))}
@@ -129,20 +128,14 @@ function ChannelCard({
           <span className={cn('h-3 w-3 rounded-full', dotClass(allConnected, partial))} />
         </div>
       </div>
-
-      {/* Name */}
       <p className="text-sm font-semibold text-foreground">{label}</p>
       <p className="font-mono text-[10px] text-muted-foreground/40 mt-0.5">{channelId}</p>
-
-      {/* Connection bar */}
       <div className="mt-3 h-1.5 rounded-full bg-muted/30 overflow-hidden">
         <div
           className={cn('h-full rounded-full transition-all duration-500', barClass(allConnected, partial))}
           style={{ width: `${Math.max(ratio, 2)}%` }}
         />
       </div>
-
-      {/* Stats */}
       <div className="flex gap-3 mt-3">
         <div>
           <p className="text-xs font-bold text-foreground">{s.connected}</p>
@@ -157,8 +150,6 @@ function ChannelCard({
           <p className="text-[9px] text-muted-foreground/40">Enabled</p>
         </div>
       </div>
-
-      {/* Bindings detail */}
       {bindings.length > 0 && (
         <>
           <Separator className="my-3 opacity-30" />
@@ -229,7 +220,6 @@ export function AgentChannels({ agentId, channels, config, isDefault }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Summary bar */}
       <div className="flex flex-wrap items-center gap-2">
         <AgentStatPill icon={Radio} value={ids.length} label="channels" />
         <AgentStatPill
@@ -245,8 +235,6 @@ export function AgentChannels({ agentId, channels, config, isDefault }: Props) {
           </Badge>
         )}
       </div>
-
-      {/* Channel grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sortedIds.map((id) => {
           const accounts = channels.channelAccounts?.[id] ?? []

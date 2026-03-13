@@ -217,10 +217,7 @@ const ActivityItem = memo(function ActivityItem({ item, now }: { readonly item: 
 
   return (
     <div className="group relative flex gap-3 py-2.5">
-      {/* Timeline line */}
       <div className="absolute left-[13px] top-10 bottom-0 w-px bg-border/40 group-last:hidden" />
-
-      {/* Dot + icon */}
       <div
         className={cn(
           'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
@@ -229,8 +226,6 @@ const ActivityItem = memo(function ActivityItem({ item, now }: { readonly item: 
       >
         <Icon className={cn('h-3.5 w-3.5', CATEGORY_COLORS[item.category])} />
       </div>
-
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-foreground truncate">{item.title}</span>
@@ -294,7 +289,7 @@ export function AgentActivity({ agentId, client }: Props) {
   const [filter, setFilter] = useState<EventCategory>('all')
   const [cronRuns, setCronRuns] = useState<Array<CronRunLogEntry & { _jobName?: string }>>([])
 
-  const [cleared, setCleared] = useState<number>(0) // timestamp of last clear
+  const [cleared, setCleared] = useState<number>(0)
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
@@ -339,7 +334,6 @@ export function AgentActivity({ agentId, client }: Props) {
 
   return (
     <div className="flex h-full flex-col gap-3 p-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
@@ -362,13 +356,9 @@ export function AgentActivity({ agentId, client }: Props) {
       </div>
 
       <Separator className="opacity-50" />
-
-      {/* Filter bar */}
       <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2">
         <ActivityFilter active={filter} onChange={setFilter} counts={counts} />
       </div>
-
-      {/* Timeline */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
           {filtered.length === 0 ? (

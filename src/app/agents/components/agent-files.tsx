@@ -222,7 +222,6 @@ export function AgentFiles({ agentId, client }: Props) {
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
       <div className="flex min-h-[500px]">
-        {/* === FILE TREE === */}
         <div className="w-56 shrink-0 border-r border-border/50 bg-muted/10 hidden md:flex flex-col">
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/30">
             <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/60">Explorer</p>
@@ -244,10 +243,7 @@ export function AgentFiles({ agentId, client }: Props) {
           )}
           <ScrollArea className="flex-1">{explorerContent}</ScrollArea>
         </div>
-
-        {/* === EDITOR AREA === */}
         <div className="flex flex-1 flex-col min-w-0">
-          {/* Open file tabs */}
           {openTabs.length > 0 && (
             <div
               className="flex border-b border-border/30 bg-muted/10 overflow-x-auto"
@@ -296,7 +292,6 @@ export function AgentFiles({ agentId, client }: Props) {
             </div>
           ) : (
             <>
-              {/* Breadcrumb */}
               <div className="flex items-center justify-between border-b border-border/30 px-3 py-1.5 bg-muted/5">
                 <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground/50 min-w-0">
                   <span className="truncate">{workspace.split('/').pop() || 'workspace'}</span>
@@ -318,8 +313,6 @@ export function AgentFiles({ agentId, client }: Props) {
                   </span>
                 </div>
               )}
-
-              {/* Editor with line numbers */}
               {loadingFile ? (
                 <div className="flex-1 p-4 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
@@ -328,7 +321,6 @@ export function AgentFiles({ agentId, client }: Props) {
                 </div>
               ) : (
                 <div className="flex flex-1 overflow-hidden relative">
-                  {/* Line numbers gutter */}
                   <div className="w-10 shrink-0 bg-muted/20 border-r border-border/30 pt-3 select-none overflow-hidden">
                     {Array.from({ length: Math.max(lineCount, 25) }, (_unused, n) => n + 1).map((lineNumber) => (
                       <div
@@ -349,8 +341,6 @@ export function AgentFiles({ agentId, client }: Props) {
                     placeholder="File content…"
                     spellCheck={false}
                   />
-
-                  {/* Floating save/reset */}
                   {isDirty && (
                     <div className="absolute bottom-4 right-4 flex gap-2">
                       <Button size="sm" variant="outline" onClick={resetDraft} className="h-8 shadow-lg">
@@ -363,8 +353,6 @@ export function AgentFiles({ agentId, client }: Props) {
                   )}
                 </div>
               )}
-
-              {/* Status bar */}
               <div className="flex items-center justify-between border-t border-border/30 px-3 py-1 bg-muted/10">
                 <div className="flex items-center gap-3">
                   <span className="text-[9px] font-mono text-muted-foreground/40">{lineCount} lines</span>

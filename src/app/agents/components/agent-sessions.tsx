@@ -141,16 +141,12 @@ function SessionCard({
         isRunning && 'border-emerald-500/30',
       )}
     >
-      {/* Header row */}
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 px-4 py-3 text-left">
-        {/* Status indicator */}
         <div className="relative shrink-0">
           <div
             className={cn('h-2.5 w-2.5 rounded-full', sessionDotClass(isRunning, isActive, Boolean(session.updatedAt)))}
           />
         </div>
-
-        {/* Name + metadata */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-semibold text-foreground">{label}</p>
@@ -197,30 +193,21 @@ function SessionCard({
             )}
           </div>
         </div>
-
-        {/* Expand icon */}
         <div className="shrink-0 text-muted-foreground/50 transition-transform duration-200">
           {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </div>
       </button>
-
-      {/* Expanded details */}
       {isExpanded && (
         <div className="animate-in fade-in slide-in-from-top-1 duration-200 border-t border-border/40 px-4 pb-4 pt-3">
-          {/* Token breakdown */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <TokenStat label="Input" value={session.inputTokens} />
             <TokenStat label="Output" value={session.outputTokens} />
             <TokenStat label="Context" value={session.contextTokens} />
             <TokenStat label="Total" value={session.totalTokens} highlight />
           </div>
-
-          {/* Session key */}
           <div className="mt-3 rounded-lg border border-border/30 bg-background/50 px-3 py-2">
             <p className="font-mono text-[10px] text-muted-foreground/70 break-all select-all">{session.key}</p>
           </div>
-
-          {/* Settings badges */}
           <div className="mt-3 flex flex-wrap gap-1.5">
             {session.thinkingLevel && session.thinkingLevel !== 'off' && (
               <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px]">
@@ -243,8 +230,6 @@ function SessionCard({
               </Badge>
             )}
           </div>
-
-          {/* Actions */}
           <Separator className="my-3 opacity-40" />
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -485,15 +470,12 @@ export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) 
 
   return (
     <div className="space-y-4">
-      {/* Stats bar */}
       <SessionStatsBar
         total={stats.total}
         active={stats.active}
         totalTokens={stats.totalTokens}
         uniqueSurfaces={stats.uniqueSurfaces}
       />
-
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/50" />
@@ -531,8 +513,6 @@ export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) 
           Refresh
         </Button>
       </div>
-
-      {/* Session list (virtualized) */}
       <VirtualSessionCards
         listRef={listRef}
         sessions={filteredSorted}
@@ -545,8 +525,6 @@ export function AgentSessions({ agentId, sessions, activeRuns, client }: Props) 
         onViewHistory={setHistoryTarget}
         search={search}
       />
-
-      {/* Dialogs */}
       <SendMessageDialog
         open={!!sendTarget}
         onOpenChange={(o) => !o && setSendTarget(null)}

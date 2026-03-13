@@ -156,7 +156,6 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
 
         <ScrollArea className="flex-1 -mx-6 px-6">
           <div className="space-y-4 pb-2">
-            {/* Step 1: Basics */}
             {step === 1 && (
               <>
                 <div className="space-y-1.5">
@@ -196,8 +195,6 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
                 </div>
               </>
             )}
-
-            {/* Step 2: Schedule */}
             {step === 2 && (
               <>
                 <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
@@ -303,8 +300,6 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
                 </div>
               </>
             )}
-
-            {/* Step 3: Payload */}
             {step === 3 && (
               <>
                 <div className="flex gap-2">
@@ -413,8 +408,6 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
                 )}
               </>
             )}
-
-            {/* Step 4: Delivery */}
             {step === 4 && (
               <>
                 <p className="text-xs text-muted-foreground/70">
@@ -473,8 +466,6 @@ export function CreateJobWizard({ open, onOpenChange, client, is24h, onCreated }
                 )}
               </>
             )}
-
-            {/* Step 5: Review */}
             {step === 5 && (
               <>
                 <div className="rounded-lg border border-border/20 bg-muted/40 divide-y divide-border/10">

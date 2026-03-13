@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  lib/agent-status — Live agent status resolution
-// ---------------------------------------------------------------------------
-
 import { describe, expect, it } from 'vitest'
 import { resolveLiveStatus } from '@/lib/agent-status'
 

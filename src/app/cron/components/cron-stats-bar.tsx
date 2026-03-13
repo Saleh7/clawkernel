@@ -21,7 +21,6 @@ export function CronStatsBar({ status, jobs, total }: Props) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {/* Scheduler status */}
       <div className="rounded-xl border border-border/40 bg-card p-4">
         <p className="text-xs text-muted-foreground mb-1">Scheduler</p>
         <div className="flex items-center gap-2">
@@ -34,8 +33,6 @@ export function CronStatsBar({ status, jobs, total }: Props) {
           <span className="text-sm font-semibold">{schedulerLabel(status)}</span>
         </div>
       </div>
-
-      {/* Total jobs */}
       <div className="rounded-xl border border-border/40 bg-card p-4">
         <p className="text-xs text-muted-foreground mb-1">Total Jobs</p>
         <div className="flex items-center gap-2">
@@ -44,8 +41,6 @@ export function CronStatsBar({ status, jobs, total }: Props) {
           <span className="text-xs text-muted-foreground">{enabledCount} enabled</span>
         </div>
       </div>
-
-      {/* Failing */}
       <div
         className={cn(
           'rounded-xl border p-4',
@@ -70,8 +65,6 @@ export function CronStatsBar({ status, jobs, total }: Props) {
           )}
         </div>
       </div>
-
-      {/* Next wake */}
       <div className="rounded-xl border border-border/40 bg-card p-4">
         <p className="text-xs text-muted-foreground mb-1">Next Wake</p>
         <div className="flex items-center gap-2">

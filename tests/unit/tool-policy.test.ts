@@ -1,13 +1,5 @@
-// ---------------------------------------------------------------------------
-//  agents/tool-policy — Tool name normalization, group expansion, access control
-// ---------------------------------------------------------------------------
-
 import { describe, expect, it } from 'vitest'
 import { normalizeToolName, resolveToolAllowed, resolveToolProfilePolicy } from '@/app/agents/tool-policy'
-
-// ===========================================================================
-//  normalizeToolName
-// ===========================================================================
 
 describe('normalizeToolName', () => {
   it('lowercases and trims', () => {
@@ -23,10 +15,6 @@ describe('normalizeToolName', () => {
     expect(normalizeToolName('custom_tool')).toBe('custom_tool')
   })
 })
-
-// ===========================================================================
-//  resolveToolProfilePolicy
-// ===========================================================================
 
 describe('resolveToolProfilePolicy', () => {
   it('returns policy for known profiles', () => {
@@ -45,10 +33,6 @@ describe('resolveToolProfilePolicy', () => {
     expect(policy?.allow).toEqual(['session_status'])
   })
 })
-
-// ===========================================================================
-//  resolveToolAllowed
-// ===========================================================================
 
 describe('resolveToolAllowed', () => {
   describe('no base policy (full access)', () => {

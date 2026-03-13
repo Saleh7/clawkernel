@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-//  chat/utils — Pure function tests (Phase 1)
-// ---------------------------------------------------------------------------
-
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   extractFileAttachments,
@@ -30,10 +26,6 @@ import {
 } from '../helpers/fixtures'
 
 afterEach(() => resetFixtureSeq())
-
-// ===========================================================================
-//  stripThinkingTags
-// ===========================================================================
 
 describe('stripThinkingTags', () => {
   describe('basic functionality', () => {
@@ -163,10 +155,6 @@ describe('stripThinkingTags', () => {
   })
 })
 
-// ===========================================================================
-//  extractText
-// ===========================================================================
-
 describe('extractText', () => {
   it('returns null for undefined message', () => {
     expect(extractText(undefined)).toBeNull()
@@ -204,10 +192,6 @@ describe('extractText', () => {
   })
 })
 
-// ===========================================================================
-//  extractThinking
-// ===========================================================================
-
 describe('extractThinking', () => {
   it('returns null for undefined message', () => {
     expect(extractThinking(undefined)).toBeNull()
@@ -229,10 +213,6 @@ describe('extractThinking', () => {
     expect(extractThinking(msg)).toBe('First thought\n\nSecond thought')
   })
 })
-
-// ===========================================================================
-//  extractImages
-// ===========================================================================
 
 describe('extractImages', () => {
   it('returns empty array for undefined message', () => {
@@ -285,10 +265,6 @@ describe('extractImages', () => {
   })
 })
 
-// ===========================================================================
-//  extractToolCalls
-// ===========================================================================
-
 describe('extractToolCalls', () => {
   it('returns empty for undefined message', () => {
     expect(extractToolCalls(undefined)).toEqual([])
@@ -301,10 +277,6 @@ describe('extractToolCalls', () => {
     expect(extractToolCalls(msg)).toEqual([{ id: 'tc-1', name: 'web_search', arguments: { query: 'test' } }])
   })
 })
-
-// ===========================================================================
-//  groupMessages
-// ===========================================================================
 
 describe('groupMessages', () => {
   it('returns empty for empty input', () => {
@@ -365,10 +337,6 @@ describe('groupMessages', () => {
   })
 })
 
-// ===========================================================================
-//  generateId
-// ===========================================================================
-
 describe('generateId', () => {
   it('returns unique ids across 1000 calls', () => {
     const ids = new Set<string>()
@@ -381,10 +349,6 @@ describe('generateId', () => {
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
   })
 })
-
-// ===========================================================================
-//  getRawText
-// ===========================================================================
 
 describe('getRawText', () => {
   it('returns null for undefined message', () => {
@@ -410,10 +374,6 @@ describe('getRawText', () => {
   })
 })
 
-// ===========================================================================
-//  extractFileAttachments
-// ===========================================================================
-
 describe('extractFileAttachments', () => {
   it('returns empty for text without file blocks', () => {
     expect(extractFileAttachments('no files here')).toEqual([])
@@ -431,10 +391,6 @@ describe('extractFileAttachments', () => {
     expect(extractFileAttachments(input)).toHaveLength(2)
   })
 })
-
-// ===========================================================================
-//  extractSourcesFromMessages
-// ===========================================================================
 
 describe('extractSourcesFromMessages', () => {
   it('returns empty map for empty messages', () => {
@@ -515,10 +471,6 @@ describe('extractSourcesFromMessages', () => {
     expect(result.size).toBe(0)
   })
 })
-
-// ===========================================================================
-//  fmtTimeShort / fmtTimeFull
-// ===========================================================================
 
 describe('fmtTimeShort', () => {
   it('returns empty string for falsy timestamp', () => {

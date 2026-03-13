@@ -148,16 +148,12 @@ export function QuickActions({
           </Button>
         </div>
       </div>
-
-      {/* Send Message Dialog */}
       <SendMessageDialog
         session={sendSession}
         open={!!sendSession}
         onOpenChange={(v) => !v && setSendSession(null)}
         client={client}
       />
-
-      {/* Clear Sessions Confirm */}
       <ConfirmDialog
         open={showClearConfirm}
         onOpenChange={setShowClearConfirm}
@@ -277,8 +273,6 @@ export function DangerZone({
           action={deleteSlot}
         />
       </div>
-
-      {/* Clear Sessions Confirm */}
       <ConfirmDialog
         open={showClearConfirm}
         onOpenChange={setShowClearConfirm}
@@ -295,8 +289,6 @@ export function DangerZone({
         loading={clearingSessions}
         onConfirm={clearAllSessions}
       />
-
-      {/* Reset Workspace Confirm */}
       <ConfirmDialog
         open={showResetConfirm}
         onOpenChange={setShowResetConfirm}

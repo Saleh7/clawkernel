@@ -53,7 +53,7 @@ export function extractText(msg: ChatMessage | undefined): string | null {
   return result
 }
 
-// -- Thinking tag stripping (ported from OpenClaw reasoning-tags.ts) --------
+// Thinking tag stripping matches OpenClaw reasoning-tags.ts.
 
 const THINKING_TAG_NAMES = new Set(['think', 'thinking', 'thought', 'antthinking'])
 
