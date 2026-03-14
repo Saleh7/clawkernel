@@ -47,6 +47,7 @@ const ConnectErrorDetailCodes = {
   AUTH_TOKEN_MISSING: 'AUTH_TOKEN_MISSING',
   AUTH_PASSWORD_MISSING: 'AUTH_PASSWORD_MISSING',
   AUTH_PASSWORD_MISMATCH: 'AUTH_PASSWORD_MISMATCH',
+  AUTH_BOOTSTRAP_TOKEN_INVALID: 'AUTH_BOOTSTRAP_TOKEN_INVALID',
   AUTH_RATE_LIMITED: 'AUTH_RATE_LIMITED',
   PAIRING_REQUIRED: 'PAIRING_REQUIRED',
   CONTROL_UI_DEVICE_IDENTITY_REQUIRED: 'CONTROL_UI_DEVICE_IDENTITY_REQUIRED',
@@ -84,6 +85,7 @@ function isNonRecoverableAuthError(error: GatewayErrorInfo | undefined): boolean
   const code = resolveGatewayErrorDetailCode(error)
   return (
     code === ConnectErrorDetailCodes.AUTH_TOKEN_MISSING ||
+    code === ConnectErrorDetailCodes.AUTH_BOOTSTRAP_TOKEN_INVALID ||
     code === ConnectErrorDetailCodes.AUTH_PASSWORD_MISSING ||
     code === ConnectErrorDetailCodes.AUTH_PASSWORD_MISMATCH ||
     code === ConnectErrorDetailCodes.AUTH_RATE_LIMITED ||

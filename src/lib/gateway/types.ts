@@ -114,6 +114,7 @@ export type GatewaySessionRow = {
   verboseLevel?: string
   reasoningLevel?: string
   elevatedLevel?: string
+  fastMode?: boolean
   inputTokens?: number
   outputTokens?: number
   totalTokens?: number
@@ -146,6 +147,7 @@ export type SessionsPatchResult = {
     verboseLevel?: string
     reasoningLevel?: string
     elevatedLevel?: string
+    fastMode?: boolean
   }
 }
 

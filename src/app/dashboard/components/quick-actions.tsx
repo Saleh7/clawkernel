@@ -1,4 +1,4 @@
-import { ArrowUpCircle, MessageSquare, Zap } from 'lucide-react'
+import { ArrowUpCircle, FileEdit, MessageSquare, Zap } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -17,8 +17,10 @@ export function QuickActions() {
   const [wakeBusy, setWakeBusy] = useState(false)
   const [updateBusy, setUpdateBusy] = useState(false)
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false)
+  const [openFileBusy, setOpenFileBusy] = useState(false)
   const wakeBusyRef = useRef(false)
   const updateBusyRef = useRef(false)
+  const openFileBusyRef = useRef(false)
 
   // Source: OpenClaw src/gateway/server-methods/cron.ts:25 (wake RPC)
   const handleWake = useCallback(async () => {
@@ -62,6 +64,27 @@ export function QuickActions() {
     }
   }, [client])
 
+  // Source: OpenClaw src/gateway/server-methods/config.ts (config.openFile RPC)
+  const handleOpenConfig = useCallback(async () => {
+    if (!client?.connected || openFileBusyRef.current) return
+    openFileBusyRef.current = true
+    setOpenFileBusy(true)
+    try {
+      const result = await client.request<{ ok: boolean; path: string; error?: string }>('config.openFile', {})
+      if (result.ok) {
+        toast.success(`Opened ${result.path}`)
+      } else {
+        toast.error(result.error ?? 'Failed to open config file')
+      }
+    } catch (err) {
+      log.warn('config.openFile failed', err)
+      toast.error('Failed to open config file')
+    } finally {
+      openFileBusyRef.current = false
+      setOpenFileBusy(false)
+    }
+  }, [client])
+
   return (
     <div className="flex items-center gap-2">
       <CreateAgentDialog client={client} />
@@ -74,6 +97,16 @@ export function QuickActions() {
           <Button variant="outline" size="sm" className="gap-1.5" disabled={wakeBusy} onClick={() => void handleWake()}>
             <Zap className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{wakeBusy ? 'Waking…' : 'Wake'}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            disabled={openFileBusy}
+            onClick={() => void handleOpenConfig()}
+          >
+            <FileEdit className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{openFileBusy ? 'Opening…' : 'Config'}</span>
           </Button>
           <Button
             variant="outline"

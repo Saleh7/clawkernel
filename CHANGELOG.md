@@ -6,6 +6,21 @@
 
 ### Added
 
+#### OpenClaw v2026.3.12 Compatibility
+- **Gateway Identity card** — new `GatewayIdentityCard` component in sidebar footer; fetches `gateway.identity.get` RPC on connect; displays truncated `deviceId` and `publicKey` with full-value tooltips; click-to-copy with success confirmation
+- **Open Config button** — "Config" quick action in dashboard header; triggers `config.openFile` RPC to open the gateway config file in the system's default editor
+- **Fast Mode toggle** — `PatchSessionDialog` gains a `Zap` icon + `Switch` toggle for `fastMode`; value sent with `sessions.patch` RPC and synced from session state
+
+### Changed
+
+#### OpenClaw v2026.3.12 Compatibility
+- **`ConnectErrorDetailCodes`** — added `AUTH_BOOTSTRAP_TOKEN_INVALID` (new in v2026.3.12); matches upstream `connect-error-details.ts`
+- **`isNonRecoverableAuthError`** — added `AUTH_BOOTSTRAP_TOKEN_INVALID` to the non-recoverable list; prevents infinite reconnect loops when gateway rejects an invalid bootstrap token; order matches upstream `ui/src/ui/gateway.ts`
+- **`GatewaySessionRow`** — added `fastMode?: boolean` field; matches upstream `SessionsPatchParamsSchema` addition in v2026.3.12
+- **`SessionsPatchResult.entry`** — added `fastMode?: boolean` field
+
+### Added
+
 #### Exec Approval UI
 - **Exec Approval Bell** — new `ExecApprovalBell` component in the global status bar; real-time exec approval queue powered by `exec.approval.requested` / `exec.approval.resolved` gateway events
 - **Approve / Deny actions** — per-request allow-once, allow-always, and deny buttons via `exec.approval.resolve` RPC; auto-expire entries based on server-provided TTL

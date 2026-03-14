@@ -14,6 +14,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { NavLink } from 'react-router'
+import { GatewayIdentityCard } from '@/components/gateway-identity-card'
 import {
   Sidebar,
   SidebarContent,
@@ -92,6 +93,9 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <GatewayIdentityCard />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <ThemeToggleButton />
           </SidebarMenuItem>

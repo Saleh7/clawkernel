@@ -1,9 +1,10 @@
-import { Brain, Eye, Settings2, ShieldCheck, Sparkles, Timer } from 'lucide-react'
+import { Brain, Eye, Settings2, ShieldCheck, Sparkles, Timer, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import type { GatewayClient } from '@/lib/gateway/client'
 import type { GatewaySessionRow, SessionsPatchResult } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
@@ -72,6 +73,7 @@ export function PatchSessionDialog({
   const [reasoning, setReasoning] = useState(session?.reasoningLevel || 'off')
   const [verbose, setVerbose] = useState(session?.verboseLevel || 'off')
   const [elevated, setElevated] = useState(session?.elevatedLevel || 'off')
+  const [fastMode, setFastMode] = useState(session?.fastMode ?? false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -80,6 +82,7 @@ export function PatchSessionDialog({
       setReasoning(session.reasoningLevel || 'off')
       setVerbose(session.verboseLevel || 'off')
       setElevated(session.elevatedLevel || 'off')
+      setFastMode(session.fastMode ?? false)
     }
   }, [session])
 
@@ -93,6 +96,7 @@ export function PatchSessionDialog({
         reasoningLevel: reasoning,
         verboseLevel: verbose,
         elevatedLevel: elevated,
+        fastMode,
       })
       onPatched?.()
       onOpenChange(false)
@@ -120,6 +124,13 @@ export function PatchSessionDialog({
           <LevelSelector icon={Sparkles} label="Reasoning Level" value={reasoning} onChange={setReasoning} />
           <LevelSelector icon={Eye} label="Verbose Level" value={verbose} onChange={setVerbose} />
           <LevelSelector icon={ShieldCheck} label="Elevated Level" value={elevated} onChange={setElevated} />
+          <div className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2.5">
+            <Label className="flex items-center gap-1.5 text-xs">
+              <Zap className="h-3.5 w-3.5 text-muted-foreground" />
+              Fast Mode
+            </Label>
+            <Switch checked={fastMode} onCheckedChange={setFastMode} />
+          </div>
         </div>
         <div className="mt-2 flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>

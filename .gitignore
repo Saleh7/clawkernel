@@ -30,3 +30,5 @@ CONVENTIONS.md
 coverage
 CLAUDE.md
 AGENTS.md
+/contracts
+/src/lib/gateway/upstream-version.ts
