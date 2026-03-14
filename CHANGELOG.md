@@ -13,6 +13,10 @@
 
 ### Changed
 
+#### OpenClaw v2026.3.13 Compatibility
+- **`BrowserStatus`** — added `driver?: 'openclaw' | 'extension' | 'existing-session'` and `transport?: 'cdp' | 'chrome-mcp'`; updated `cdpPort` to `number | null` and `cdpUrl` to `string | null | undefined`; matches upstream `src/browser/client.ts`
+- **`ConnectErrorDetailCodes`** — added `CONTROL_UI_ORIGIN_NOT_ALLOWED`; matches upstream `src/gateway/protocol/connect-error-details.ts`
+
 #### OpenClaw v2026.3.12 Compatibility
 - **`ConnectErrorDetailCodes`** — added `AUTH_BOOTSTRAP_TOKEN_INVALID` (new in v2026.3.12); matches upstream `connect-error-details.ts`
 - **`isNonRecoverableAuthError`** — added `AUTH_BOOTSTRAP_TOKEN_INVALID` to the non-recoverable list; prevents infinite reconnect loops when gateway rejects an invalid bootstrap token; order matches upstream `ui/src/ui/gateway.ts`

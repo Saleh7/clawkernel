@@ -496,16 +496,20 @@ export type AgentFileEntry = {
   content?: string
 }
 
+export type BrowserTransport = 'cdp' | 'chrome-mcp'
+
 // Source: OpenClaw src/browser/client.ts (BrowserStatus)
 export type BrowserStatus = {
   enabled: boolean
   profile?: string
+  driver?: 'openclaw' | 'extension' | 'existing-session'
+  transport?: BrowserTransport
   running: boolean
   cdpReady?: boolean
   cdpHttp?: boolean
   pid: number | null
-  cdpPort: number
-  cdpUrl?: string
+  cdpPort: number | null
+  cdpUrl?: string | null
   chosenBrowser: string | null
   detectedBrowser?: string | null
   detectedExecutablePath?: string | null
