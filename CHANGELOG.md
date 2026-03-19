@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`GatewaySessionRow`** — added `spawnedBy?: string` field; tracks which session spawned a sub-agent session
+
 ### Added
 
 #### OpenClaw v2026.3.12 Compatibility
