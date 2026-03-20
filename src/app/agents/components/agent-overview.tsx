@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -194,7 +195,10 @@ export function AgentOverview({
     client
       .request<{ models: ModelChoice[] }>('models.list', {})
       .then((r) => setAvailableModels(r.models))
-      .catch((err) => log.warn('Models list failed', err))
+      .catch((err) => {
+        log.warn('Models list failed', err)
+        toast.error('Failed to load available models')
+      })
   }, [client])
 
   const isDirty = useMemo(() => {

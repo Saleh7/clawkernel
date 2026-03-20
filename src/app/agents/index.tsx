@@ -20,6 +20,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { AgentActivity } from '@/app/agents/components/agent-activity'
 import { AgentBindings } from '@/app/agents/components/agent-bindings'
 import { AgentCard } from '@/app/agents/components/agent-card'
@@ -123,7 +124,10 @@ export default function AgentsPage() {
       client
         .request<AgentIdentityResult>('agent.identity.get', { agentId: agent.id })
         .then((r) => setIdentities((prev) => ({ ...prev, [agent.id]: r })))
-        .catch((err) => log.warn(`Identity fetch failed for ${agent.id}`, err))
+        .catch((err) => {
+          log.warn(`Identity fetch failed for ${agent.id}`, err)
+          toast.error(`Failed to load identity for ${agent.name || agent.id}`)
+        })
     }
   }, [client, agents])
 
@@ -132,7 +136,10 @@ export default function AgentsPage() {
     client
       .request<ConfigSnapshot>('config.get', {})
       .then((r) => useGatewayStore.getState().setConfig(r))
-      .catch((err) => log.warn('Config fetch failed', err))
+      .catch((err) => {
+        log.warn('Config fetch failed', err)
+        toast.error('Failed to load configuration')
+      })
   }, [client, config])
 
   useEffect(() => {
@@ -141,7 +148,10 @@ export default function AgentsPage() {
     client
       .request<{ agentId: string; workspace: string; files: unknown[] }>('agents.files.list', { agentId: selectedId })
       .then((r) => setWorkspace(r.workspace))
-      .catch((err) => log.warn('Workspace fetch failed', err))
+      .catch((err) => {
+        log.warn('Workspace fetch failed', err)
+        toast.error('Failed to load workspace info')
+      })
   }, [client, selectedId])
 
   const refresh = async () => {

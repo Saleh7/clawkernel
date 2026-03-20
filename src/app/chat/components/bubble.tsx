@@ -1,11 +1,26 @@
-import { Bot, Check, ChevronRight, Copy, ImageOff, RotateCcw, Sparkles, User } from 'lucide-react'
-import { memo, useCallback, useState } from 'react'
+import {
+  Bookmark,
+  Bot,
+  Check,
+  ChevronRight,
+  Copy,
+  ImageOff,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  User,
+  Volume2,
+} from 'lucide-react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Markdown } from '@/components/prompt-kit/markdown'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { ChatMessage } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
+import { detectJson } from '../lib/json-detect'
+import { extractMessageMeta } from '../lib/message-meta'
+import { isTtsSpeaking, isTtsSupported, speakText, stopTts } from '../lib/speech'
 import type { AgentInfo, ChatSettings, FileAttachment, Source } from '../types'
 import { FILE_ICONS } from '../types'
 import {
@@ -18,8 +33,115 @@ import {
   fmtTimeShort,
   getRawText,
 } from '../utils'
+import { JsonBlock } from './json-block'
+import { MessageMetaBadge } from './message-meta'
 import { SourcesButton } from './sources-panel'
 import { ToolCallBlock } from './tool-group'
+
+function formatToolOutput(text: string): string {
+  const t = text.trim()
+  if ((t.startsWith('{') || t.startsWith('[')) && t.length < 20_000) {
+    try {
+      return `\`\`\`json\n${JSON.stringify(JSON.parse(t), null, 2)}\n\`\`\``
+    } catch {
+      /* expected: input may not be valid JSON */
+    }
+  }
+  return text
+}
+
+type KeyedImage = { img: ReturnType<typeof extractImages>[number]; key: string; index: number }
+
+function ImageGrid({
+  images,
+  isUser,
+  onImageClick,
+}: {
+  readonly images: KeyedImage[]
+  readonly isUser: boolean
+  readonly onImageClick?: (src: string) => void
+}) {
+  if (images.length === 0) return null
+  return (
+    <div className={cn('flex flex-wrap gap-2 mb-1', isUser ? 'justify-end' : 'justify-start')}>
+      {images.map(({ img, key, index }) => {
+        if (img.kind === 'omitted') {
+          const sizeKB = img.bytes > 0 ? `${Math.round(img.bytes / 1024)} KB` : ''
+          return (
+            <div
+              key={key}
+              className="flex flex-col items-center justify-center gap-1.5 w-[160px] h-[100px] rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground"
+            >
+              <ImageOff className="h-5 w-5" />
+              <span className="text-[11px] leading-tight text-center">
+                Image not stored{sizeKB ? ` (${sizeKB})` : ''}
+              </span>
+            </div>
+          )
+        }
+        const src = img.kind === 'url' ? img.url : `data:${img.mediaType};base64,${img.data}`
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onImageClick?.(src)}
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+            aria-label={`View attachment ${index}`}
+          >
+            <img
+              src={src}
+              alt={`Attachment ${index}`}
+              loading="lazy"
+              className="max-w-[300px] max-h-[300px] rounded-xl object-cover border border-border hover:opacity-90 transition-opacity"
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function TextContent({
+  text,
+  isUser,
+  jsonResult,
+  onRetry,
+  onPin,
+  onDelete,
+  isPinned,
+}: {
+  readonly text: string
+  readonly isUser: boolean
+  readonly jsonResult: ReturnType<typeof detectJson>
+  readonly onRetry?: () => void
+  readonly onPin?: () => void
+  readonly onDelete?: () => void
+  readonly isPinned?: boolean
+}) {
+  if (jsonResult && !isUser) return <JsonBlock json={jsonResult} />
+  return (
+    <div className="relative">
+      <div
+        className={cn(
+          'rounded-2xl px-4 py-2.5 text-sm leading-relaxed overflow-x-auto overflow-y-hidden',
+          isUser
+            ? 'bg-primary text-primary-foreground rounded-br-md'
+            : 'bg-card text-card-foreground border border-border rounded-bl-md',
+        )}
+      >
+        <Markdown className={isUser ? 'user-markdown' : undefined}>{text}</Markdown>
+      </div>
+      <MessageActionsBar
+        text={text}
+        onRetry={isUser ? undefined : onRetry}
+        onPin={onPin}
+        onDelete={onDelete}
+        isPinned={isPinned}
+        isAssistant={!isUser}
+      />
+    </div>
+  )
+}
 
 function imageBaseKey(image: ReturnType<typeof extractImages>[number]): string {
   if (image.kind === 'url') return `url:${image.url}`
@@ -51,14 +173,51 @@ function FileAttachmentCard({ file, align }: { readonly file: FileAttachment; re
     </div>
   )
 }
-function MessageActionsBar({ text, onRetry }: { readonly text: string; readonly onRetry?: () => void }) {
+function MessageActionsBar({
+  text,
+  onRetry,
+  onPin,
+  onDelete,
+  isPinned,
+  isAssistant,
+}: {
+  readonly text: string
+  readonly onRetry?: () => void
+  readonly onPin?: () => void
+  readonly onDelete?: () => void
+  readonly isPinned?: boolean
+  readonly isAssistant?: boolean
+}) {
   const [copied, setCopied] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    },
+    [],
+  )
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(true)
+        copyTimerRef.current = setTimeout(() => setCopied(false), 1500)
+      },
+      () => {
+        /* clipboard unavailable (non-HTTPS or denied) */
+      },
+    )
+  }, [text])
+
+  const handleTts = useCallback(() => {
+    if (isTtsSpeaking()) {
+      stopTts()
+      setSpeaking(false)
+      return
+    }
+    setSpeaking(true)
+    speakText(text, { onEnd: () => setSpeaking(false), onError: () => setSpeaking(false) })
   }, [text])
 
   return (
@@ -78,6 +237,21 @@ function MessageActionsBar({ text, onRetry }: { readonly text: string; readonly 
           </TooltipTrigger>
           <TooltipContent side="top">{copied ? 'Copied!' : 'Copy'}</TooltipContent>
         </Tooltip>
+        {isAssistant && isTtsSupported() && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn('h-6 w-6', speaking && 'text-primary')}
+                onClick={handleTts}
+              >
+                <Volume2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">{speaking ? 'Stop' : 'Read aloud'}</TooltipContent>
+          </Tooltip>
+        )}
         {onRetry && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -86,6 +260,31 @@ function MessageActionsBar({ text, onRetry }: { readonly text: string; readonly 
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">Retry</TooltipContent>
+          </Tooltip>
+        )}
+        {onPin && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={cn('h-6 w-6', isPinned && 'text-primary')} onClick={onPin}>
+                <Bookmark className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">{isPinned ? 'Unpin' : 'Pin'}</TooltipContent>
+          </Tooltip>
+        )}
+        {onDelete && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Delete</TooltipContent>
           </Tooltip>
         )}
       </div>
@@ -117,6 +316,11 @@ export const ChatBubble = memo(
     onImageClick,
     hideToolCalls,
     onRetry,
+    contextWindow,
+    isPinned,
+    onPin,
+    onDelete,
+    onOpenToolOutput,
   }: {
     message: ChatMessage
     agentInfo?: AgentInfo
@@ -128,6 +332,11 @@ export const ChatBubble = memo(
     onImageClick?: (src: string) => void
     hideToolCalls?: boolean
     onRetry?: () => void
+    contextWindow?: number
+    isPinned?: boolean
+    onPin?: () => void
+    onDelete?: () => void
+    onOpenToolOutput?: (content: string) => void
   }) {
     const isUser = message.role === 'user'
     const { text, thinking } = resolveDisplayContent(message, isUser)
@@ -137,8 +346,10 @@ export const ChatBubble = memo(
     const images = extractImages(message)
     const timestamp = message.timestamp
     const showTools = toolCalls.length > 0 && settings.showToolCalls && !hideToolCalls
+    const meta = useMemo(() => extractMessageMeta(message, contextWindow), [message, contextWindow])
+    const jsonResult = useMemo(() => (!isUser && text ? detectJson(text) : null), [isUser, text])
 
-    // Pre-compute stable keys for images and file attachments (avoids IIFE in JSX)
+    // Stable keys for React reconciliation
     const keyedImages = (() => {
       const counts = new Map<string, number>()
       return images.map((img, idx) => {
@@ -181,43 +392,7 @@ export const ChatBubble = memo(
         </div>
 
         <div className={cn('flex flex-col gap-1 max-w-[75%] min-w-0', isUser ? 'items-end' : 'items-start')}>
-          {images.length > 0 && (
-            <div className={cn('flex flex-wrap gap-2 mb-1', isUser ? 'justify-end' : 'justify-start')}>
-              {keyedImages.map(({ img, key, index }) => {
-                if (img.kind === 'omitted') {
-                  const sizeKB = img.bytes > 0 ? `${Math.round(img.bytes / 1024)} KB` : ''
-                  return (
-                    <div
-                      key={key}
-                      className="flex flex-col items-center justify-center gap-1.5 w-[160px] h-[100px] rounded-xl border border-dashed border-border bg-muted/50 text-muted-foreground"
-                    >
-                      <ImageOff className="h-5 w-5" />
-                      <span className="text-[11px] leading-tight text-center">
-                        Image not stored{sizeKB ? ` (${sizeKB})` : ''}
-                      </span>
-                    </div>
-                  )
-                }
-                const src = img.kind === 'url' ? img.url : `data:${img.mediaType};base64,${img.data}`
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => onImageClick?.(src)}
-                    className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
-                    aria-label={`View attachment ${index}`}
-                  >
-                    <img
-                      src={src}
-                      alt={`Attachment ${index}`}
-                      loading="lazy"
-                      className="max-w-[300px] max-h-[300px] rounded-xl object-cover border border-border hover:opacity-90 transition-opacity"
-                    />
-                  </button>
-                )
-              })}
-            </div>
-          )}
+          <ImageGrid images={keyedImages} isUser={isUser} onImageClick={onImageClick} />
           {fileAttachments.length > 0 && (
             <div className="flex flex-col gap-1.5 mb-1">
               {keyedFiles.map(({ file, key }) => (
@@ -253,46 +428,49 @@ export const ChatBubble = memo(
                   args={tc.arguments}
                   result={toolResults.get(tc.id)?.content}
                   isError={toolResults.get(tc.id)?.isError}
+                  onViewOutput={
+                    onOpenToolOutput && toolResults.get(tc.id)?.content
+                      ? () => onOpenToolOutput(formatToolOutput(toolResults.get(tc.id)!.content))
+                      : undefined
+                  }
                 />
               ))}
             </div>
           )}
 
-          {/* Text — wrapped in relative container for action bar overlay */}
           {text?.trim() && (
-            <div className="relative">
-              <div
-                className={cn(
-                  'rounded-2xl px-4 py-2.5 text-sm leading-relaxed overflow-x-auto overflow-y-hidden',
-                  isUser
-                    ? 'bg-primary text-primary-foreground rounded-br-md'
-                    : 'bg-card text-card-foreground border border-border rounded-bl-md',
-                )}
-              >
-                <Markdown className={isUser ? 'user-markdown' : undefined}>{text}</Markdown>
-              </div>
-              <MessageActionsBar text={text} onRetry={isUser ? undefined : onRetry} />
-            </div>
+            <TextContent
+              text={text}
+              isUser={isUser}
+              jsonResult={jsonResult}
+              onRetry={onRetry}
+              onPin={onPin}
+              onDelete={onDelete}
+              isPinned={isPinned}
+            />
           )}
           {sources && sources.length > 0 && onOpenSources && (
             <SourcesButton sources={sources} onClick={() => onOpenSources(sources)} />
           )}
-          {timestamp && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  className={cn(
-                    'text-xs text-muted-foreground cursor-default transition-opacity duration-100',
-                    'opacity-0 group-hover/msg:opacity-100',
-                    isLastAssistant && 'opacity-100',
-                  )}
-                >
-                  {fmtTimeShort(timestamp)}
-                </TooltipTrigger>
-                <TooltipContent side="top">{fmtTimeFull(timestamp)}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          <div
+            className={cn(
+              'flex items-center gap-2 transition-opacity duration-100',
+              'opacity-0 group-hover/msg:opacity-100',
+              isLastAssistant && 'opacity-100',
+            )}
+          >
+            {timestamp && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger className="text-xs text-muted-foreground cursor-default">
+                    {fmtTimeShort(timestamp)}
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{fmtTimeFull(timestamp)}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {meta && <MessageMetaBadge meta={meta} />}
+          </div>
         </div>
       </div>
     )
@@ -303,6 +481,8 @@ export const ChatBubble = memo(
     if (prev.settings !== next.settings) return false
     if (prev.sources !== next.sources) return false
     if (prev.toolResults !== next.toolResults) return false
+    if (prev.contextWindow !== next.contextWindow) return false
+    if (prev.isPinned !== next.isPinned) return false
     // Compare content by reference first (fast path), then by extracted text
     if (prev.message.content !== next.message.content) {
       if (extractText(prev.message) !== extractText(next.message)) return false

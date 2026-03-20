@@ -11,6 +11,7 @@ import {
   generateId,
   getRawText,
   groupMessages,
+  messageKey,
   stripThinkingTags,
 } from '@/app/chat/utils'
 import type { ChatMessage } from '@/lib/gateway/types'
@@ -499,5 +500,52 @@ describe('fmtTimeFull', () => {
   it('returns full formatted date', () => {
     const result = fmtTimeFull(Date.now())
     expect(result.length).toBeGreaterThan(10)
+  })
+})
+
+describe('messageKey', () => {
+  it('uses toolCallId when present', () => {
+    expect(messageKey(makeMsg('assistant', { toolCallId: 'tc-123' }), 0)).toBe('tool:tc-123')
+  })
+
+  it('uses id over toolCallId when no toolCallId', () => {
+    const msg = makeMsg('assistant') as Record<string, unknown>
+    msg.id = 'msg-456'
+    expect(messageKey(msg as ChatMessage, 0)).toBe('msg:msg-456')
+  })
+
+  it('uses messageId when no id or toolCallId', () => {
+    const msg = makeMsg('assistant') as Record<string, unknown>
+    msg.messageId = 'mid-789'
+    expect(messageKey(msg as ChatMessage, 0)).toBe('msg:mid-789')
+  })
+
+  it('falls back to role:timestamp:index', () => {
+    const msg = makeMsg('user', { timestamp: 1000 })
+    expect(messageKey(msg, 5)).toBe('msg:user:1000:5')
+  })
+
+  it('falls back to role:index when no timestamp', () => {
+    const msg = makeMsg('assistant', { timestamp: undefined })
+    expect(messageKey(msg, 3)).toBe('msg:assistant:3')
+  })
+
+  it('uses "unknown" for undefined role', () => {
+    const msg = makeMsg('assistant', { timestamp: undefined })
+    msg.role = undefined
+    expect(messageKey(msg, 0)).toBe('msg:unknown:0')
+  })
+
+  it('prioritizes toolCallId over id and timestamp', () => {
+    const msg = makeMsg('assistant', { toolCallId: 'tc-1', timestamp: 9999 }) as Record<string, unknown>
+    msg.id = 'id-1'
+    expect(messageKey(msg as ChatMessage, 0)).toBe('tool:tc-1')
+  })
+
+  it('prioritizes id over messageId and timestamp', () => {
+    const msg = makeMsg('assistant', { timestamp: 9999 }) as Record<string, unknown>
+    msg.id = 'id-1'
+    msg.messageId = 'mid-1'
+    expect(messageKey(msg as ChatMessage, 0)).toBe('msg:id-1')
   })
 })

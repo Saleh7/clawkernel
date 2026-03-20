@@ -2,6 +2,23 @@ import type { ChatMessage } from '@/lib/gateway/types'
 import type { FileAttachment, RenderItem, Source } from './types'
 import { IMAGE_QUALITY, MAX_IMAGE_DIM, MAX_TEXT_CHARS, TARGET_SIZE } from './types'
 
+/**
+ * Stable key for a chat message — survives filtering, reordering, and history reload.
+ * Mirrors OpenClaw UI's messageKey() (ui/src/ui/views/chat.ts).
+ */
+export function messageKey(msg: ChatMessage, index: number): string {
+  const toolCallId = typeof msg.toolCallId === 'string' ? msg.toolCallId : ''
+  if (toolCallId) return `tool:${toolCallId}`
+  const m = msg as Record<string, unknown>
+  const id = typeof m.id === 'string' ? m.id : ''
+  if (id) return `msg:${id}`
+  const messageId = typeof m.messageId === 'string' ? m.messageId : ''
+  if (messageId) return `msg:${messageId}`
+  const role = typeof msg.role === 'string' ? msg.role : 'unknown'
+  if (msg.timestamp != null) return `msg:${role}:${msg.timestamp}:${index}`
+  return `msg:${role}:${index}`
+}
+
 const INBOUND_CONTEXT_RE = /^Conversation info \(untrusted metadata\):\s*```json?\s*\{[\s\S]*?\}\s*```\s*/
 const TIMESTAMP_PREFIX = /^\[(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+[A-Z+\d]+\]\s*/
 const MEDIA_ATTACHED_RE = /\[media attached:[^\]]*\]\s*/g
@@ -500,6 +517,7 @@ function parseWebSearchResults(content: string | undefined): Array<Record<string
     if (!Array.isArray(parsed.results)) return []
     return parsed.results.filter(isRecord)
   } catch {
+    /* expected: tool output may not be valid JSON */
     return []
   }
 }

@@ -4,6 +4,14 @@ import type { GatewayClient } from '@/lib/gateway/client'
 import type { ChatEventPayload, ChatMessage, ChatMessageContent } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
 import { selectClient, selectIsConnected, useGatewayStore } from '@/stores/gateway-store'
+import { exportChatMarkdown } from '../lib/chat-export'
+import { DeletedMessages } from '../lib/deleted-messages'
+import { InputHistory } from '../lib/input-history'
+import { PinnedMessages } from '../lib/pinned-messages'
+import { getOrCreate } from '../lib/session-cache'
+import { isSilentReply } from '../lib/silent-filter'
+import { parseSlashCommand } from '../lib/slash-commands'
+import { executeSlashCommand } from '../lib/slash-executor'
 import type { AgentInfo, AttachmentFile, ChatQueueItem, ChatSettings, ChatState, SessionEntry, Source } from '../types'
 import { FILE_TYPES, IMAGE_TYPES, TEXT_READABLE_TYPES } from '../types'
 import {
@@ -14,14 +22,20 @@ import {
   fileToBase64,
   generateId,
   groupMessages,
+  messageKey,
   readFileAsText,
 } from '../utils'
+import { useSlashMenu } from './use-slash-menu'
 
 const log = createLogger('chat')
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const HISTORY_PAGE_SIZE = 200
 const STOP_COMMANDS = new Set(['stop', 'esc', 'abort', 'wait', 'exit', '/stop'])
 const DEFAULT_CHAT_SETTINGS: ChatSettings = { showToolCalls: true, showThinking: true }
+
+// Persistent instances keyed by session (survive re-renders)
+const pinnedCache = new Map<string, PinnedMessages>()
+const deletedCache = new Map<string, DeletedMessages>()
 
 /** Normalize a final event message — accepts assistant messages with content or text */
 function normalizeFinalMessage(message: unknown): ChatMessage | null {
@@ -30,7 +44,6 @@ function normalizeFinalMessage(message: unknown): ChatMessage | null {
   // Role is optional for final messages (some may omit it)
   const role = typeof m.role === 'string' ? m.role : undefined
   if (role && role !== 'assistant') return null
-  // Must have content array or text field
   if (!('content' in m) && !('text' in m)) return null
   return message as ChatMessage
 }
@@ -244,6 +257,15 @@ export function useChat() {
     }
   })
 
+  const slashMenu = useSlashMenu()
+  const inputHistoryRef = useRef(new InputHistory())
+
+  const [focusMode, setFocusMode] = useState(false)
+  const [toolSidebarContent, setToolSidebarContent] = useState<string | null>(null)
+  const [updateTick, setUpdateTick] = useState(0)
+  const pinnedRef = useRef<PinnedMessages | null>(null)
+  const deletedRef = useRef<DeletedMessages | null>(null)
+
   const [chat, setChat] = useState<ChatState>({
     messages: [],
     loading: false,
@@ -256,6 +278,10 @@ export function useChat() {
     hasMore: false,
   })
 
+  const chatMessagesRef = useRef(chat.messages)
+  useEffect(() => {
+    chatMessagesRef.current = chat.messages
+  }, [chat.messages])
   useEffect(() => {
     inputValueRef.current = inputValue
   }, [inputValue])
@@ -327,10 +353,38 @@ export function useChat() {
     return map
   }, [chat.messages])
 
-  const displayMessages = useMemo(
-    () => chat.messages.filter((m) => m.role !== 'toolResult' && m.role !== 'tool'),
-    [chat.messages],
-  )
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: updateTick forces re-computation after pin/delete
+  const { displayMessages, displayKeys } = useMemo(() => {
+    const deleted = deletedRef.current
+    const msgs: typeof chat.messages = []
+    const keys: string[] = []
+    for (let i = 0; i < chat.messages.length; i++) {
+      const m = chat.messages[i]
+      if (m.role === 'toolResult' || m.role === 'tool') continue
+      if (isSilentReply(m)) continue
+      const key = messageKey(m, i)
+      if (deleted?.has(key)) continue
+      msgs.push(m)
+      keys.push(key)
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const filtered: typeof msgs = []
+      const filteredKeys: string[] = []
+      for (let j = 0; j < msgs.length; j++) {
+        const t = extractText(msgs[j])
+        if (t?.toLowerCase().includes(q)) {
+          filtered.push(msgs[j])
+          filteredKeys.push(keys[j])
+        }
+      }
+      return { displayMessages: filtered, displayKeys: filteredKeys }
+    }
+    return { displayMessages: msgs, displayKeys: keys }
+  }, [chat.messages, searchQuery, updateTick]) // updateTick forces re-computation after pin/delete
   const sourcesMap = useMemo(
     () => extractSourcesFromMessages(chat.messages, toolResultsMap),
     [chat.messages, toolResultsMap],
@@ -383,6 +437,8 @@ export function useChat() {
     if (!client || !connected || !selectedSession) return
 
     historySessionRef.current = selectedSession
+    pinnedRef.current = getOrCreate(pinnedCache, selectedSession, () => new PinnedMessages(selectedSession))
+    deletedRef.current = getOrCreate(deletedCache, selectedSession, () => new DeletedMessages(selectedSession))
     setChat((prev) => ({
       ...prev,
       messages: [],
@@ -691,7 +747,7 @@ export function useChat() {
     return { message: fullMessage, attachments: apiAttachments, contentBlocks, id: generateId() }
   }, [])
 
-  /** Actually send a prepared payload via the gateway. */
+  /** Send payload via Gateway RPC. */
   const executeSend = useCallback(
     async (payload: {
       message: string
@@ -758,22 +814,109 @@ export function useChat() {
   flushQueueRef.current = () => {
     void flushQueue()
   }
+
+  const handleRefresh = useCallback(async () => {
+    if (!client || !connected || !selectedSession) return
+    setChat((p) => ({ ...p, loading: true, error: null }))
+    try {
+      const res = await client.request<{ messages?: ChatMessage[]; thinkingLevel?: string }>('chat.history', {
+        sessionKey: selectedSession,
+        limit: HISTORY_PAGE_SIZE,
+      })
+      const msgs = Array.isArray(res.messages) ? res.messages : []
+      setChat((p) => ({
+        ...p,
+        messages: msgs,
+        thinkingLevel: res.thinkingLevel ?? p.thinkingLevel,
+        loading: false,
+        streaming: null,
+        runId: null,
+        hasMore: msgs.length >= HISTORY_PAGE_SIZE,
+      }))
+    } catch (err) {
+      setChat((p) => ({ ...p, loading: false, error: String(err) }))
+    }
+  }, [client, connected, selectedSession])
+
+  const execSessionResetAction = useCallback(
+    async (cl: GatewayClient, sk: string, reason: 'new' | 'reset') => {
+      try {
+        await cl.request('sessions.reset', { key: sk, reason })
+        void handleRefresh()
+      } catch (err) {
+        log.warn('Session reset action failed', err)
+      }
+    },
+    [handleRefresh],
+  )
+
+  /** Execute a client-side slash command via Gateway RPC. */
+  const handleSlashCommand = useCallback(
+    async (cl: GatewayClient, sk: string, commandName: string, args: string) => {
+      if (commandName === 'export') {
+        exportChatMarkdown(chatMessagesRef.current, currentAgentInfo?.name || currentAgentId || 'Agent')
+        return
+      }
+      if (commandName === 'stop') {
+        cl.request('chat.abort', { sessionKey: sk, ...(runIdRef.current ? { runId: runIdRef.current } : {}) }).catch(
+          (err) => log.warn('Slash stop failed', err),
+        )
+        return
+      }
+      try {
+        const result = await executeSlashCommand(cl, sk, commandName, args)
+        if (result.content) {
+          setChat((prev) => ({
+            ...prev,
+            messages: [
+              ...prev.messages,
+              {
+                role: 'assistant',
+                content: [{ type: 'text', text: result.content }],
+                timestamp: Date.now(),
+                __slashResult: true,
+              } as ChatMessage,
+            ],
+          }))
+        }
+        if (result.action === 'refresh') void handleRefresh()
+        else if (result.action === 'new-session') void execSessionResetAction(cl, sk, 'new')
+        else if (result.action === 'reset') void execSessionResetAction(cl, sk, 'reset')
+        else if (result.action === 'clear') setChat((p) => ({ ...p, messages: [] }))
+      } catch (err) {
+        log.warn('Slash command failed', err)
+      }
+    },
+    [handleRefresh, execSessionResetAction, currentAgentInfo, currentAgentId],
+  )
+
   const handleSend = useCallback(async () => {
     if (!client || !connected || !selectedSession) return
 
-    // Stop commands abort the current run instead of sending.
-    // Reads from refs — isBusyRef/runIdRef change every frame during streaming
-    // but the callback must remain stable to avoid PromptInput re-renders.
     const trimmedInput = inputValueRef.current.trim().toLowerCase()
     if (trimmedInput && STOP_COMMANDS.has(trimmedInput) && isBusyRef.current) {
       setInputValue('')
-      const runId = runIdRef.current
       client
-        .request('chat.abort', { sessionKey: selectedSession, ...(runId ? { runId } : {}) })
+        .request('chat.abort', {
+          sessionKey: selectedSession,
+          ...(runIdRef.current ? { runId: runIdRef.current } : {}),
+        })
         .catch((err) => log.warn('Stop command abort failed', err))
       return
     }
 
+    const rawInput = inputValueRef.current
+    const parsed = parseSlashCommand(rawInput)
+    if (parsed?.command.local) {
+      inputHistoryRef.current.push(rawInput)
+      setInputValue('')
+      slashMenu.close()
+      await handleSlashCommand(client, selectedSession, parsed.command.name, parsed.args)
+      return
+    }
+
+    inputHistoryRef.current.push(rawInput)
+    slashMenu.close()
     const payload = prepareSendPayload()
     if (!payload) return
 
@@ -795,7 +938,7 @@ export function useChat() {
     }
 
     await executeSend(payload)
-  }, [client, connected, selectedSession, prepareSendPayload, executeSend])
+  }, [client, connected, selectedSession, prepareSendPayload, executeSend, slashMenu, handleSlashCommand])
   const handleRetry = useCallback(
     async (userMessage: ChatMessage) => {
       if (!client || !connected || !selectedSession) return
@@ -840,29 +983,6 @@ export function useChat() {
       setChat((p) => ({ ...p, loadingMore: false }))
     }
   }, [client, connected, selectedSession, chat.loadingMore, chat.hasMore, chat.runId, chat.messages.length])
-  const handleRefresh = useCallback(async () => {
-    if (!client || !connected || !selectedSession) return
-    setChat((p) => ({ ...p, loading: true, error: null }))
-    try {
-      const res = await client.request<{ messages?: ChatMessage[]; thinkingLevel?: string }>('chat.history', {
-        sessionKey: selectedSession,
-        limit: HISTORY_PAGE_SIZE,
-      })
-      const msgs = Array.isArray(res.messages) ? res.messages : []
-      setChat((p) => ({
-        ...p,
-        messages: msgs,
-        thinkingLevel: res.thinkingLevel ?? p.thinkingLevel,
-        loading: false,
-        streaming: null,
-        runId: null,
-        hasMore: msgs.length >= HISTORY_PAGE_SIZE,
-      }))
-    } catch (err) {
-      setChat((p) => ({ ...p, loading: false, error: String(err) }))
-    }
-  }, [client, connected, selectedSession])
-
   return {
     connected,
     connectionState,
@@ -887,6 +1007,7 @@ export function useChat() {
     currentSession,
     toolResultsMap,
     displayMessages,
+    displayKeys,
     sourcesMap,
     lastAssistantIndex,
     renderItems,
@@ -911,5 +1032,18 @@ export function useChat() {
     handleDragLeave,
     handleDragOver,
     handleDrop,
+    slashMenu,
+    inputHistory: inputHistoryRef.current,
+    searchOpen,
+    searchQuery,
+    setSearchOpen,
+    setSearchQuery,
+    focusMode,
+    setFocusMode,
+    toolSidebarContent,
+    setToolSidebarContent,
+    pinned: pinnedRef.current,
+    deleted: deletedRef.current,
+    triggerUpdate: () => setUpdateTick((n) => n + 1),
   }
 }

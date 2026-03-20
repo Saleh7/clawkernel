@@ -3,10 +3,11 @@
  * Only common languages included to minimize chunk sizes.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let highlighterPromise: Promise<any> | null = null
+type Highlighter = Awaited<ReturnType<typeof import('shiki/core').createHighlighterCore>>
 
-function getHighlighter(): Promise<any> {
+let highlighterPromise: Promise<Highlighter> | null = null
+
+function getHighlighter(): Promise<Highlighter> {
   const promise = (highlighterPromise ??= (async () => {
     const { createHighlighterCore } = await import('shiki/core')
     const { createOnigurumaEngine } = await import('shiki/engine/oniguruma')
@@ -43,13 +44,14 @@ export async function highlightCode(code: string, language: string, isDark: bool
     const hl = await getHighlighter()
     const lang = language.toLowerCase() || 'text'
     const loaded = hl.getLoadedLanguages()
-    if (!loaded.includes(lang as any)) return null
+    if (!loaded.includes(lang)) return null
 
     return hl.codeToHtml(code, {
       lang,
       theme: isDark ? 'vitesse-dark' : 'vitesse-light',
     })
   } catch {
+    /* expected: highlighter may fail to load in constrained environments */
     return null
   }
 }

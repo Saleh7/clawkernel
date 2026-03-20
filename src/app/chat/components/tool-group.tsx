@@ -1,6 +1,7 @@
-import { Bot, ChevronDown, Loader2, Wrench } from 'lucide-react'
+import { Bot, ChevronDown, ExternalLink, Loader2, Wrench } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import type { ChatMessage } from '@/lib/gateway/types'
 import { cn } from '@/lib/utils'
@@ -11,11 +12,13 @@ export function ToolCallBlock({
   args,
   result,
   isError,
+  onViewOutput,
 }: {
   readonly name: string
   readonly args: Record<string, unknown>
   readonly result?: string
   readonly isError?: boolean
+  readonly onViewOutput?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const argsStr = JSON.stringify(args, null, 2)
@@ -63,6 +66,11 @@ export function ToolCallBlock({
                 {isError ? 'Error' : 'Output'}
               </span>
               <pre className="mt-1 whitespace-pre-wrap text-foreground/80 max-h-60 overflow-auto">{result}</pre>
+              {onViewOutput && (
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] mt-1 gap-1" onClick={onViewOutput}>
+                  <ExternalLink className="h-3 w-3" /> View full output
+                </Button>
+              )}
             </div>
           )}
         </div>

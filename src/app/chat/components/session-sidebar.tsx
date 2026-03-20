@@ -1,10 +1,22 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Bot, MessageSquare, RefreshCw, Search, User } from 'lucide-react'
+import {
+  Bot,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Eraser,
+  MessageSquare,
+  RefreshCw,
+  Search,
+  User,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatTokens } from '@/lib/format'
+import { formatRelativeTime, formatTokens } from '@/lib/format'
 import type { SessionsListResult, SessionsPreviewEntry, SessionsPreviewResult } from '@/lib/gateway/types'
 import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
@@ -13,11 +25,8 @@ import type { AgentInfo, SessionEntry } from '../types'
 
 const log = createLogger('chat:sidebar')
 
-// Session status classification — real-time from activeRuns + updatedAt
-
 type SessionStatus = 'running' | 'recent' | 'idle'
-
-const RECENT_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes
+const RECENT_THRESHOLD_MS = 5 * 60 * 1000
 
 function classifySession(key: string, updatedAt: number | null, activeSessions: Set<string>): SessionStatus {
   if (activeSessions.has(key)) return 'running'
@@ -25,7 +34,6 @@ function classifySession(key: string, updatedAt: number | null, activeSessions: 
   return 'idle'
 }
 
-// Status indicator dot — zero-delay, pure CSS animations
 function StatusDot({ status }: { readonly status: SessionStatus }) {
   if (status === 'running') {
     return (
@@ -55,6 +63,12 @@ function statusLabel(status: SessionStatus): string {
   return 'Idle'
 }
 
+// ── Preview hover card ──
+
+const PREVIEW_CACHE_TTL_MS = 60_000
+const PREVIEW_CACHE_MAX = 100
+const previewCache = new Map<string, { entry: SessionsPreviewEntry; ts: number }>()
+
 function PreviewHoverCard({ entry }: { readonly entry: SessionsPreviewEntry | null | 'loading' }) {
   if (entry === 'loading') {
     return (
@@ -77,11 +91,9 @@ function PreviewHoverCard({ entry }: { readonly entry: SessionsPreviewEntry | nu
         return entry.items.slice(-4).map((item) => {
           const isUser = item.role === 'user'
           const text = item.text.length > 120 ? `${item.text.slice(0, 117)}…` : item.text
-
           const baseKey = `${item.role}:${item.text.slice(0, 80)}`
           const occurrence = (keyCounts.get(baseKey) ?? 0) + 1
           keyCounts.set(baseKey, occurrence)
-
           return (
             <div
               key={`${baseKey}:${occurrence}`}
@@ -107,10 +119,7 @@ function PreviewHoverCard({ entry }: { readonly entry: SessionsPreviewEntry | nu
   )
 }
 
-// Shared preview cache (module-level, persists across re-renders)
-const PREVIEW_CACHE_TTL_MS = 60_000
-const PREVIEW_CACHE_MAX = 100
-const previewCache = new Map<string, { entry: SessionsPreviewEntry; ts: number }>()
+// ── Session item ──
 
 function SessionItem({
   session,
@@ -169,6 +178,8 @@ function SessionItem({
     setPreview(null)
   }, [])
 
+  const timeAgo = session.updatedAt ? formatRelativeTime(session.updatedAt) : null
+
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip open={hovered && preview !== null}>
@@ -179,30 +190,56 @@ function SessionItem({
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className={cn(
-              'group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-all duration-150',
+              'group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition-all duration-150',
               selected
-                ? 'bg-accent text-accent-foreground'
+                ? 'bg-accent text-accent-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
               status === 'running' && !selected && 'bg-emerald-500/5 border border-emerald-500/10',
               status === 'running' && selected && 'ring-1 ring-emerald-500/30',
             )}
           >
             <StatusDot status={status} />
-            <span className="flex-1 flex flex-col min-w-0">
-              <span className="truncate font-mono">{session.label}</span>
-              {session.preview && <span className="truncate text-xs text-muted-foreground">{session.preview}</span>}
-            </span>
-            {session.totalTokens ? (
-              <span className="text-[10px] opacity-50 font-mono tabular-nums">
-                {formatTokens(session.totalTokens ?? 0)}
-              </span>
-            ) : null}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate font-mono text-[11px] font-medium">{session.label}</span>
+              </div>
+              {session.preview && (
+                <span className="block truncate text-[10px] text-muted-foreground/70 mt-0.5">{session.preview}</span>
+              )}
+            </div>
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
+              <div className="group-hover:hidden flex flex-col items-end gap-0.5">
+                {timeAgo && <span className="text-[9px] text-muted-foreground/50">{timeAgo}</span>}
+                {session.totalTokens ? (
+                  <span className="text-[9px] opacity-40 font-mono tabular-nums">
+                    {formatTokens(session.totalTokens)}
+                  </span>
+                ) : null}
+              </div>
+              <div className="hidden group-hover:flex items-center gap-0.5">
+                <button
+                  type="button"
+                  title="Compact context"
+                  className="h-5 w-5 rounded inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (!client?.connected) return
+                    client.request('sessions.compact', { key: session.key }).then(
+                      () => toast.success('Context compacted'),
+                      () => toast.error('Compact failed'),
+                    )
+                  }}
+                >
+                  <Eraser className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="right" className="text-xs p-3">
+        <TooltipContent side="right" className="text-xs p-3 max-w-72">
           <p className="font-medium mb-1">{session.label}</p>
           <p className="text-muted-foreground mb-2">{statusLabel(status)}</p>
-          {session.model && <p className="text-muted-foreground font-mono mb-2">{session.model}</p>}
+          {session.model && <p className="text-muted-foreground font-mono mb-2 text-[10px]">{session.model}</p>}
           <PreviewHoverCard entry={preview} />
         </TooltipContent>
       </Tooltip>
@@ -210,70 +247,101 @@ function SessionItem({
   )
 }
 
+// ── Agent group header (collapsible) ──
+
 function AgentGroupHeader({
   agentId,
   info,
   statuses,
+  sessionCount,
+  collapsed,
+  onToggle,
 }: {
   readonly agentId: string
   readonly info?: AgentInfo
   readonly statuses: SessionStatus[]
+  readonly sessionCount: number
+  readonly collapsed: boolean
+  readonly onToggle: () => void
 }) {
   const runningCount = statuses.filter((s) => s === 'running').length
-  const recentCount = statuses.filter((s) => s === 'recent').length
 
   return (
-    <div className="flex items-center gap-1.5 px-2 py-1.5">
-      <span className="text-sm">{info?.emoji || '🤖'}</span>
-      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        {info?.name || agentId}
-      </span>
-      <div className="ml-auto flex items-center gap-1">
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex w-full items-center gap-1.5 px-2.5 py-2 hover:bg-accent/30 rounded-md transition-colors group"
+    >
+      {collapsed ? (
+        <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+      ) : (
+        <ChevronDown className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+      )}
+      <span className="text-sm shrink-0">{info?.emoji || '🤖'}</span>
+      <span className="text-[11px] font-semibold text-foreground/80 truncate">{info?.name || agentId}</span>
+      <div className="ml-auto flex items-center gap-1.5">
         {runningCount > 0 && (
           <span className="flex items-center gap-0.5 text-[9px] font-medium text-emerald-500">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             {runningCount}
           </span>
         )}
-        {recentCount > 0 && (
-          <span className="flex items-center gap-0.5 text-[9px] font-medium text-amber-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-            {recentCount}
-          </span>
-        )}
+        <span className="text-[9px] text-muted-foreground/40 font-mono">{sessionCount}</span>
       </div>
-    </div>
+    </button>
   )
 }
 
+// ── Flat item types for virtualization ──
+
 type FlatItem =
-  | { readonly kind: 'header'; readonly agentId: string; readonly info?: AgentInfo; readonly statuses: SessionStatus[] }
+  | {
+      readonly kind: 'header'
+      readonly agentId: string
+      readonly info?: AgentInfo
+      readonly statuses: SessionStatus[]
+      readonly sessionCount: number
+    }
   | { readonly kind: 'session'; readonly session: SessionEntry & { status: SessionStatus } }
 
-const HEADER_HEIGHT = 32
-const SESSION_HEIGHT = 40
+const HEADER_HEIGHT = 36
+const SESSION_HEIGHT = 44
+
+// ── Virtual session list ──
 
 function VirtualSessionList({
   grouped,
   agents,
   selected,
   onSelect,
+  collapsedAgents,
+  onToggleAgent,
 }: {
   readonly grouped: Map<string, Array<SessionEntry & { status: SessionStatus }>>
   readonly agents: Map<string, AgentInfo>
   readonly selected: string | null
   readonly onSelect: (key: string) => void
+  readonly collapsedAgents: Set<string>
+  readonly onToggleAgent: (agentId: string) => void
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
 
   const flatItems = useMemo(() => {
     const items: FlatItem[] = []
     for (const [agentId, sessions] of grouped) {
-      items.push({ kind: 'header', agentId, info: agents.get(agentId), statuses: sessions.map((s) => s.status) })
-      for (const s of sessions) items.push({ kind: 'session', session: s })
+      items.push({
+        kind: 'header',
+        agentId,
+        info: agents.get(agentId),
+        statuses: sessions.map((s) => s.status),
+        sessionCount: sessions.length,
+      })
+      if (!collapsedAgents.has(agentId)) {
+        for (const s of sessions) items.push({ kind: 'session', session: s })
+      }
     }
     return items
-  }, [grouped, agents])
+  }, [grouped, agents, collapsedAgents])
 
   const virtualizer = useVirtualizer({
     count: flatItems.length,
@@ -283,22 +351,34 @@ function VirtualSessionList({
   })
 
   if (flatItems.length === 0) {
-    return <div className="px-4 py-8 text-center text-xs text-muted-foreground">No sessions found</div>
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 px-4 py-10">
+        <Search className="h-5 w-5 text-muted-foreground/30" />
+        <span className="text-xs text-muted-foreground">No sessions found</span>
+      </div>
+    )
   }
 
   return (
     <div ref={parentRef} className="flex-1 overflow-y-auto">
-      <div className="relative px-2 py-1" style={{ height: virtualizer.getTotalSize() }}>
+      <div className="relative px-2.5 py-1" style={{ height: virtualizer.getTotalSize() }}>
         {virtualizer.getVirtualItems().map((vRow) => {
           const item = flatItems[vRow.index]
           return (
             <div
               key={vRow.key}
-              className="absolute left-0 right-0 px-0"
+              className="absolute left-0 right-0 px-2.5"
               style={{ height: vRow.size, transform: `translateY(${vRow.start}px)` }}
             >
               {item.kind === 'header' ? (
-                <AgentGroupHeader agentId={item.agentId} info={item.info} statuses={item.statuses} />
+                <AgentGroupHeader
+                  agentId={item.agentId}
+                  info={item.info}
+                  statuses={item.statuses}
+                  sessionCount={item.sessionCount}
+                  collapsed={collapsedAgents.has(item.agentId)}
+                  onToggle={() => onToggleAgent(item.agentId)}
+                />
               ) : (
                 <SessionItem
                   session={item.session}
@@ -314,6 +394,8 @@ function VirtualSessionList({
     </div>
   )
 }
+
+// ── Sidebar ──
 
 export function SessionSidebar({
   sessions,
@@ -334,6 +416,16 @@ export function SessionSidebar({
 }) {
   const client = useGatewayStore(selectClient)
   const [refreshing, setRefreshing] = useState(false)
+  const [collapsedAgents, setCollapsedAgents] = useState<Set<string>>(new Set())
+
+  const toggleAgent = useCallback((agentId: string) => {
+    setCollapsedAgents((prev) => {
+      const next = new Set(prev)
+      if (next.has(agentId)) next.delete(agentId)
+      else next.add(agentId)
+      return next
+    })
+  }, [])
 
   const handleRefreshSessions = useCallback(async () => {
     if (!client?.connected || refreshing) return
@@ -350,8 +442,6 @@ export function SessionSidebar({
     setRefreshing(false)
   }, [client, refreshing])
 
-  // Re-evaluate session statuses only when there are recent/running sessions
-  // that may transition. Uses 30s interval instead of 1s to reduce re-renders.
   const [, forceTick] = useReducer((value: number) => value + 1, 0)
   const hasActiveOrRecent = sessions.some(
     (s) => activeSessions.has(s.key) || (s.updatedAt && Date.now() - s.updatedAt < RECENT_THRESHOLD_MS),
@@ -362,7 +452,6 @@ export function SessionSidebar({
     return () => clearInterval(id)
   }, [hasActiveOrRecent])
 
-  // Group sessions by agent, with status classification
   const grouped = useMemo(() => {
     const map = new Map<string, Array<SessionEntry & { status: SessionStatus }>>()
     const q = search.toLowerCase()
@@ -373,27 +462,28 @@ export function SessionSidebar({
       arr.push({ ...s, status })
       map.set(s.agentId, arr)
     }
-    // Sort each group: running first, then recent, then idle
     const statusOrder: Record<SessionStatus, number> = { running: 0, recent: 1, idle: 2 }
     for (const [, arr] of map) {
       arr.sort((a, b) => statusOrder[a.status] - statusOrder[b.status])
     }
     return map
   }, [sessions, search, activeSessions])
+
   const globalCounts = useMemo(() => {
-    let running = 0,
-      recent = 0
+    let running = 0
+    let total = 0
     for (const [, arr] of grouped) {
+      total += arr.length
       for (const s of arr) {
         if (s.status === 'running') running++
-        else if (s.status === 'recent') recent++
       }
     }
-    return { running, recent }
+    return { running, total }
   }, [grouped])
 
   return (
     <div className="flex h-full w-72 flex-col border-r border-border bg-sidebar">
+      {/* Header */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-semibold text-foreground">Sessions</span>
@@ -406,8 +496,8 @@ export function SessionSidebar({
               {globalCounts.running} live
             </Badge>
           )}
-          <Badge variant="secondary" className="text-xs font-mono">
-            {sessions.length}
+          <Badge variant="secondary" className="text-[9px] font-mono px-1.5 py-0">
+            {globalCounts.total}
           </Badge>
           <TooltipProvider>
             <Tooltip>
@@ -426,8 +516,10 @@ export function SessionSidebar({
           </TooltipProvider>
         </div>
       </div>
-      <div className="px-3 py-2">
-        <div className="relative">
+
+      {/* Search */}
+      <div className="flex items-center gap-1.5 px-3 py-2">
+        <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -436,8 +528,43 @@ export function SessionSidebar({
             className="h-8 pl-8 text-xs"
           />
         </div>
+        {grouped.size > 1 && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allAgentIds = [...grouped.keys()]
+                    const allCollapsed = allAgentIds.every((id) => collapsedAgents.has(id))
+                    setCollapsedAgents(allCollapsed ? new Set() : new Set(allAgentIds))
+                  }}
+                  className="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  {[...grouped.keys()].every((id) => collapsedAgents.has(id)) ? (
+                    <ChevronsUpDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronsDownUp className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {[...grouped.keys()].every((id) => collapsedAgents.has(id)) ? 'Expand all' : 'Collapse all'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
-      <VirtualSessionList grouped={grouped} agents={agents} selected={selected} onSelect={onSelect} />
+
+      {/* Session list */}
+      <VirtualSessionList
+        grouped={grouped}
+        agents={agents}
+        selected={selected}
+        onSelect={onSelect}
+        collapsedAgents={collapsedAgents}
+        onToggleAgent={toggleAgent}
+      />
     </div>
   )
 }

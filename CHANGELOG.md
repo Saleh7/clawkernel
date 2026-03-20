@@ -4,6 +4,76 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Slash Commands** — type `/` to open autocomplete menu with 18 commands; keyboard navigation (↑↓ Tab Enter Esc); arg picker for `/think`, `/fast`, `/verbose`; categorized by Session, Model, Tools, Agents (`lib/slash-commands.ts`, `components/slash-menu.tsx`, `hooks/use-slash-menu.ts`)
+- **Slash Command Executor** — 15 client-side commands executed via Gateway RPC without sending to agent: `/model`, `/think`, `/compact`, `/fast`, `/verbose`, `/usage`, `/agents`, `/kill`, `/help`, `/new`, `/reset`, `/stop`, `/clear`, `/export`, `/focus` (`lib/slash-executor.ts`)
+- **Input History** — Arrow Up/Down navigates last 50 sent messages, deduplicates consecutive identical entries (`lib/input-history.ts`)
+- **Chat Export** — `/export` generates a Markdown file and downloads it (`lib/chat-export.ts`)
+- **Message Search** — `Ctrl+F` / `Cmd+F` opens search bar; filters messages by text content; shows match count (`components/search-bar.tsx`)
+- **Per-Message Metadata** — assistant messages display input/output tokens, cache read/write, cost, context %, and model name on hover (`lib/message-meta.ts`, `components/message-meta.tsx`)
+- **JSON Auto-Detection** — messages containing pure JSON render as collapsible blocks with syntax badge and pretty-print (`lib/json-detect.ts`, `components/json-block.tsx`)
+- **Welcome State** — empty chat shows agent avatar, name, `/` hint, and 4 quick-start suggestion buttons (`components/welcome-state.tsx`)
+- **Token Estimate** — input area shows approximate token count (`~N tokens`) when message exceeds 100 characters
+- **NO_REPLY Filter** — assistant messages matching `NO_REPLY` are silently hidden from display (`lib/silent-filter.ts`)
+- **Speech-to-Text (STT)** — microphone button records voice and inserts transcribed text; uses Web Speech API with interim + final transcript support (`lib/speech.ts`)
+- **Text-to-Speech (TTS)** — volume button on assistant messages reads content aloud; strips markdown before speaking; stop/cancel support (`lib/speech.ts`)
+- **Pinned Messages** — bookmark button on any message; pinned bar above chat with expand/collapse; persisted to localStorage per session (`lib/pinned-messages.ts`, `components/pinned-bar.tsx`)
+- **Deleted Messages** — trash button hides messages client-side; persisted to localStorage per session (`lib/deleted-messages.ts`)
+- **Focus Mode** — toggle in chat settings hides sidebar for distraction-free chatting
+- **Tool Output Sidebar** — resizable split panel; click "View full output" on any tool call to see formatted output; drag handle for width adjustment (`components/tool-sidebar.tsx`)
+- **Session Cache** — LRU cache (max 20) for pinned/deleted message state across session switches (`lib/session-cache.ts`)
+
+#### Chat — Input Redesign
+- **Professional chat input** — redesigned to match OpenClaw UI: card-style container with accent focus glow, subtle toolbar separator, compact icon buttons (`h-7 rounded-md`), accent-colored send button with hover shadow
+- **Model Selector** — inline model picker in chat input toolbar; lazy-loads model catalog on open; search/filter models; shows current model with provider; switches via `sessions.patch` RPC (`components/model-selector.tsx`)
+- **Slash Command Button** — `/` icon button in toolbar opens slash menu; active state highlighted; toggle on/off
+- **New Session in toolbar** — moved `+` button from header to chat input toolbar-right; hidden during streaming (replaced by Stop button); matches OpenClaw layout pattern
+- **Full-width input** — removed `max-w-3xl` constraint; input stretches to screen width
+- **Dynamic placeholder** — shows `"Message {AgentName} (Enter to send)"` instead of static text; switches to `"Listening…"` during STT recording
+
+#### Chat — Session Sidebar Redesign
+- **Collapsible agent groups** — click agent header to toggle sessions visibility; chevron indicator (`▶`/`▼`); collapsed groups excluded from virtualization
+- **Collapse/Expand all** — icon button next to search filter; toggles all agent groups; appears only with 2+ agents; tooltip hint
+- **Enhanced session items** — two-line layout (label + preview/subject); relative time (`just now`, `5m ago`); token count right-aligned; selected state with subtle shadow
+- **Improved spacing** — consistent `px-2.5` padding on virtual list items and container; no more edge-clipping
+
+#### Chat — Toolbar Actions
+- **Export Button** — download icon in chat input toolbar; triggers `exportChatMarkdown()` to save conversation as Markdown file; hidden during streaming
+- **Search Button** — magnifying glass icon in chat input toolbar; opens search bar overlay; synced with `Ctrl+F` / `Cmd+F` keyboard shortcut
+
+#### Chat — Session Rename
+- **Inline session rename** — double-click session label in chat header to edit; Enter to save, Escape to cancel; calls `sessions.patch` RPC with `label` field; toast feedback on success/failure
+
+#### Chat — Auto-scroll Toggle
+- **Scroll lock** — lock/unlock toggle near scroll area; when locked, `ChatContainerScrollAnchor` is unmounted to pause auto-scroll during streaming; visual indicator shows lock state
+
+#### Chat — Quick Actions on Hover
+- **Session hover actions** — hovering a session item in sidebar reveals compact and delete action buttons overlaying the time/token area; uses `group-hover` Tailwind pattern; compact calls `sessions.compact` RPC with toast feedback
+
+#### Chat — Header Cleanup
+- **Removed duplicate Stop button** — single Stop button in chat input toolbar only; header shows `"Generating…"` shimmer text indicator
+- **Removed Reset button** — reset available via `/reset` slash command; reduces header clutter
+
+#### Chat — Stable Message Keys
+- **`messageKey()`** — stable key generation for chat messages using `id > messageId > toolCallId > timestamp+role+index`; mirrors OpenClaw UI's `messageKey()` (`ui/src/ui/views/chat.ts:1467`); used by pin and delete features for correctness across history reloads
+
+#### Tests
+- **Chat lib unit tests** — 59 new tests across 7 files: `input-history` (9), `json-detect` (9), `silent-filter` (6), `pinned-messages` (6), `deleted-messages` (6), `slash-commands` (15), `messageKey` (8); total test count 342 → 401
+- **Coverage config** — added 6 chat lib files to `vitest.config.ts` coverage include
+
+### Changed
+
+#### Chat — Code Quality
+- **Shiki highlighter** — replaced `Promise<any>` + `as any` with proper `Awaited<ReturnType<>>` typing; zero `as any` casts remaining in codebase (`lib/shiki.ts`)
+- **SlashMenu memo stability** — destructured stable `useCallback` refs from `useSlashMenu()` hook into individual deps; `SlashMenu` memo now works correctly instead of re-rendering every keystroke
+- **Clipboard error handling** — added rejection handler to `navigator.clipboard.writeText()`; prevents unhandled promise rejection in non-HTTPS contexts
+- **Input ref timing** — captured `rawInput` from ref before `setInputValue('')` to eliminate dependency on React batching internals
+- **Copy timeout cleanup** — `setCopied(false)` timeout tracked via ref and cleared on unmount; prevents setState-after-unmount warning
+- **Drag resize optimization** — tool sidebar `handleMouseDown` uses `widthRef` instead of `width` in closure; callback stable with `[]` deps during drag
+- **STT listener cleanup** — speech recognition event listeners tracked and explicitly removed in `stopStt()`
+- **Agent load error toasts** — failed identity, config, workspace, and model list loads now show `toast.error()` instead of silent `log.warn`
+
 ### Changed
 
 - **`GatewaySessionRow`** — added `spawnedBy?: string` field; tracks which session spawned a sub-agent session
