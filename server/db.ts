@@ -1,5 +1,6 @@
 // SQLite database at ~/.clawkernel.db. Tables are created with IF NOT EXISTS, so no migrations are required.
 
+import crypto from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
 import Database from 'better-sqlite3'
@@ -38,6 +39,26 @@ const usageHistory = sqliteTable('usage_history', {
   costUsd: real('cost_usd').notNull(),
 })
 
+export const promptCategories = sqliteTable('prompt_categories', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at').notNull(),
+})
+
+export const prompts = sqliteTable('prompts', {
+  id: text('id').primaryKey(),
+  categoryId: text('category_id').notNull(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  usageCount: integer('usage_count').notNull().default(0),
+  lastUsedAt: integer('last_used_at'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+})
+
 function initDb() {
   const sqlite = new Database(DB_PATH)
   sqlite.pragma('journal_mode = WAL')
@@ -74,9 +95,46 @@ function initDb() {
     )
   `)
 
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_categories (
+      id         TEXT    PRIMARY KEY,
+      name       TEXT    NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    )
+  `)
+
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS prompts (
+      id          TEXT    PRIMARY KEY,
+      category_id TEXT    NOT NULL,
+      title       TEXT    NOT NULL,
+      content     TEXT    NOT NULL,
+      pinned      INTEGER NOT NULL DEFAULT 0,
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      usage_count INTEGER NOT NULL DEFAULT 0,
+      last_used_at INTEGER,
+      created_at  INTEGER NOT NULL,
+      updated_at  INTEGER NOT NULL
+    )
+  `)
+
+  seedDefaultCategories(sqlite)
+
   return drizzle(sqlite, { schema })
 }
 
-const schema = { preferences, tokenAlarms, usageHistory }
+function seedDefaultCategories(sqlite: Database.Database) {
+  const count = sqlite.prepare('SELECT COUNT(*) as n FROM prompt_categories').get() as { n: number }
+  if (count.n > 0) return
+  const now = Math.floor(Date.now() / 1000)
+  const defaults = ['General', 'Development', 'Operations', 'Research', 'Writing']
+  const stmt = sqlite.prepare('INSERT INTO prompt_categories (id, name, sort_order, created_at) VALUES (?, ?, ?, ?)')
+  for (let i = 0; i < defaults.length; i++) {
+    stmt.run(crypto.randomUUID(), defaults[i], i, now)
+  }
+}
+
+const schema = { preferences, tokenAlarms, usageHistory, promptCategories, prompts }
 
 export const db = initDb()

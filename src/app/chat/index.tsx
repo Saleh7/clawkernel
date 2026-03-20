@@ -43,6 +43,7 @@ import { AttachmentStrip } from './components/attachments'
 import { ChatBubble } from './components/bubble'
 import { ModelSelector } from './components/model-selector'
 import { PinnedBar } from './components/pinned-bar'
+import { PromptLibrary } from './components/prompt-library'
 import { SearchBar } from './components/search-bar'
 import { SessionSidebar } from './components/session-sidebar'
 import { SlashMenu } from './components/slash-menu'
@@ -264,6 +265,7 @@ export default function ChatPage() {
   const [renameValue, setRenameValue] = useState('')
   const [scrollLocked, setScrollLocked] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [showNewConfirm, setShowNewConfirm] = useState(false)
   const compactionStatus = useGatewayStore((s) => s.compactionStatus)
   const fallbackStatus = useGatewayStore((s) => s.fallbackStatus)
   const [sttRecording, setSttRecording] = useState(false)
@@ -795,13 +797,14 @@ export default function ChatPage() {
                       <Download className="h-4 w-4" />
                     </Button>
                   </PromptInputAction>
+                  <PromptLibrary onSelect={(content) => c.setInputValue(content)} disabled={!c.connected} />
                   {!c.isStreaming && (
                     <PromptInputAction tooltip="New session">
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
-                        onClick={handleNewSession}
+                        onClick={() => setShowNewConfirm(true)}
                         disabled={sessionResetting || !c.connected}
                       >
                         <Plus className="h-4 w-4" />
@@ -861,6 +864,16 @@ export default function ChatPage() {
         loading={sessionResetting}
         loadingLabel="Resetting…"
         onConfirm={handleResetSession}
+      />
+      <ConfirmDialog
+        open={showNewConfirm}
+        onOpenChange={setShowNewConfirm}
+        title="New Session"
+        description="This will start a new session. The current conversation will be archived. Continue?"
+        actionLabel="Yes, start new"
+        loading={sessionResetting}
+        loadingLabel="Starting…"
+        onConfirm={handleNewSession}
       />
     </div>
   )

@@ -56,6 +56,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 
 // server/db.ts
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
@@ -85,6 +86,24 @@ var usageHistory = sqliteTable("usage_history", {
   inputTokens: integer("input_tokens").notNull(),
   outputTokens: integer("output_tokens").notNull(),
   costUsd: real("cost_usd").notNull()
+});
+var promptCategories = sqliteTable("prompt_categories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: integer("created_at").notNull()
+});
+var prompts = sqliteTable("prompts", {
+  id: text("id").primaryKey(),
+  categoryId: text("category_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  pinned: integer("pinned", { mode: "boolean" }).notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  usageCount: integer("usage_count").notNull().default(0),
+  lastUsedAt: integer("last_used_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull()
 });
 function initDb() {
   const sqlite = new Database(DB_PATH);
@@ -118,9 +137,42 @@ function initDb() {
       cost_usd      REAL    NOT NULL
     )
   `);
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_categories (
+      id         TEXT    PRIMARY KEY,
+      name       TEXT    NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL
+    )
+  `);
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS prompts (
+      id          TEXT    PRIMARY KEY,
+      category_id TEXT    NOT NULL,
+      title       TEXT    NOT NULL,
+      content     TEXT    NOT NULL,
+      pinned      INTEGER NOT NULL DEFAULT 0,
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      usage_count INTEGER NOT NULL DEFAULT 0,
+      last_used_at INTEGER,
+      created_at  INTEGER NOT NULL,
+      updated_at  INTEGER NOT NULL
+    )
+  `);
+  seedDefaultCategories(sqlite);
   return drizzle(sqlite, { schema });
 }
-var schema = { preferences, tokenAlarms, usageHistory };
+function seedDefaultCategories(sqlite) {
+  const count = sqlite.prepare("SELECT COUNT(*) as n FROM prompt_categories").get();
+  if (count.n > 0) return;
+  const now3 = Math.floor(Date.now() / 1e3);
+  const defaults = ["General", "Development", "Operations", "Research", "Writing"];
+  const stmt = sqlite.prepare("INSERT INTO prompt_categories (id, name, sort_order, created_at) VALUES (?, ?, ?, ?)");
+  for (let i = 0; i < defaults.length; i++) {
+    stmt.run(crypto.randomUUID(), defaults[i], i, now3);
+  }
+}
+var schema = { preferences, tokenAlarms, usageHistory, promptCategories, prompts };
 var db = initDb();
 
 // server/lib/prefs.ts
@@ -156,6 +208,187 @@ async function handlePrefsPatch(c) {
     if (value !== void 0) setPref(key, value);
   }
   return c.json({ ok: true });
+}
+
+// server/lib/prompts.ts
+import crypto2 from "node:crypto";
+import { eq as eq2, sql } from "drizzle-orm";
+var now2 = () => Math.floor(Date.now() / 1e3);
+function listCategories() {
+  return db.select().from(promptCategories).orderBy(promptCategories.sortOrder).all();
+}
+function createCategory(name) {
+  const maxOrder = db.select({ max: sql`COALESCE(MAX(sort_order), -1)` }).from(promptCategories).get();
+  const entry = {
+    id: crypto2.randomUUID(),
+    name: name.trim(),
+    sortOrder: (maxOrder?.max ?? -1) + 1,
+    createdAt: now2()
+  };
+  db.insert(promptCategories).values(entry).run();
+  return entry;
+}
+function updateCategory(id, name) {
+  db.update(promptCategories).set({ name: name.trim() }).where(eq2(promptCategories.id, id)).run();
+}
+function deleteCategory(id) {
+  db.delete(prompts).where(eq2(prompts.categoryId, id)).run();
+  const result = db.delete(promptCategories).where(eq2(promptCategories.id, id)).run();
+  return { deleted: result.changes };
+}
+function reorderCategories(ids) {
+  for (let i = 0; i < ids.length; i++) {
+    db.update(promptCategories).set({ sortOrder: i }).where(eq2(promptCategories.id, ids[i])).run();
+  }
+}
+function listPrompts() {
+  return db.select().from(prompts).orderBy(prompts.sortOrder).all();
+}
+function createPrompt(data) {
+  const maxOrder = db.select({ max: sql`COALESCE(MAX(sort_order), -1)` }).from(prompts).where(eq2(prompts.categoryId, data.categoryId)).get();
+  const entry = {
+    id: crypto2.randomUUID(),
+    categoryId: data.categoryId,
+    title: data.title.trim(),
+    content: data.content.trim(),
+    pinned: false,
+    sortOrder: (maxOrder?.max ?? -1) + 1,
+    usageCount: 0,
+    lastUsedAt: null,
+    createdAt: now2(),
+    updatedAt: now2()
+  };
+  db.insert(prompts).values(entry).run();
+  return entry;
+}
+function updatePrompt(id, data) {
+  const set = { updatedAt: now2() };
+  if (data.title !== void 0) set.title = data.title.trim();
+  if (data.content !== void 0) set.content = data.content.trim();
+  if (data.categoryId !== void 0) set.categoryId = data.categoryId;
+  if (data.pinned !== void 0) set.pinned = data.pinned;
+  return db.update(prompts).set(set).where(eq2(prompts.id, id)).run();
+}
+function deletePrompt(id) {
+  return db.delete(prompts).where(eq2(prompts.id, id)).run();
+}
+function recordUsage(id) {
+  return db.update(prompts).set({ usageCount: sql`usage_count + 1`, lastUsedAt: now2(), updatedAt: now2() }).where(eq2(prompts.id, id)).run();
+}
+function reorderPrompts(ids) {
+  for (let i = 0; i < ids.length; i++) {
+    db.update(prompts).set({ sortOrder: i }).where(eq2(prompts.id, ids[i])).run();
+  }
+}
+function exportAll() {
+  return {
+    version: 1,
+    categories: listCategories(),
+    prompts: listPrompts()
+  };
+}
+function importAll(data) {
+  let catCount = 0;
+  let promptCount = 0;
+  const ts = now2();
+  const categoryIdMap = /* @__PURE__ */ new Map();
+  for (const cat of data.categories) {
+    const newId = crypto2.randomUUID();
+    categoryIdMap.set(cat.id, newId);
+    db.insert(promptCategories).values({ id: newId, name: cat.name, sortOrder: cat.sortOrder, createdAt: ts }).run();
+    catCount++;
+  }
+  for (const p of data.prompts) {
+    const mappedCategoryId = categoryIdMap.get(p.categoryId);
+    if (!mappedCategoryId) continue;
+    db.insert(prompts).values({
+      id: crypto2.randomUUID(),
+      categoryId: mappedCategoryId,
+      title: p.title,
+      content: p.content,
+      pinned: p.pinned,
+      sortOrder: p.sortOrder,
+      usageCount: 0,
+      lastUsedAt: null,
+      createdAt: ts,
+      updatedAt: ts
+    }).run();
+    promptCount++;
+  }
+  return { categories: catCount, prompts: promptCount };
+}
+
+// server/routes/prompts.ts
+function handlePromptsGet(c) {
+  return c.json({ categories: listCategories(), prompts: listPrompts() });
+}
+async function handlePromptsCreate(c) {
+  const body = await c.req.json();
+  if (!body.categoryId || !body.title?.trim() || !body.content?.trim()) {
+    return c.json({ ok: false, error: "categoryId, title, and content required" }, 400);
+  }
+  const prompt = createPrompt({ categoryId: body.categoryId, title: body.title, content: body.content });
+  return c.json({ ok: true, prompt });
+}
+async function handlePromptsUpdate(c) {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const result = updatePrompt(id, body);
+  if (result.changes === 0) return c.json({ ok: false, error: "Prompt not found" }, 404);
+  return c.json({ ok: true });
+}
+async function handlePromptsDelete(c) {
+  const result = deletePrompt(c.req.param("id"));
+  if (result.changes === 0) return c.json({ ok: false, error: "Prompt not found" }, 404);
+  return c.json({ ok: true });
+}
+async function handlePromptsUse(c) {
+  const result = recordUsage(c.req.param("id"));
+  if (result.changes === 0) return c.json({ ok: false, error: "Prompt not found" }, 404);
+  return c.json({ ok: true });
+}
+async function handlePromptsReorder(c) {
+  const body = await c.req.json();
+  if (!Array.isArray(body.ids)) return c.json({ ok: false, error: "ids array required" }, 400);
+  reorderPrompts(body.ids);
+  return c.json({ ok: true });
+}
+function handleCategoriesGet(c) {
+  return c.json({ categories: listCategories() });
+}
+async function handleCategoriesCreate(c) {
+  const body = await c.req.json();
+  if (!body.name?.trim()) return c.json({ ok: false, error: "name required" }, 400);
+  const category = createCategory(body.name);
+  return c.json({ ok: true, category });
+}
+async function handleCategoriesUpdate(c) {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  if (!body.name?.trim()) return c.json({ ok: false, error: "name required" }, 400);
+  updateCategory(id, body.name);
+  return c.json({ ok: true });
+}
+async function handleCategoriesDelete(c) {
+  const result = deleteCategory(c.req.param("id"));
+  return c.json({ ok: true, ...result });
+}
+async function handleCategoriesReorder(c) {
+  const body = await c.req.json();
+  if (!Array.isArray(body.ids)) return c.json({ ok: false, error: "ids array required" }, 400);
+  reorderCategories(body.ids);
+  return c.json({ ok: true });
+}
+function handlePromptsExport(c) {
+  return c.json(exportAll());
+}
+async function handlePromptsImport(c) {
+  const body = await c.req.json();
+  if (body.version !== 1 || !Array.isArray(body.categories) || !Array.isArray(body.prompts)) {
+    return c.json({ ok: false, error: "Invalid import format" }, 400);
+  }
+  const result = importAll(body);
+  return c.json({ ok: true, ...result });
 }
 
 // server/routes/version.ts
@@ -299,6 +532,9 @@ var api = new Hono().basePath("/api");
 api.get("/health", handleHealth);
 api.get("/version", handleVersionGet);
 api.get("/prefs", handlePrefsGet);
+api.get("/prompts", handlePromptsGet);
+api.get("/prompts/export", handlePromptsExport);
+api.get("/prompt-categories", handleCategoriesGet);
 api.post("/version/dismiss", (c) => {
   const denied = requireAuth(c);
   if (denied) return denied;
@@ -318,6 +554,56 @@ api.patch("/prefs", (c) => {
   const denied = requireAuth(c);
   if (denied) return denied;
   return handlePrefsPatch(c);
+});
+api.post("/prompts", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handlePromptsCreate(c);
+});
+api.patch("/prompts/:id", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handlePromptsUpdate(c);
+});
+api.delete("/prompts/:id", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handlePromptsDelete(c);
+});
+api.post("/prompts/:id/use", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handlePromptsUse(c);
+});
+api.post("/prompts/reorder", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handlePromptsReorder(c);
+});
+api.post("/prompts/import", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handlePromptsImport(c);
+});
+api.post("/prompt-categories", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handleCategoriesCreate(c);
+});
+api.patch("/prompt-categories/:id", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handleCategoriesUpdate(c);
+});
+api.delete("/prompt-categories/:id", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handleCategoriesDelete(c);
+});
+api.post("/prompt-categories/reorder", (c) => {
+  const denied = requireAuth(c);
+  if (denied) return denied;
+  return handleCategoriesReorder(c);
 });
 app.route("/", api);
 var VITE_DEV_PORT = 5173;

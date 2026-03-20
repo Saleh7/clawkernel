@@ -6,6 +6,22 @@
 
 ### Added
 
+#### Prompt Library
+- **Prompt Library dialog** — reusable prompt manager accessible from chat input toolbar (Zap icon); CRUD for prompts with title, content, and category assignment (`components/prompt-library.tsx`, `lib/prompts-api.ts`)
+- **Category management** — create, rename, and delete prompt categories; filter prompts by category with pill-style toggle buttons; default categories seeded on first launch (General, Development, Operations, Research, Writing)
+- **Prompt pinning** — pin/unpin prompts to prioritize them at the top of the list; pinned state persisted server-side
+- **Drag-and-drop reorder** — drag prompts to reorder within the library; sort order persisted via `POST /api/prompts/reorder`
+- **Usage tracking** — tracks per-prompt usage count and last-used timestamp; displayed on each prompt card
+- **Import / Export** — export all prompts and categories as versioned JSON; import with client-side format validation and error toast on malformed files
+- **Search** — real-time search across prompt titles and content
+- **New session confirmation** — "New Session" button now shows a confirm dialog before starting a new session (prevents accidental session loss)
+
+#### Prompt Library — Backend
+- **SQLite tables** — `prompt_categories` and `prompts` tables created with `IF NOT EXISTS`; Drizzle ORM schema with typed columns (`server/db.ts`)
+- **CRUD service** — `server/lib/prompts.ts`: `listCategories`, `createCategory`, `updateCategory`, `deleteCategory` (cascade-deletes prompts), `reorderCategories`, `listPrompts`, `createPrompt`, `updatePrompt`, `deletePrompt`, `recordUsage`, `reorderPrompts`, `exportAll`, `importAll`
+- **API routes** — 13 endpoints under `/api/prompts` and `/api/prompt-categories`; all mutating routes require `Authorization: Bearer` when `CK_API_TOKEN` is set; 404 responses for non-existent prompt IDs on update/delete/use (`server/routes/prompts.ts`)
+- **Default category seeding** — 5 default categories inserted on first database initialization
+
 - **Slash Commands** — type `/` to open autocomplete menu with 18 commands; keyboard navigation (↑↓ Tab Enter Esc); arg picker for `/think`, `/fast`, `/verbose`; categorized by Session, Model, Tools, Agents (`lib/slash-commands.ts`, `components/slash-menu.tsx`, `hooks/use-slash-menu.ts`)
 - **Slash Command Executor** — 15 client-side commands executed via Gateway RPC without sending to agent: `/model`, `/think`, `/compact`, `/fast`, `/verbose`, `/usage`, `/agents`, `/kill`, `/help`, `/new`, `/reset`, `/stop`, `/clear`, `/export`, `/focus` (`lib/slash-executor.ts`)
 - **Input History** — Arrow Up/Down navigates last 50 sent messages, deduplicates consecutive identical entries (`lib/input-history.ts`)

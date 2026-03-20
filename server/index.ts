@@ -11,6 +11,21 @@ import { handleChannelsSetup } from './routes/channels'
 import { handleGatewayRestart } from './routes/gateway'
 import { handleHealth } from './routes/health'
 import { handlePrefsGet, handlePrefsPatch } from './routes/prefs'
+import {
+  handleCategoriesCreate,
+  handleCategoriesDelete,
+  handleCategoriesGet,
+  handleCategoriesReorder,
+  handleCategoriesUpdate,
+  handlePromptsCreate,
+  handlePromptsDelete,
+  handlePromptsExport,
+  handlePromptsGet,
+  handlePromptsImport,
+  handlePromptsReorder,
+  handlePromptsUpdate,
+  handlePromptsUse,
+} from './routes/prompts'
 import { handleVersionDismiss, handleVersionGet } from './routes/version'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -116,6 +131,9 @@ const api = new Hono().basePath('/api')
 api.get('/health', handleHealth)
 api.get('/version', handleVersionGet)
 api.get('/prefs', handlePrefsGet)
+api.get('/prompts', handlePromptsGet)
+api.get('/prompts/export', handlePromptsExport)
+api.get('/prompt-categories', handleCategoriesGet)
 
 api.post('/version/dismiss', (c) => {
   const denied = requireAuth(c)
@@ -136,6 +154,56 @@ api.patch('/prefs', (c) => {
   const denied = requireAuth(c)
   if (denied) return denied
   return handlePrefsPatch(c)
+})
+api.post('/prompts', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handlePromptsCreate(c)
+})
+api.patch('/prompts/:id', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handlePromptsUpdate(c)
+})
+api.delete('/prompts/:id', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handlePromptsDelete(c)
+})
+api.post('/prompts/:id/use', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handlePromptsUse(c)
+})
+api.post('/prompts/reorder', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handlePromptsReorder(c)
+})
+api.post('/prompts/import', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handlePromptsImport(c)
+})
+api.post('/prompt-categories', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handleCategoriesCreate(c)
+})
+api.patch('/prompt-categories/:id', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handleCategoriesUpdate(c)
+})
+api.delete('/prompt-categories/:id', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handleCategoriesDelete(c)
+})
+api.post('/prompt-categories/reorder', (c) => {
+  const denied = requireAuth(c)
+  if (denied) return denied
+  return handleCategoriesReorder(c)
 })
 app.route('/', api)
 
